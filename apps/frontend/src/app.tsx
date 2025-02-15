@@ -218,10 +218,10 @@ function App() {
                 top: `${(note.y ?? 0) + 20}px`,
                 transform: 'none'
               }}
-              aria-describedby="note-description"
+              aria-describedby={`note-description-${note.id}`}
             >
               <DialogTitle className="sr-only">Add Note</DialogTitle>
-              <div id="note-description" className="sr-only">
+              <div id={`note-description-${note.id}`} className="sr-only">
                 Add or edit your note for the selected element. Use the textarea below to write your note, then click Save to confirm or Delete to remove the note.
               </div>
               <textarea
