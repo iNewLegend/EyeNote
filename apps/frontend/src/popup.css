@@ -8,23 +8,23 @@
   }
 
   .popup h1 {
-    @apply text-2xl mb-4 text-text;
+    @apply text-2xl font-semibold text-text;
   }
 
   .popup h2 {
-    @apply text-lg my-4 text-text;
+    @apply text-lg font-medium my-4 text-text;
   }
 
   .settings {
-    @apply mb-6;
+    @apply mb-6 space-y-3;
   }
 
   .settings label {
-    @apply flex items-center mb-2 cursor-pointer;
+    @apply flex items-center gap-2 cursor-pointer hover:bg-accent/50 p-2 rounded-md transition-colors;
   }
 
   .settings input[type="checkbox"] {
-    @apply mr-2 w-4 h-4 cursor-pointer;
+    @apply h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer;
   }
 
   .groups {
@@ -32,15 +32,15 @@
   }
 
   .groups ul {
-    @apply list-none p-0 m-0;
+    @apply list-none p-0 m-0 space-y-2;
   }
 
   .groups li {
-    @apply p-2 bg-gray-100 rounded mb-1;
+    @apply p-2 bg-accent rounded-md text-sm font-medium;
   }
 
   .instructions {
-    @apply p-3 bg-primary-light rounded border border-primary;
+    @apply p-3 bg-primary/10 rounded-md border border-primary/20;
   }
 
   .instructions p {
