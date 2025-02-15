@@ -43,7 +43,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["assets/*", "chunks/*"],
+      "resources": ["assets/*", "chunks/*", "cursor.png"],
       "matches": ["<all_urls>"]
     }
   ],
