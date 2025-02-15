@@ -35,9 +35,9 @@
     --radius: 0.5rem;
 
     /* Custom theme colors */
-    --primary-color: #646cff;
-    --primary-hover: #535bf2;
-    --primary-light: rgba(100, 108, 255, 0.1);
+    --primary-color: #4804ad;
+    --primary-hover: #5e1d78;
+    --primary-light: rgba(72, 4, 173, 0.1);
     --text-color: #213547;
     --background-color: #ffffff;
     --border-color: #ddd;
@@ -97,9 +97,9 @@
   }
 
   .eye-note-highlight {
-    outline: 2px solid #FF00E6 !important;
+    outline: 2px solid #4804ad !important;
     outline-offset: 2px !important;
-    background-color: rgba(255, 0, 230, 0.1) !important;
+    background-color: rgba(72, 4, 173, 0.1) !important;
     z-index: 999998 !important;
     position: relative !important;
   }
