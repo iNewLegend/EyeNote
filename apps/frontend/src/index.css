@@ -89,15 +89,11 @@
   }
 
   .note-marker {
-    @apply absolute w-6 h-6 bg-primary rounded-full cursor-pointer pointer-events-auto transition-transform duration-200 ease-in-out shadow-md;
-  }
-
-  .note-marker:hover {
-    @apply transform scale-110 bg-primary-hover;
+    @apply absolute w-6 h-6 bg-primary rounded-full cursor-pointer pointer-events-auto transition-transform duration-200 ease-in-out shadow-md hover:scale-110 hover:bg-primary/90;
   }
 
   .note-content {
-    @apply absolute bg-background rounded-lg shadow-lg p-4 w-[300px] pointer-events-auto z-[10000] max-h-[80vh] overflow-y-auto;
+    @apply w-[300px] max-h-[80vh] overflow-y-auto;
   }
 
   .eye-note-highlight {

@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import type { Note } from "./types";
 import React from "react";
+import { Dialog, DialogContent } from "./components/ui/dialog";
+import { Button } from "./components/ui/button";
+import { useToast } from "./components/ui/toast-context";
 
 function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [isShiftPressed, setIsShiftPressed] = useState(false);
   const [hoveredElement, setHoveredElement] = useState<Element | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -111,6 +115,11 @@ function App() {
     setHoveredElement(null);
     event.preventDefault();
     event.stopPropagation();
+
+    toast({
+      title: "Note Created",
+      description: "Click the marker to edit your note."
+    });
   };
 
   const getElementPath = (element: Element): string => {
@@ -146,6 +155,10 @@ function App() {
         note.id === id ? { ...note, content, isEditing: false } : note
       )
     );
+    toast({
+      title: "Note Updated",
+      description: "Your note has been saved."
+    });
   };
 
   return (
@@ -157,23 +170,41 @@ function App() {
             style={{ 
               left: `${note.x ?? 0}px`, 
               top: `${note.y ?? 0}px` 
-            }} 
+            }}
+            onClick={() => setNotes(notes.map(n => 
+              n.id === note.id ? { ...n, isEditing: true } : n
+            ))}
           />
-          {note.isEditing && (
-            <div 
-              className="note-content" 
-              style={{ 
-                left: `${note.x ?? 0}px`, 
-                top: `${(note.y ?? 0) + 20}px` 
-              }}
-            >
+          <Dialog open={note.isEditing} onOpenChange={(open) => {
+            if (!open) {
+              setNotes(notes.map(n => 
+                n.id === note.id ? { ...n, isEditing: false } : n
+              ));
+            }
+          }}>
+            <DialogContent className="note-content" style={{ 
+              position: 'absolute',
+              left: `${note.x ?? 0}px`, 
+              top: `${(note.y ?? 0) + 20}px`,
+              transform: 'none'
+            }}>
               <textarea
+                className="w-full min-h-[100px] p-2 border border-border rounded resize-y font-sans"
                 defaultValue={note.content}
                 placeholder="Enter your note..."
+                autoFocus
                 onBlur={(e) => updateNote(note.id, e.target.value)}
               />
-            </div>
-          )}
+              <div className="flex justify-end gap-2 mt-4">
+                <Button variant="outline" onClick={() => setNotes(notes.filter(n => n.id !== note.id))}>
+                  Delete
+                </Button>
+                <Button onClick={() => updateNote(note.id, note.content)}>
+                  Save
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       ))}
     </div>

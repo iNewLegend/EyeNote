@@ -64,6 +64,23 @@ async function prepareExtension() {
       }
     }
 
+    // Rename index.html to popup.html
+    const indexPath = path.join(extensionDir, 'index.html');
+    const popupPath = path.join(extensionDir, 'popup.html');
+    if (await fs.access(indexPath).then(() => true).catch(() => false)) {
+      await fs.rename(indexPath, popupPath);
+      console.log('Renamed index.html to popup.html');
+    }
+
+    // Extract CSS from content.iife.js and save as style.css
+    const contentScriptPath = path.join(extensionDir, 'content.iife.js');
+    const contentScript = await fs.readFile(contentScriptPath, 'utf-8');
+    const cssMatch = contentScript.match(/var style = document\.createElement\('style'\);[\s\S]*?style\.textContent = `([\s\S]*?)`;/);
+    if (cssMatch && cssMatch[1]) {
+      await fs.writeFile(path.join(extensionDir, 'style.css'), cssMatch[1]);
+      console.log('Extracted CSS to style.css');
+    }
+
     console.log('Extension files prepared successfully!');
   } catch (err) {
     console.error('Error preparing extension:', err);

@@ -1,23 +1,21 @@
-// Handle installation and updates
-chrome.runtime.onInstalled.addListener((details) => {
-  if (details.reason === "install") {
-    // Set default settings
-    chrome.storage.local.set({
-      activeGroups: [],
-      settings: {
-        enabled: true,
-        notificationSound: true,
-        showUnreadBadge: true,
-      },
-    });
-  }
+// Listen for extension installation or update
+chrome.runtime.onInstalled.addListener(() => {
+  // Initialize default settings
+  chrome.storage.local.set({
+    settings: {
+      enabled: true,
+      notificationSound: true,
+      showUnreadBadge: true,
+    },
+    activeGroups: [],
+  });
 });
 
 // Listen for messages from content script
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message.type === "GET_ACTIVE_GROUPS") {
-    chrome.storage.local.get("activeGroups", (result) => {
-      sendResponse(result.activeGroups || []);
+  if (message.type === "GET_AUTH_STATUS") {
+    chrome.storage.local.get("authToken", (result) => {
+      sendResponse({ isAuthenticated: !!result.authToken });
     });
     return true; // Will respond asynchronously
   }

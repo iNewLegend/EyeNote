@@ -24,9 +24,9 @@ const ideIntegrationPlugin = () => ({
 const contentScriptBuild = defineConfig({
   build: {
     lib: {
-      entry: resolve(__dirname, "src/content-script.jsx"),
+      entry: resolve(__dirname, "src/content-script.tsx"),
       name: "content",
-      fileName: "content",
+      fileName: () => "content.iife.js",
       formats: ["iife"],
     },
     outDir: "dist",
@@ -36,7 +36,8 @@ const contentScriptBuild = defineConfig({
     },
   },
   define: {
-    "process.env.NODE_ENV": '"production"',
+    "process.env.NODE_ENV": JSON.stringify("production"),
+    "process.env": JSON.stringify({}),
   },
   plugins: [react()],
 });
@@ -60,6 +61,10 @@ const mainBuild = defineConfig({
     emptyOutDir: true,
     sourcemap: true,
     assetsDir: "assets",
+  },
+  define: {
+    "process.env.NODE_ENV": JSON.stringify("production"),
+    "process.env": JSON.stringify({}),
   },
   css: {
     modules: {
