@@ -25,10 +25,16 @@ async function handleGoogleAuth(token: string) {
     );
 
     if (!response.ok) {
-      throw new Error("Failed to fetch user info");
+      console.error("Failed to fetch user info:", await response.text());
+      throw new Error(`Failed to fetch user info: ${response.statusText}`);
     }
 
     const data = await response.json();
+    console.log("User info received:", data);
+
+    if (!data.sub || !data.email || !data.name) {
+      throw new Error("Invalid user info received");
+    }
 
     // Store the auth token and user info
     await chrome.storage.local.set({
@@ -37,7 +43,7 @@ async function handleGoogleAuth(token: string) {
         id: data.sub,
         email: data.email,
         name: data.name,
-        picture: data.picture,
+        picture: data.picture || null,
       },
     });
 
@@ -64,6 +70,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   if (message.type === "GOOGLE_AUTH") {
+    if (!message.token) {
+      sendResponse({ success: false, error: "No token provided" });
+      return true;
+    }
     handleGoogleAuth(message.token).then(sendResponse);
     return true; // Will respond asynchronously
   }
