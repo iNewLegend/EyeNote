@@ -116,6 +116,7 @@ function App() {
       };
 
       setNotes(prevNotes => [...prevNotes, newNote]);
+      // Don't remove highlight when creating a note
       setHoveredElement(null);
       e.preventDefault();
       e.stopPropagation();
@@ -172,10 +173,11 @@ function App() {
     setNotes(
       notes.map((note) => {
         if (note.id === id) {
-          if (note.highlightedElement) {
+          // Only remove highlight if we're saving the note
+          if (note.highlightedElement && content.trim() !== '') {
             note.highlightedElement.classList.remove('eye-note-highlight');
           }
-          return { ...note, content, isEditing: false, highlightedElement: null };
+          return { ...note, content, isEditing: false, highlightedElement: content.trim() === '' ? note.highlightedElement : null };
         }
         return note;
       })
@@ -196,17 +198,28 @@ function App() {
               left: `${note.x ?? 0}px`, 
               top: `${note.y ?? 0}px` 
             }}
-            onClick={() => setNotes(notes.map(n => 
-              n.id === note.id ? { ...n, isEditing: true } : n
-            ))}
+            onClick={() => {
+              // Re-add highlight when reopening the dialog
+              if (note.highlightedElement) {
+                note.highlightedElement.classList.add('eye-note-highlight');
+              }
+              setNotes(notes.map(n => 
+                n.id === note.id ? { ...n, isEditing: true } : n
+              ));
+            }}
           />
           <Dialog open={note.isEditing} onOpenChange={(open) => {
             if (!open) {
-              if (note.highlightedElement) {
+              // Only remove highlight if the note has content
+              if (note.highlightedElement && note.content.trim() !== '') {
                 note.highlightedElement.classList.remove('eye-note-highlight');
               }
               setNotes(notes.map(n => 
-                n.id === note.id ? { ...n, isEditing: false, highlightedElement: null } : n
+                n.id === note.id ? { 
+                  ...n, 
+                  isEditing: false, 
+                  highlightedElement: n.content.trim() === '' ? n.highlightedElement : null 
+                } : n
               ));
             }
           }}>
