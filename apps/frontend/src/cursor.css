@@ -1,0 +1,32 @@
+/* Add a transition for smooth cursor changes */
+* {
+  cursor-transition: 150ms ease;
+}
+
+body.shift-pressed {
+  cursor: url('chrome-extension://__MSG_@@extension_id__/cursor.png') 6 6, auto !important;
+  /* Add a subtle glow effect to the entire page */
+  position: relative;
+}
+
+body.shift-pressed::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at var(--x, 50%) var(--y, 50%),
+    rgba(255, 0, 230, 0.1) 0%,
+    transparent 50px
+  );
+  z-index: 999999;
+  transition: opacity 0.3s ease;
+}
+
+/* Ensure the cursor applies to all elements when shift is pressed */
+body.shift-pressed * {
+  cursor: url('chrome-extension://__MSG_@@extension_id__/cursor.png') 6 6, auto !important;
+} 

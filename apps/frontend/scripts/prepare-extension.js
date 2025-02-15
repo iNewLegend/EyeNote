@@ -9,6 +9,7 @@ const distDir = path.join(rootDir, 'dist');
 const extensionDir = path.join(rootDir, 'extension');
 const iconsDir = path.join(extensionDir, 'icons');
 const assetsDir = path.join(extensionDir, 'assets');
+const cursorsDir = path.join(extensionDir, 'cursors');
 
 async function copyFile(src, dest) {
   try {
@@ -26,21 +27,43 @@ async function prepareExtension() {
     await fs.rm(extensionDir, { recursive: true, force: true });
     await fs.mkdir(extensionDir, { recursive: true });
     await fs.mkdir(assetsDir, { recursive: true });
+    await fs.mkdir(cursorsDir, { recursive: true });
 
     // Create icons directory if it doesn't exist
     await fs.mkdir(iconsDir, { recursive: true });
 
-    // Convert and copy icons
+    // Convert and copy icons from icon.svg
+    const sourceIcon = path.join(rootDir, 'public', 'icons', 'icon.svg');
     const sizes = [16, 48, 128];
-    await Promise.all(
-      sizes.map(async (size) => {
-        const svgPath = path.join(rootDir, 'public', 'icons', `icon${size}.svg`);
-        const svgBuffer = await fs.readFile(svgPath);
-        await sharp(svgBuffer)
-          .png()
-          .toFile(path.join(iconsDir, `icon${size}.png`));
-      })
-    );
+    
+    try {
+      const svgBuffer = await fs.readFile(sourceIcon);
+      await Promise.all(
+        sizes.map(async (size) => {
+          await sharp(svgBuffer)
+            .resize(size, size)
+            .png()
+            .toFile(path.join(iconsDir, `icon${size}.png`));
+          console.log(`Created icon${size}.png from icon.svg`);
+        })
+      );
+
+      // Generate cursor image
+      await sharp(svgBuffer)
+        .resize(12, 12, {
+          kernel: sharp.kernel.lanczos3,
+          fit: 'contain',
+          position: 'center',
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
+        })
+        .png({ quality: 100, compressionLevel: 9 })
+        .toFile(path.join(extensionDir, 'cursor.png'));
+      console.log('Created cursor.png');
+
+    } catch (error) {
+      console.error('Error processing icons:', error);
+      throw error;
+    }
 
     // Copy manifest
     await copyFile(
@@ -74,8 +97,14 @@ async function prepareExtension() {
     const contentScript = await fs.readFile(contentScriptPath, 'utf-8');
     const cssMatch = contentScript.match(/var style = document\.createElement\('style'\);[\s\S]*?style\.textContent = `([\s\S]*?)`;/);
     if (cssMatch && cssMatch[1]) {
-      await fs.writeFile(path.join(extensionDir, 'style.css'), cssMatch[1]);
-      console.log('Extracted CSS to style.css');
+      let cssContent = cssMatch[1];
+      // Replace the cursor placeholder with the base64 data
+      cssContent = cssContent.replace(
+        /url\("CURSOR_PLACEHOLDER"\)/g,
+        `url("data:image/png;base64,${base64Cursor}")`
+      );
+      await fs.writeFile(path.join(extensionDir, 'style.css'), cssContent);
+      console.log('Created style.css with base64 cursor');
     }
 
     console.log('Extension files prepared successfully!');
