@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Note } from "./types";
-import React from "react";
-import { Dialog, DialogContent } from "./components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "./components/ui/dialog";
 import { Button } from "./components/ui/button";
 import { useToast } from "./components/ui/toast-context";
 
@@ -14,8 +13,12 @@ function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Shift") {
+        // Clear any existing highlights
+        document.querySelectorAll('.eye-note-highlight').forEach(el => {
+          el.classList.remove('eye-note-highlight');
+        });
         setIsShiftPressed(true);
-        document.body.style.cursor = 'crosshair';
+        document.body.classList.add("shift-pressed");
       }
     };
 
@@ -23,7 +26,7 @@ function App() {
       if (e.key === "Shift") {
         setIsShiftPressed(false);
         setHoveredElement(null);
-        document.body.style.cursor = '';
+        document.body.classList.remove("shift-pressed");
       }
     };
 
@@ -33,14 +36,18 @@ function App() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
-      document.body.style.cursor = '';
+      document.body.classList.remove("shift-pressed");
     };
   }, []);
 
   useEffect(() => {
     if (!isShiftPressed) {
       if (hoveredElement) {
-        hoveredElement.classList.remove('eye-note-highlight');
+        // Only remove highlight if we're not creating a note
+        const activeNotes = notes.filter(note => note.isEditing && note.highlightedElement === hoveredElement);
+        if (activeNotes.length === 0) {
+          hoveredElement.classList.remove('eye-note-highlight');
+        }
       }
       setHoveredElement(null);
       return;
@@ -53,9 +60,12 @@ function App() {
       // Don't highlight if it's the same element
       if (target === hoveredElement) return;
       
-      // Remove highlight from previous element
+      // Remove highlight from previous element only if it's not being edited
       if (hoveredElement) {
-        hoveredElement.classList.remove('eye-note-highlight');
+        const activeNotes = notes.filter(note => note.isEditing && note.highlightedElement === hoveredElement);
+        if (activeNotes.length === 0) {
+          hoveredElement.classList.remove('eye-note-highlight');
+        }
       }
 
       // Don't highlight our own UI elements
@@ -72,55 +82,64 @@ function App() {
     const handleMouseOut = (e: MouseEvent) => {
       const target = e.target as Element;
       if (target === hoveredElement) {
-        target.classList.remove('eye-note-highlight');
+        // Only remove highlight if we're not creating a note
+        const activeNotes = notes.filter(note => note.isEditing && note.highlightedElement === target);
+        if (activeNotes.length === 0) {
+          target.classList.remove('eye-note-highlight');
+        }
         setHoveredElement(null);
       }
     };
 
+    const handleClick = (e: MouseEvent) => {
+      if (!isShiftPressed || !hoveredElement) return;
+
+      // Don't create notes on our own UI elements
+      if ((e.target as Element).closest('.notes-plugin')) return;
+
+      const elementPath = getElementPath(hoveredElement);
+      const rect = hoveredElement.getBoundingClientRect();
+
+      const newNote: Note = {
+        id: Date.now(),
+        elementPath,
+        content: '',
+        url: window.location.href,
+        groupId: '',
+        createdAt: Date.now(),
+        createdBy: 'current-user',
+        comments: [],
+        x: rect.right,
+        y: rect.top,
+        isEditing: true,
+        highlightedElement: hoveredElement
+      };
+
+      setNotes(prevNotes => [...prevNotes, newNote]);
+      setHoveredElement(null);
+      e.preventDefault();
+      e.stopPropagation();
+
+      toast({
+        title: "Note Created",
+        description: "Click the marker to edit your note."
+      });
+    };
+
     document.addEventListener('mouseover', handleMouseOver);
     document.addEventListener('mouseout', handleMouseOut);
+    document.addEventListener('click', handleClick);
 
     return () => {
       document.removeEventListener('mouseover', handleMouseOver);
       document.removeEventListener('mouseout', handleMouseOut);
+      document.removeEventListener('click', handleClick);
       // Clean up highlight when effect is cleaned up
       if (hoveredElement) {
         hoveredElement.classList.remove('eye-note-highlight');
       }
     };
-  }, [isShiftPressed, hoveredElement]);
-
-  const handleClick = (event: React.MouseEvent) => {
-    if (!isShiftPressed || !hoveredElement) return;
-
-    const elementPath = getElementPath(hoveredElement);
-    const rect = hoveredElement.getBoundingClientRect();
-
-    const newNote: Note = {
-      id: Date.now(),
-      elementPath,
-      content: '',
-      url: window.location.href,
-      groupId: '',
-      createdAt: Date.now(),
-      createdBy: 'current-user',
-      comments: [],
-      x: rect.right,
-      y: rect.top,
-      isEditing: true
-    };
-
-    setNotes([...notes, newNote]);
-    hoveredElement.classList.remove('eye-note-highlight');
-    setHoveredElement(null);
-    event.preventDefault();
-    event.stopPropagation();
-
-    toast({
-      title: "Note Created",
-      description: "Click the marker to edit your note."
-    });
-  };
+  }, [isShiftPressed, hoveredElement, toast, notes]);
 
   const getElementPath = (element: Element): string => {
     const path: string[] = [];
@@ -151,9 +170,15 @@ function App() {
 
   const updateNote = (id: number, content: string): void => {
     setNotes(
-      notes.map((note) =>
-        note.id === id ? { ...note, content, isEditing: false } : note
-      )
+      notes.map((note) => {
+        if (note.id === id) {
+          if (note.highlightedElement) {
+            note.highlightedElement.classList.remove('eye-note-highlight');
+          }
+          return { ...note, content, isEditing: false, highlightedElement: null };
+        }
+        return note;
+      })
     );
     toast({
       title: "Note Updated",
@@ -162,7 +187,7 @@ function App() {
   };
 
   return (
-    <div className="notes-plugin" onMouseDown={handleClick}>
+    <div className="notes-plugin">
       {notes.map((note) => (
         <div key={note.id}>
           <div 
@@ -177,8 +202,11 @@ function App() {
           />
           <Dialog open={note.isEditing} onOpenChange={(open) => {
             if (!open) {
+              if (note.highlightedElement) {
+                note.highlightedElement.classList.remove('eye-note-highlight');
+              }
               setNotes(notes.map(n => 
-                n.id === note.id ? { ...n, isEditing: false } : n
+                n.id === note.id ? { ...n, isEditing: false, highlightedElement: null } : n
               ));
             }
           }}>
@@ -188,6 +216,7 @@ function App() {
               top: `${(note.y ?? 0) + 20}px`,
               transform: 'none'
             }}>
+              <DialogTitle className="sr-only">Add Note</DialogTitle>
               <textarea
                 className="w-full min-h-[100px] p-2 border border-border rounded resize-y font-sans"
                 defaultValue={note.content}

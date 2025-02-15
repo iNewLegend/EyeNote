@@ -97,17 +97,28 @@
   }
 
   .eye-note-highlight {
-    @apply relative !important;
-    outline: 2px solid theme('colors.primary.DEFAULT') !important;
+    outline: 2px solid #FF00E6 !important;
     outline-offset: 2px !important;
-    @apply cursor-crosshair !important;
-    background-color: theme('colors.primary.light') !important;
-    @apply transition-all duration-200 ease-in-out !important;
-    @apply z-max !important;
+    background-color: rgba(255, 0, 230, 0.1) !important;
+    z-index: 999998 !important;
+    position: relative !important;
   }
 
   .eye-note-highlight * {
     @apply pointer-events-none !important;
+  }
+
+  /* Ensure dialog overlay doesn't completely hide the highlight */
+  [data-radix-dialog-overlay] {
+    background-color: rgba(0, 0, 0, 0.4) !important;
+  }
+
+  /* Ensure the dialog content is above both highlight and overlay */
+  .note-content {
+    z-index: 999999 !important;
+    background: white !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
   }
 }
 

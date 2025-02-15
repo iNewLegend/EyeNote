@@ -6,10 +6,18 @@ export interface Note {
   groupId: string;
   createdAt: number;
   createdBy: string;
-  comments: NoteComment[];
-  isEditing?: boolean;
+  comments: Comment[];
   x?: number;
   y?: number;
+  isEditing?: boolean;
+  highlightedElement?: Element | null;
+}
+
+export interface Comment {
+  id: number;
+  content: string;
+  createdAt: number;
+  createdBy: string;
 }
 
 export interface NoteComment {
