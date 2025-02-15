@@ -210,13 +210,20 @@ function App() {
               ));
             }
           }}>
-            <DialogContent className="note-content" style={{ 
-              position: 'absolute',
-              left: `${note.x ?? 0}px`, 
-              top: `${(note.y ?? 0) + 20}px`,
-              transform: 'none'
-            }}>
+            <DialogContent 
+              className="note-content" 
+              style={{ 
+                position: 'absolute',
+                left: `${note.x ?? 0}px`, 
+                top: `${(note.y ?? 0) + 20}px`,
+                transform: 'none'
+              }}
+              aria-describedby="note-description"
+            >
               <DialogTitle className="sr-only">Add Note</DialogTitle>
+              <div id="note-description" className="sr-only">
+                Add or edit your note for the selected element. Use the textarea below to write your note, then click Save to confirm or Delete to remove the note.
+              </div>
               <textarea
                 className="w-full min-h-[100px] p-2 border border-border rounded resize-y font-sans"
                 defaultValue={note.content}
