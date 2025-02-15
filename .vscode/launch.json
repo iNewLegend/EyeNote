@@ -1,0 +1,50 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Watch & Debug Extension",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/apps/frontend",
+      "sourceMapPathOverrides": {
+        "/*": "${webRoot}/*"
+      },
+      "preLaunchTask": "Watch Extension",
+      "postDebugTask": "Terminate All Tasks"
+    },
+    {
+      "name": "Attach to Chrome",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9222,
+      "webRoot": "${workspaceFolder}/apps/frontend",
+      "sourceMapPathOverrides": {
+        "/*": "${webRoot}/*"
+      }
+    },
+    {
+      "name": "Debug Content Script",
+      "type": "chrome",
+      "request": "launch",
+      "url": "<all_urls>",
+      "webRoot": "${workspaceFolder}/apps/frontend",
+      "sourceMapPathOverrides": {
+        "/*": "${webRoot}/*"
+      },
+      "preLaunchTask": "Watch Extension",
+      "postDebugTask": "Terminate All Tasks",
+      "runtimeArgs": [
+        "--load-extension=${workspaceFolder}/apps/frontend/extension"
+      ]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Extension + Chrome",
+      "configurations": ["Watch & Debug Extension", "Attach to Chrome"],
+      "preLaunchTask": "Watch Extension",
+      "postDebugTask": "Terminate All Tasks"
+    }
+  ]
+}

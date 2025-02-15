@@ -1,0 +1,15 @@
+{
+  "name": "eye-note",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @eye-note/frontend dev",
+    "build": "pnpm --filter @eye-note/frontend build",
+    "build:extension": "pnpm --filter @eye-note/frontend build:extension",
+    "watch": "pnpm --filter @eye-note/frontend dev:extension",
+    "watch:frontend": "pnpm --filter @eye-note/frontend watch",
+    "watch:extension": "pnpm --filter @eye-note/frontend watch:extension",
+    "watch:ide": "pnpm --filter @eye-note/frontend watch:ide"
+  },
+  "packageManager": "pnpm@8.15.1"
+}

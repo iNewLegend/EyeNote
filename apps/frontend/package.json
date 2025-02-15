@@ -1,0 +1,41 @@
+{
+  "name": "@eye-note/frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build && CONTENT_SCRIPT=1 vite build",
+    "build:extension": "pnpm build && node scripts/prepare-extension.js",
+    "watch": "vite build --watch",
+    "watch:extension": "nodemon --watch dist --exec 'node scripts/prepare-extension.js' --delay 1",
+    "watch:ide": "node scripts/ide-watcher.js",
+    "dev:extension": "concurrently \"pnpm watch\" \"pnpm watch:extension\" \"pnpm watch:ide\"",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "clean": "rm -rf dist extension node_modules"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.304",
+    "@types/node": "^20.11.16",
+    "@types/react": "^18.2.55",
+    "@types/react-dom": "^18.2.19",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "chalk": "^5.3.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.56.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "nodemon": "^3.0.3",
+    "sharp": "^0.33.5",
+    "typescript": "^5.2.2",
+    "vite": "^5.1.0"
+  },
+  "packageManager": "pnpm@8.15.1"
+}
