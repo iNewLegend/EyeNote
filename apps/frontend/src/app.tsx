@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Note } from "./types";
-import { Dialog, DialogContent, DialogTitle } from "./components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "./components/ui/dialog";
 import { Button } from "./components/ui/button";
 import { useToast } from "./components/ui/toast-context";
 
@@ -218,12 +218,11 @@ function App() {
                 top: `${(note.y ?? 0) + 20}px`,
                 transform: 'none'
               }}
-              aria-describedby={`note-description-${note.id}`}
             >
               <DialogTitle className="sr-only">Add Note</DialogTitle>
-              <div id={`note-description-${note.id}`} className="sr-only">
+              <DialogDescription className="sr-only">
                 Add or edit your note for the selected element. Use the textarea below to write your note, then click Save to confirm or Delete to remove the note.
-              </div>
+              </DialogDescription>
               <textarea
                 className="w-full min-h-[100px] p-2 border border-border rounded resize-y font-sans"
                 defaultValue={note.content}
