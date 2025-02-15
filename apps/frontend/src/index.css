@@ -1,3 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply m-0 p-0 box-border;
+  }
+
+  body {
+    @apply font-sans text-text bg-background;
+  }
+}
+
+@layer components {
+  .notes-plugin {
+    @apply fixed z-[9999] pointer-events-none top-0 left-0 w-full h-full;
+  }
+
+  .note-marker {
+    @apply absolute w-6 h-6 bg-primary rounded-full cursor-pointer pointer-events-auto transition-transform duration-200 ease-in-out shadow-md;
+  }
+
+  .note-marker:hover {
+    @apply transform scale-110 bg-primary-hover;
+  }
+
+  .note-content {
+    @apply absolute bg-background rounded-lg shadow-lg p-4 w-[300px] pointer-events-auto z-[10000] max-h-[80vh] overflow-y-auto;
+  }
+
+  .eye-note-highlight {
+    @apply relative !important;
+    outline: 2px solid theme('colors.primary.DEFAULT') !important;
+    outline-offset: 2px !important;
+    @apply cursor-crosshair !important;
+    background-color: theme('colors.primary.light') !important;
+    @apply transition-all duration-200 ease-in-out !important;
+    @apply z-max !important;
+  }
+
+  .eye-note-highlight * {
+    @apply pointer-events-none !important;
+  }
+}
+
 :root {
   --primary-color: #646cff;
   --primary-hover: #535bf2;
@@ -6,12 +52,6 @@
   --background-color: #ffffff;
   --border-color: #ddd;
   --shadow-color: rgba(0, 0, 0, 0.1);
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
 }
 
 body {

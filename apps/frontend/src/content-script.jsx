@@ -196,6 +196,7 @@ function renderNotes() {
       content.style.top = `${note.y + 20}px`;
       
       const textarea = document.createElement('textarea');
+      textarea.className = 'w-full min-h-[100px] p-2 border border-border rounded resize-y font-sans';
       textarea.placeholder = 'Enter your note...';
       textarea.value = note.content;
       textarea.addEventListener('blur', (e) => {

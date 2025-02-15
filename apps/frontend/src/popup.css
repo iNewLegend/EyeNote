@@ -1,66 +1,49 @@
-.popup {
-  width: 320px;
-  padding: 16px;
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  color: #213547;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-h1 {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  color: #213547;
-}
+@layer components {
+  .popup {
+    @apply w-80 p-4 font-sans text-text;
+  }
 
-h2 {
-  font-size: 1.1rem;
-  margin: 1rem 0;
-  color: #213547;
-}
+  .popup h1 {
+    @apply text-2xl mb-4 text-text;
+  }
 
-.settings {
-  margin-bottom: 1.5rem;
-}
+  .popup h2 {
+    @apply text-lg my-4 text-text;
+  }
 
-.settings label {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.5rem;
-  cursor: pointer;
-}
+  .settings {
+    @apply mb-6;
+  }
 
-.settings input[type="checkbox"] {
-  margin-right: 0.5rem;
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
+  .settings label {
+    @apply flex items-center mb-2 cursor-pointer;
+  }
 
-.groups {
-  margin-bottom: 1.5rem;
-}
+  .settings input[type="checkbox"] {
+    @apply mr-2 w-4 h-4 cursor-pointer;
+  }
 
-.groups ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
+  .groups {
+    @apply mb-6;
+  }
 
-.groups li {
-  padding: 8px;
-  background: #f5f5f5;
-  border-radius: 4px;
-  margin-bottom: 4px;
-}
+  .groups ul {
+    @apply list-none p-0 m-0;
+  }
 
-.instructions {
-  padding: 12px;
-  background: #f0f0ff;
-  border-radius: 4px;
-  border: 1px solid #646cff;
-}
+  .groups li {
+    @apply p-2 bg-gray-100 rounded mb-1;
+  }
 
-.instructions p {
-  margin: 0;
-  color: #213547;
-  font-size: 0.9rem;
+  .instructions {
+    @apply p-3 bg-primary-light rounded border border-primary;
+  }
+
+  .instructions p {
+    @apply m-0 text-text text-sm;
+  }
 } 
