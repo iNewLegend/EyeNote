@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./app";
 import { ToastContextProvider } from "./components/ui/toast-context";
+import { ThemeProvider } from "./components/theme-provider";
 import "./index.css";
 import "./cursor.css";
 
@@ -25,9 +26,11 @@ if (!document.getElementById("eye-note-root")) {
   try {
     createRoot(root).render(
       <React.StrictMode>
-        <ToastContextProvider>
-          <App />
-        </ToastContextProvider>
+        <ThemeProvider defaultTheme="dark">
+          <ToastContextProvider>
+            <App />
+          </ToastContextProvider>
+        </ThemeProvider>
       </React.StrictMode>
     );
   } catch (error) {

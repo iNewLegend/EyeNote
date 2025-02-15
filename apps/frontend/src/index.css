@@ -4,35 +4,57 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
- 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
- 
+    --background: 272 20% 12%;
+    --foreground: 0 0% 100%;
+    --card: 272 20% 12%;
+    --card-foreground: 0 0% 100%;
+    --popover: 272 20% 12%;
+    --popover-foreground: 0 0% 100%;
     --primary: 272 93% 35%;
     --primary-foreground: 0 0% 100%;
- 
     --secondary: 272 93% 95%;
     --secondary-foreground: 272 93% 35%;
- 
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
- 
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
     --accent: 272 93% 95%;
     --accent-foreground: 272 93% 35%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 272 20% 25%;
+    --input: 272 30% 15%;
+    --ring: 272 93% 35%;
+    --radius: 0.5rem;
+
+    /* Custom theme colors */
+    --primary-color: #4804ad;
+    --primary-hover: #5e1d78;
+    --primary-light: rgba(72, 4, 173, 0.1);
+    --text-color: #ffffff;
+    --background-color: #1a1325;
+    --border-color: #2f1136;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+  }
  
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 272 93% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 272 93% 95%;
+    --secondary-foreground: 272 93% 35%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 272 93% 95%;
+    --accent-foreground: 272 93% 35%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
-
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 272 93% 35%;
- 
-    --radius: 0.5rem;
 
     /* Custom theme colors */
     --primary-color: #4804ad;
@@ -42,36 +64,6 @@
     --background-color: #ffffff;
     --border-color: #ddd;
     --shadow-color: rgba(0, 0, 0, 0.1);
-  }
- 
-  .dark {
-    --background: 272 20% 12%;
-    --foreground: 0 0% 100%;
- 
-    --card: 272 20% 12%;
-    --card-foreground: 0 0% 100%;
- 
-    --popover: 272 20% 12%;
-    --popover-foreground: 0 0% 100%;
- 
-    --primary: 272 93% 35%;
-    --primary-foreground: 0 0% 100%;
- 
-    --secondary: 272 93% 95%;
-    --secondary-foreground: 272 93% 35%;
- 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 65%;
- 
-    --accent: 272 93% 95%;
-    --accent-foreground: 272 93% 35%;
- 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 100%;
- 
-    --border: 272 20% 25%;
-    --input: 272 30% 15%;
-    --ring: 272 93% 35%;
   }
 
   * {
