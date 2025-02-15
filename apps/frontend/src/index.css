@@ -92,17 +92,19 @@
     outline: 2px solid var(--primary-color) !important;
     outline-offset: 2px !important;
     background-color: var(--primary-light) !important;
-    z-index: 999998 !important;
+    z-index: 999996 !important;
     position: relative !important;
+    pointer-events: auto !important;
   }
 
   .eye-note-highlight * {
-    @apply pointer-events-none !important;
+    pointer-events: auto !important;
   }
 
   /* Ensure dialog overlay doesn't completely hide the highlight */
   [data-radix-dialog-overlay] {
     @apply bg-background/80 backdrop-blur-sm;
+    z-index: 999998;
   }
 
   /* Ensure the dialog content is above both highlight and overlay */

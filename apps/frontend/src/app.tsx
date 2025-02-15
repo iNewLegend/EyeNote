@@ -13,10 +13,12 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Shift") {
-        // Clear all highlights when shift is pressed
+      if (e.key === "Shift" && !isShiftPressed) {
+        // Only clear highlights if we're not already in shift mode
         document.querySelectorAll('.eye-note-highlight').forEach(el => {
-          el.classList.remove('eye-note-highlight');
+          if (!notes.some(note => note.highlightedElement === el)) {
+            el.classList.remove('eye-note-highlight');
+          }
         });
         setSelectedElement(null);  // Clear selected element
         setIsShiftPressed(true);
@@ -27,8 +29,8 @@ function App() {
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === "Shift") {
         setIsShiftPressed(false);
-        // Clear hover highlight
-        if (hoveredElement) {
+        // Only clear hover highlight if it's not associated with a note
+        if (hoveredElement && !notes.some(note => note.highlightedElement === hoveredElement)) {
           hoveredElement.classList.remove('eye-note-highlight');
         }
         setHoveredElement(null);
@@ -42,9 +44,10 @@ function App() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
+      // Only remove shift-pressed class, don't remove highlights
       document.body.classList.remove("shift-pressed");
     };
-  }, [hoveredElement]);  // Only depend on hoveredElement since we want to clear all highlights on Shift
+  }, [hoveredElement, isShiftPressed, notes]);  // Add isShiftPressed and notes to dependencies
 
   useEffect(() => {
     if (!isShiftPressed) {

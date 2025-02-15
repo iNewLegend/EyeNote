@@ -3,12 +3,34 @@
   cursor-transition: 150ms ease;
 }
 
-body.shift-pressed {
+/* Base cursor styles */
+body.shift-pressed,
+body.shift-pressed *:not(.notes-plugin),
+body.shift-pressed *:not(.notes-plugin *) {
   cursor: url('chrome-extension://__MSG_@@extension_id__/cursor.png') 6 6, auto !important;
-  /* Add a subtle glow effect to the entire page */
+}
+
+/* Ensure highlighted elements maintain the cursor */
+.eye-note-highlight {
+  outline: 2px solid var(--primary-color) !important;
+  outline-offset: 2px !important;
+  background-color: var(--primary-light) !important;
+  z-index: 999996 !important;
+  position: relative !important;
+  pointer-events: auto !important;
+  cursor: url('chrome-extension://__MSG_@@extension_id__/cursor.png') 6 6, auto !important;
+}
+
+.eye-note-highlight * {
+  pointer-events: auto !important;
+  cursor: url('chrome-extension://__MSG_@@extension_id__/cursor.png') 6 6, auto !important;
+}
+
+body.shift-pressed {
   position: relative;
 }
 
+/* Glow effect */
 body.shift-pressed::after {
   content: '';
   position: fixed;
@@ -19,14 +41,9 @@ body.shift-pressed::after {
   pointer-events: none;
   background: radial-gradient(
     circle at var(--x, 50%) var(--y, 50%),
-    rgba(255, 0, 230, 0.1) 0%,
+    rgba(72, 4, 173, 0.1) 0%,
     transparent 50px
   );
-  z-index: 999999;
+  z-index: 999997;
   transition: opacity 0.3s ease;
-}
-
-/* Ensure the cursor applies to all elements when shift is pressed */
-body.shift-pressed * {
-  cursor: url('chrome-extension://__MSG_@@extension_id__/cursor.png') 6 6, auto !important;
 } 
