@@ -3,8 +3,15 @@
   "name": "EyeNote",
   "version": "1.0.0",
   "description": "Create and share notes on any webpage element - see what others see!",
-  "permissions": ["activeTab", "storage", "scripting"],
+  "permissions": ["activeTab", "storage", "scripting", "identity"],
   "host_permissions": ["<all_urls>"],
+  "oauth2": {
+    "client_id": "655366359218-u22o0btbt68bhisgae68qsvisci1gdtg.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile"
+    ]
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -35,5 +42,8 @@
       "resources": ["assets/*", "chunks/*"],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
 }

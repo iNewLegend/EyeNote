@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import ReactDOM from "react-dom/client";
 import { AuthDialog } from "./components/auth-dialog";
 import { Button } from "./components/ui/button";
 import { ToastContextProvider } from "./components/ui/toast-context";
+import { useToast } from "./components/ui/toast-context";
 import {
   Card,
   CardContent,
@@ -14,7 +14,14 @@ import { Switch } from "./components/ui/switch";
 import { Label } from "./components/ui/label";
 import "./popup.css";
 
-function Popup() {
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  picture: string;
+}
+
+export function Popup() {
   const [settings, setSettings] = useState({
     enabled: true,
     notificationSound: true,
@@ -24,6 +31,8 @@ function Popup() {
   const [activeGroups, setActiveGroups] = useState<string[]>([]);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Load settings
@@ -41,10 +50,30 @@ function Popup() {
     });
 
     // Check authentication status
-    chrome.storage.local.get("authToken", (result) => {
-      setIsAuthenticated(!!result.authToken);
+    chrome.runtime.sendMessage({ type: "GET_AUTH_STATUS" }, (response) => {
+      setIsAuthenticated(response.isAuthenticated);
+      setUser(response.user || null);
     });
   }, []);
+
+  const handleSignOut = async () => {
+    try {
+      const response = await chrome.runtime.sendMessage({ type: "SIGN_OUT" });
+      if (response.success) {
+        setIsAuthenticated(false);
+        setUser(null);
+        toast({
+          title: "Signed out",
+          description: "You have been successfully signed out",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+      });
+    }
+  };
 
   const toggleSetting = (key: keyof typeof settings) => {
     const newSettings = {
@@ -57,13 +86,26 @@ function Popup() {
 
   return (
     <ToastContextProvider>
-      <Card className="w-[350px] border-none shadow-none">
-        <CardHeader className="pb-4">
+      <Card className="w-full h-full border-none shadow-none rounded-none bg-background">
+        <CardHeader className="pb-4 bg-background sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary/90 to-primary bg-clip-text text-transparent">
               EyeNote
             </CardTitle>
-            {!isAuthenticated && (
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                {user?.picture && (
+                  <img
+                    src={user.picture}
+                    alt={user.name}
+                    className="w-8 h-8 rounded-full"
+                  />
+                )}
+                <Button variant="outline" size="sm" onClick={handleSignOut}>
+                  Sign Out
+                </Button>
+              </div>
+            ) : (
               <Button
                 variant="outline"
                 size="sm"
@@ -73,10 +115,15 @@ function Popup() {
               </Button>
             )}
           </div>
+          {isAuthenticated && user && (
+            <CardDescription className="mt-2">
+              Signed in as {user.name}
+            </CardDescription>
+          )}
         </CardHeader>
 
         {isAuthenticated ? (
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 pb-6">
             <div className="space-y-4">
               <h2 className="text-lg font-semibold">Settings</h2>
               <div className="space-y-3">
@@ -153,5 +200,3 @@ function Popup() {
     </ToastContextProvider>
   );
 }
-
-ReactDOM.createRoot(document.getElementById("root")!).render(<Popup />);

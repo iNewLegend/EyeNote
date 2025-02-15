@@ -60,16 +60,13 @@ async function prepareExtension() {
         await fs.cp(srcPath, destPath, { recursive: true });
         console.log(`Copied directory ${file} to extension/`);
       } else {
-        await copyFile(srcPath, destPath);
+        // For index.html, copy it directly as popup.html
+        if (file === 'index.html') {
+          await copyFile(srcPath, path.join(extensionDir, 'popup.html'));
+        } else {
+          await copyFile(srcPath, destPath);
+        }
       }
-    }
-
-    // Rename index.html to popup.html
-    const indexPath = path.join(extensionDir, 'index.html');
-    const popupPath = path.join(extensionDir, 'popup.html');
-    if (await fs.access(indexPath).then(() => true).catch(() => false)) {
-      await fs.rename(indexPath, popupPath);
-      console.log('Renamed index.html to popup.html');
     }
 
     // Extract CSS from content.iife.js and save as style.css
