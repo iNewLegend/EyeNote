@@ -55,104 +55,73 @@ export function useShiftHover(notes: Note[]) {
   );
 
   // Handle mouse events
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!stateRef.current.isShiftMode) return;
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!stateRef.current.isShiftMode) return;
 
-      const x = e.clientX;
-      const y = e.clientY;
-      const element = document.elementFromPoint(x, y) as Element;
+    const x = e.clientX;
+    const y = e.clientY;
 
-      if (!element) return;
+    // Get all elements at the current point
+    const elements = document.elementsFromPoint(x, y);
 
-      // First, clear any existing highlight
-      if (stateRef.current.hoveredElement) {
-        highlightManager.removeHighlight(stateRef.current.hoveredElement);
-        stateRef.current.hoveredElement = null;
-        setHoveredElement(null);
-      }
+    // Filter out plugin elements and find the most relevant element
+    const relevantElements = elements.filter(
+      (el) =>
+        !el.closest(".notes-plugin") &&
+        el !== document.body &&
+        el !== document.documentElement
+    );
 
-      // Don't proceed if hovering over plugin elements
-      if (element.closest(".notes-plugin")) return;
+    if (!relevantElements.length) return;
 
-      // Find the most relevant element by checking text content and dimensions
-      let targetElement = element;
+    // First, clear any existing highlight
+    if (stateRef.current.hoveredElement) {
+      highlightManager.removeHighlight(stateRef.current.hoveredElement);
+      stateRef.current.hoveredElement = null;
+      setHoveredElement(null);
+    }
 
-      // Check if the current element is a semantic element (h1-h6, p, etc.)
-      const isSemanticElement =
-        /^h[1-6]$|^p$|^li$|^dt$|^dd$|^figcaption$|^label$/i.test(
+    // Always select the first (most nested) semantic or interactive element
+    const targetElement =
+      relevantElements.find((element) => {
+        // Check if it's a semantic element
+        const isSemanticElement =
+          /^(h[1-6]|p|li|dt|dd|figcaption|label|article|section|main|nav|header|footer|aside)$/i.test(
+            element.tagName
+          );
+
+        // Check if it's an interactive element
+        const isInteractiveElement = /^(button|a|input|select|textarea)$/i.test(
           element.tagName
         );
 
-      // If it's not a semantic element, try to find a better parent
-      if (!isSemanticElement) {
-        let bestElement = element;
-        let parentElement = element.parentElement;
-        let bestTextLength = element.textContent?.trim().length || 0;
-        let bestArea = 0;
+        // Check if it has meaningful text content
+        const hasText = element.textContent?.trim().length > 0;
 
-        // Get element's area
-        const rect = element.getBoundingClientRect();
-        bestArea = rect.width * rect.height;
+        return (isSemanticElement || isInteractiveElement) && hasText;
+      }) || relevantElements[0]; // Fallback to most nested element if no semantic element found
 
-        while (parentElement && !parentElement.closest(".notes-plugin")) {
-          // Skip body and html
-          if (
-            parentElement === document.body ||
-            parentElement === document.documentElement
-          ) {
-            break;
-          }
+    if (!targetElement) return;
 
-          const parentRect = parentElement.getBoundingClientRect();
-          const parentArea = parentRect.width * parentRect.height;
-          const parentTextLength =
-            parentElement.textContent?.trim().length || 0;
-          const isParentSemantic =
-            /^h[1-6]$|^p$|^li$|^dt$|^dd$|^figcaption$|^label$/i.test(
-              parentElement.tagName
-            );
+    console.log("[useShiftHover] Selected element:", {
+      tag: targetElement.tagName,
+      id: targetElement.id,
+      class: targetElement.className,
+      isNested: relevantElements.indexOf(targetElement),
+      hasChildren: targetElement.children.length > 0,
+      childrenTypes: Array.from(targetElement.children).map(
+        (child) => child.tagName
+      ),
+    });
 
-          // Check if this parent is a better target based on:
-          // 1. Has meaningful text content
-          // 2. Not too large compared to current best
-          // 3. Contains the mouse position within its bounds
-          // 4. Preferably a semantic element
-          if (
-            parentTextLength > 0 &&
-            (isParentSemantic || parentArea < bestArea * 1.5) && // Stricter size comparison for non-semantic elements
-            x >= parentRect.left &&
-            x <= parentRect.right &&
-            y >= parentRect.top &&
-            y <= parentRect.bottom
-          ) {
-            bestElement = parentElement;
-            bestArea = parentArea;
-            bestTextLength = parentTextLength;
+    // Don't highlight if it's the same as current
+    if (targetElement === stateRef.current.hoveredElement) return;
 
-            // If we found a semantic element, stop looking further
-            if (isParentSemantic) {
-              break;
-            }
-          }
-
-          parentElement = parentElement.parentElement;
-        }
-
-        targetElement = bestElement;
-      }
-
-      // Don't add highlight if it's a plugin element or the same as current
-      if (targetElement.closest(".notes-plugin")) return;
-      if (targetElement === stateRef.current.hoveredElement) return;
-
-      // Add highlight to new element
-      highlightManager.addHighlight(targetElement);
-      stateRef.current.hoveredElement = targetElement;
-      setHoveredElement(targetElement);
-    },
-    [] // Remove clearHighlight dependency as we're using highlightManager directly
-  );
+    // Add highlight to new element
+    highlightManager.addHighlight(targetElement);
+    stateRef.current.hoveredElement = targetElement;
+    setHoveredElement(targetElement);
+  }, []);
 
   // Handle shift key events
   useEffect(() => {
