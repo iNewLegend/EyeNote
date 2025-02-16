@@ -20,16 +20,30 @@ export function useShiftHover(notes: Note[]) {
 
   const clearAllHighlights = useCallback(() => {
     console.log("[useShiftHover] Clearing all highlights");
-    highlightManager.clearAllHighlights();
+    // Don't clear highlights for elements that have open note dialogs
+    const elementsToKeep = notes
+      .filter((note) => note.isEditing)
+      .map((note) => note.highlightedElement)
+      .filter((el): el is Element => el !== null && el !== undefined);
+
+    // Remove highlights from all elements except those with open dialogs
+    highlightManager.getHighlightedElements().forEach((element) => {
+      if (!elementsToKeep.includes(element)) {
+        highlightManager.removeHighlight(element);
+      }
+    });
+
     setHoveredElement(null);
     stateRef.current.hoveredElement = null;
-  }, []);
+  }, [notes]);
 
   const clearHighlight = useCallback(
     (element: Element | null) => {
       if (
         element &&
-        !notes.some((note) => note.highlightedElement === element)
+        !notes.some(
+          (note) => note.highlightedElement === element && note.isEditing
+        )
       ) {
         console.log(
           "[useShiftHover] Clearing highlight from element:",
@@ -145,7 +159,7 @@ export function useShiftHover(notes: Note[]) {
   // Clear highlights when notes change
   useEffect(() => {
     if (notes.some((note) => note.isEditing)) {
-      console.log("[useShiftHover] Note dialog opened, clearing highlights");
+      console.log("[useShiftHover] Note dialog opened");
       if (stateRef.current.mouseHandler) {
         document.removeEventListener(
           "mousemove",
@@ -155,7 +169,14 @@ export function useShiftHover(notes: Note[]) {
       stateRef.current.isShiftMode = false;
       setIsShiftMode(false);
       cursorManager.disableShiftMode();
-      clearAllHighlights();
+
+      // Get the element being edited
+      const editingNote = notes.find((note) => note.isEditing);
+      if (editingNote?.highlightedElement) {
+        // Ensure the highlight remains for the element being edited
+        highlightManager.addHighlight(editingNote.highlightedElement);
+        setSelectedElement(editingNote.highlightedElement);
+      }
     }
   }, [notes, clearAllHighlights]);
 

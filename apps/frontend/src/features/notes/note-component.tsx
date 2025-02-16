@@ -55,11 +55,26 @@ export function NoteComponent({
           if (!open) {
             const element = note.highlightedElement;
             if (element) {
-              highlightManager.removeHighlight(element);
-              setSelectedElement(null);
+              const otherNotesEditing = noteManager
+                .getNotes()
+                .some(
+                  (n) =>
+                    n.id !== note.id &&
+                    n.isEditing &&
+                    n.highlightedElement === element
+                );
+              if (!otherNotesEditing) {
+                highlightManager.removeHighlight(element);
+                setSelectedElement(null);
+              }
             }
             noteManager.setNoteEditing(note.id, false);
             onUpdate(noteManager.getNotes());
+          } else {
+            if (note.highlightedElement) {
+              highlightManager.addHighlight(note.highlightedElement);
+              setSelectedElement(note.highlightedElement);
+            }
           }
         }}
       >
