@@ -20,7 +20,6 @@ body.shift-pressed *:not(.notes-plugin *) {
   outline: 2px solid var(--primary-color) !important;
   outline-offset: 2px !important;
   background-color: var(--primary-light) !important;
-  z-index: 999996 !important;
   position: relative !important;
   cursor: url('chrome-extension://__MSG_@@extension_id__/cursor.png') 6 6, auto !important;
   transition: all 0.2s ease !important;
@@ -39,7 +38,6 @@ body.shift-pressed::before {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 999995;
   pointer-events: none;
 }
 
@@ -57,6 +55,5 @@ body.shift-pressed::after {
     rgba(72, 4, 173, 0.15) 0%,
     transparent 100px
   );
-  z-index: 999997;
   transition: opacity 0.3s ease;
 } 

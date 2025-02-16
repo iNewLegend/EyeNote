@@ -4,11 +4,31 @@ import { useToast } from "./components/ui/toast-context";
 import { useShiftHover } from "./hooks/use-shift-hover";
 import { NoteManager } from "./features/notes/note-manager";
 import { NoteComponent } from "./features/notes/note-component";
+import { Z_INDEX } from "./constants/z-index";
 
 function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const { toast } = useToast();
   const noteManager = NoteManager.getInstance();
+
+  // Inject z-index CSS variables
+  useEffect(() => {
+    const style = document.documentElement.style;
+    Object.entries(Z_INDEX).forEach(([key, value]) => {
+      style.setProperty(
+        `--${key.toLowerCase().replace(/_/g, "-")}-z-index`,
+        value.toString()
+      );
+    });
+
+    return () => {
+      Object.keys(Z_INDEX).forEach((key) => {
+        style.removeProperty(
+          `--${key.toLowerCase().replace(/_/g, "-")}-z-index`
+        );
+      });
+    };
+  }, []);
 
   const { hoveredElement, setHoveredElement, setSelectedElement, isShiftMode } =
     useShiftHover(notes);

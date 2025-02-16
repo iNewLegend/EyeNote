@@ -7,7 +7,7 @@ const styles = `
   cursor: crosshair !important;
   background-color: rgba(100, 108, 255, 0.1) !important;
   transition: outline-color 0.2s ease, background-color 0.2s ease !important;
-  z-index: 999999 !important;
+  z-index: var(--highlight-element-z-index) !important;
 }
 
 .eye-note-highlight * {
@@ -16,7 +16,7 @@ const styles = `
 
 .notes-plugin {
   position: fixed;
-  z-index: 9999;
+  z-index: var(--plugin-container-z-index);
   pointer-events: none;
   top: 0;
   left: 0;
@@ -49,7 +49,7 @@ const styles = `
   padding: 16px;
   width: 300px;
   pointer-events: auto;
-  z-index: 10000;
+  z-index: var(--note-content-z-index);
   max-height: 80vh;
   overflow-y: auto;
 }
