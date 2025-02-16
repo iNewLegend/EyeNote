@@ -75,20 +75,71 @@ export function useShiftHover(notes: Note[]) {
       // Don't proceed if hovering over plugin elements
       if (element.closest(".notes-plugin")) return;
 
-      // Find the most relevant parent element
+      // Find the most relevant element by checking text content and dimensions
       let targetElement = element;
-      let parentElement = element.parentElement;
 
-      while (parentElement && !parentElement.closest(".notes-plugin")) {
-        if (
-          parentElement.textContent?.trim() &&
-          parentElement !== document.body &&
-          parentElement !== document.documentElement
-        ) {
-          targetElement = parentElement;
-          break;
+      // Check if the current element is a semantic element (h1-h6, p, etc.)
+      const isSemanticElement =
+        /^h[1-6]$|^p$|^li$|^dt$|^dd$|^figcaption$|^label$/i.test(
+          element.tagName
+        );
+
+      // If it's not a semantic element, try to find a better parent
+      if (!isSemanticElement) {
+        let bestElement = element;
+        let parentElement = element.parentElement;
+        let bestTextLength = element.textContent?.trim().length || 0;
+        let bestArea = 0;
+
+        // Get element's area
+        const rect = element.getBoundingClientRect();
+        bestArea = rect.width * rect.height;
+
+        while (parentElement && !parentElement.closest(".notes-plugin")) {
+          // Skip body and html
+          if (
+            parentElement === document.body ||
+            parentElement === document.documentElement
+          ) {
+            break;
+          }
+
+          const parentRect = parentElement.getBoundingClientRect();
+          const parentArea = parentRect.width * parentRect.height;
+          const parentTextLength =
+            parentElement.textContent?.trim().length || 0;
+          const isParentSemantic =
+            /^h[1-6]$|^p$|^li$|^dt$|^dd$|^figcaption$|^label$/i.test(
+              parentElement.tagName
+            );
+
+          // Check if this parent is a better target based on:
+          // 1. Has meaningful text content
+          // 2. Not too large compared to current best
+          // 3. Contains the mouse position within its bounds
+          // 4. Preferably a semantic element
+          if (
+            parentTextLength > 0 &&
+            (isParentSemantic || parentArea < bestArea * 1.5) && // Stricter size comparison for non-semantic elements
+            x >= parentRect.left &&
+            x <= parentRect.right &&
+            y >= parentRect.top &&
+            y <= parentRect.bottom
+          ) {
+            bestElement = parentElement;
+            bestArea = parentArea;
+            bestTextLength = parentTextLength;
+
+            // If we found a semantic element, stop looking further
+            if (isParentSemantic) {
+              break;
+            }
+          }
+
+          parentElement = parentElement.parentElement;
         }
-        parentElement = parentElement.parentElement;
+
+        targetElement = bestElement;
       }
 
       // Don't add highlight if it's a plugin element or the same as current
