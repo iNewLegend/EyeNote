@@ -29,13 +29,8 @@ function App() {
       // Prevent any default behavior or event bubbling
       e.preventDefault();
       e.stopPropagation();
-
-      toast({
-        title: "Note Created",
-        description: "Click the marker to edit your note.",
-      });
     },
-    [isShiftMode, hoveredElement, setHoveredElement, setSelectedElement, toast]
+    [isShiftMode, hoveredElement, setHoveredElement, setSelectedElement]
   );
 
   useEffect(() => {
