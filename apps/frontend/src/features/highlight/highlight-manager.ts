@@ -3,14 +3,26 @@ export class HighlightManager {
   private highlightedElements: Set<Element>;
   private mutationObserver: MutationObserver;
   private rafId: number | null = null;
-  private highlightClass = "eye-note-highlight";
   private lastHighlightedElement: Element | null = null;
-  private originalStyles: WeakMap<Element, { backgroundColor: string }>;
-  private styleElement: HTMLStyleElement | null = null;
+  private overlay: HTMLDivElement;
 
   private constructor() {
     this.highlightedElements = new Set();
-    this.originalStyles = new WeakMap();
+
+    // Create highlight overlay element
+    this.overlay = document.createElement("div");
+    this.overlay.id = "eye-note-highlight-overlay";
+    this.overlay.style.cssText = `
+      position: fixed;
+      pointer-events: none;
+      z-index: 2147483647;
+      border: 2px solid #4804ad;
+      background: rgba(72, 4, 173, 0.1);
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+      display: none;
+    `;
+    document.body.appendChild(this.overlay);
 
     // Create mutation observer to clean up highlights for removed elements
     this.mutationObserver = new MutationObserver((mutations) => {
@@ -38,19 +50,6 @@ export class HighlightManager {
       subtree: true,
     });
 
-    // Add cursor style for highlighted elements
-    this.styleElement = document.createElement("style");
-    this.styleElement.id = "eye-note-cursor-styles";
-    this.styleElement.textContent = `
-      body.shift-pressed .eye-note-highlight,
-      body.shift-pressed .eye-note-highlight * {
-        cursor: url('${chrome.runtime.getURL(
-          "cursor.png"
-        )}') 6 6, auto !important;
-      }
-    `;
-    document.head.appendChild(this.styleElement);
-
     console.log("[HighlightManager] Initialized");
   }
 
@@ -59,6 +58,19 @@ export class HighlightManager {
       HighlightManager.instance = new HighlightManager();
     }
     return HighlightManager.instance;
+  }
+
+  private updateOverlay(element: Element | null): void {
+    if (!element) {
+      this.overlay.style.display = "none";
+      return;
+    }
+    const rect = element.getBoundingClientRect();
+    this.overlay.style.display = "block";
+    this.overlay.style.top = rect.top + "px";
+    this.overlay.style.left = rect.left + "px";
+    this.overlay.style.width = rect.width + "px";
+    this.overlay.style.height = rect.height + "px";
   }
 
   addHighlight(element: Element): void {
@@ -85,16 +97,15 @@ export class HighlightManager {
         this.removeHighlight(this.lastHighlightedElement);
       }
 
-      // Store original styles
-      const computedStyle = window.getComputedStyle(element);
-      this.originalStyles.set(element, {
-        backgroundColor: computedStyle.backgroundColor,
-      });
-
-      // Add highlight to the new element
-      element.classList.add(this.highlightClass);
+      // Add element to tracked set and update overlay
       this.highlightedElements.add(element);
       this.lastHighlightedElement = element;
+      this.updateOverlay(element);
+
+      // Update cursor style if element is HTMLElement
+      if (element instanceof HTMLElement) {
+        element.style.cursor = "crosshair";
+      }
 
       console.log("[HighlightManager] Added highlight to:", element);
     } catch (error) {
@@ -111,19 +122,18 @@ export class HighlightManager {
         cancelAnimationFrame(this.rafId);
       }
 
-      // Restore original styles
-      const originalStyles = this.originalStyles.get(element);
-      if (originalStyles && element instanceof HTMLElement) {
-        element.style.backgroundColor = originalStyles.backgroundColor;
-        this.originalStyles.delete(element);
+      // Reset cursor style if element is HTMLElement
+      if (element instanceof HTMLElement) {
+        element.style.cursor = "";
       }
 
-      // Remove highlight class
-      element.classList.remove(this.highlightClass);
+      // Remove from tracked set and hide overlay
       this.highlightedElements.delete(element);
       if (this.lastHighlightedElement === element) {
         this.lastHighlightedElement = null;
+        this.updateOverlay(null);
       }
+
       console.log("[HighlightManager] Removed highlight from:", element);
     } catch (error) {
       console.error("[HighlightManager] Error removing highlight:", error);
@@ -137,18 +147,17 @@ export class HighlightManager {
         cancelAnimationFrame(this.rafId);
       }
 
-      // Restore original styles and remove highlights
+      // Reset cursor styles and clear tracked elements
       this.highlightedElements.forEach((element) => {
-        const originalStyles = this.originalStyles.get(element);
-        if (originalStyles && element instanceof HTMLElement) {
-          element.style.backgroundColor = originalStyles.backgroundColor;
-          this.originalStyles.delete(element);
+        if (element instanceof HTMLElement) {
+          element.style.cursor = "";
         }
-        element.classList.remove(this.highlightClass);
       });
 
       this.highlightedElements.clear();
       this.lastHighlightedElement = null;
+      this.updateOverlay(null);
+
       console.log("[HighlightManager] Cleared all highlights");
     } catch (error) {
       console.error("[HighlightManager] Error clearing highlights:", error);
@@ -165,13 +174,10 @@ export class HighlightManager {
     });
 
     elementsToRemove.forEach((element) => {
-      const originalStyles = this.originalStyles.get(element);
-      if (originalStyles) {
-        this.originalStyles.delete(element);
-      }
       this.highlightedElements.delete(element);
       if (this.lastHighlightedElement === element) {
         this.lastHighlightedElement = null;
+        this.updateOverlay(null);
       }
     });
   }
@@ -192,9 +198,6 @@ export class HighlightManager {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
     }
-    if (this.styleElement) {
-      this.styleElement.remove();
-      this.styleElement = null;
-    }
+    this.overlay.remove();
   }
 }

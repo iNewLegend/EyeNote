@@ -12,14 +12,6 @@ if (!document.getElementById("eye-note-root")) {
   const highlightStyles = document.createElement("style");
   highlightStyles.id = "eye-note-highlight-styles";
   highlightStyles.textContent = `
-    .eye-note-highlight {
-      cursor: crosshair !important;
-    }
-
-    .eye-note-highlight * {
-      cursor: crosshair !important;
-    }
-
     #eye-note-highlight-overlay {
       position: fixed;
       pointer-events: none;
@@ -28,6 +20,7 @@ if (!document.getElementById("eye-note-root")) {
       background: rgba(72, 4, 173, 0.1);
       transition: all 0.2s ease;
       box-sizing: border-box;
+      display: none;
     }
   `;
   document.head.appendChild(highlightStyles);
@@ -37,7 +30,10 @@ if (!document.getElementById("eye-note-root")) {
   overlay.id = "eye-note-highlight-overlay";
   document.body.appendChild(overlay);
 
-  // Add mutation observer to update overlay position
+  // Track the currently highlighted element
+  let currentHighlightedElement: HTMLElement | null = null;
+
+  // Update overlay position
   const updateOverlay = (element: Element | null) => {
     if (!element) {
       overlay.style.display = "none";
@@ -50,6 +46,56 @@ if (!document.getElementById("eye-note-root")) {
     overlay.style.width = rect.width + "px";
     overlay.style.height = rect.height + "px";
   };
+
+  // Handle mouse movement
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!document.body.classList.contains("shift-pressed")) {
+      if (currentHighlightedElement) {
+        updateOverlay(null);
+        currentHighlightedElement = null;
+      }
+      return;
+    }
+
+    const element = document.elementFromPoint(e.clientX, e.clientY);
+    if (
+      !element ||
+      element === currentHighlightedElement ||
+      element.closest("#eye-note-root")
+    ) {
+      return;
+    }
+
+    if (element instanceof HTMLElement) {
+      // Update cursor style
+      element.style.cursor = "crosshair";
+      currentHighlightedElement = element;
+      updateOverlay(element);
+    }
+  };
+
+  // Handle shift key events
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Shift") {
+      document.body.classList.add("shift-pressed");
+    }
+  };
+
+  const handleKeyUp = (e: KeyboardEvent) => {
+    if (e.key === "Shift") {
+      document.body.classList.remove("shift-pressed");
+      if (currentHighlightedElement) {
+        currentHighlightedElement.style.cursor = "";
+        currentHighlightedElement = null;
+        updateOverlay(null);
+      }
+    }
+  };
+
+  // Add event listeners
+  document.addEventListener("mousemove", handleMouseMove);
+  document.addEventListener("keydown", handleKeyDown);
+  document.addEventListener("keyup", handleKeyUp);
 
   // Create root element for the app
   const root = document.createElement("div");
@@ -104,32 +150,14 @@ if (!document.getElementById("eye-note-root")) {
         </ThemeProvider>
       </React.StrictMode>
     );
-
-    // Set up mutation observer to watch for highlight class changes
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (
-          mutation.type === "attributes" &&
-          mutation.attributeName === "class"
-        ) {
-          const element = mutation.target as Element;
-          if (element.classList.contains("eye-note-highlight")) {
-            updateOverlay(element);
-          }
-        }
-      });
-    });
-
-    observer.observe(document.body, {
-      attributes: true,
-      subtree: true,
-      attributeFilter: ["class"],
-    });
   } catch (error) {
     console.error("Failed to initialize EyeNote:", error);
     // Clean up if initialization fails
     highlightStyles.remove();
     overlay.remove();
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("keydown", handleKeyDown);
+    document.removeEventListener("keyup", handleKeyUp);
     root.remove();
   }
 }
