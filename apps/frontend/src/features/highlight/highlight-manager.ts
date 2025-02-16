@@ -5,9 +5,12 @@ export class HighlightManager {
   private rafId: number | null = null;
   private highlightClass = "eye-note-highlight";
   private lastHighlightedElement: Element | null = null;
+  private originalStyles: WeakMap<Element, { backgroundColor: string }>;
+  private styleElement: HTMLStyleElement | null = null;
 
   private constructor() {
     this.highlightedElements = new Set();
+    this.originalStyles = new WeakMap();
 
     // Create mutation observer to clean up highlights for removed elements
     this.mutationObserver = new MutationObserver((mutations) => {
@@ -34,6 +37,19 @@ export class HighlightManager {
       childList: true,
       subtree: true,
     });
+
+    // Add cursor style for highlighted elements
+    this.styleElement = document.createElement("style");
+    this.styleElement.id = "eye-note-cursor-styles";
+    this.styleElement.textContent = `
+      body.shift-pressed .eye-note-highlight,
+      body.shift-pressed .eye-note-highlight * {
+        cursor: url('${chrome.runtime.getURL(
+          "cursor.png"
+        )}') 6 6, auto !important;
+      }
+    `;
+    document.head.appendChild(this.styleElement);
 
     console.log("[HighlightManager] Initialized");
   }
@@ -66,9 +82,14 @@ export class HighlightManager {
         this.lastHighlightedElement &&
         this.lastHighlightedElement !== element
       ) {
-        this.lastHighlightedElement.classList.remove(this.highlightClass);
-        this.highlightedElements.delete(this.lastHighlightedElement);
+        this.removeHighlight(this.lastHighlightedElement);
       }
+
+      // Store original styles
+      const computedStyle = window.getComputedStyle(element);
+      this.originalStyles.set(element, {
+        backgroundColor: computedStyle.backgroundColor,
+      });
 
       // Add highlight to the new element
       element.classList.add(this.highlightClass);
@@ -90,7 +111,14 @@ export class HighlightManager {
         cancelAnimationFrame(this.rafId);
       }
 
-      // Immediately remove the highlight
+      // Restore original styles
+      const originalStyles = this.originalStyles.get(element);
+      if (originalStyles && element instanceof HTMLElement) {
+        element.style.backgroundColor = originalStyles.backgroundColor;
+        this.originalStyles.delete(element);
+      }
+
+      // Remove highlight class
       element.classList.remove(this.highlightClass);
       this.highlightedElements.delete(element);
       if (this.lastHighlightedElement === element) {
@@ -109,10 +137,16 @@ export class HighlightManager {
         cancelAnimationFrame(this.rafId);
       }
 
-      // Immediately remove all highlights
+      // Restore original styles and remove highlights
       this.highlightedElements.forEach((element) => {
+        const originalStyles = this.originalStyles.get(element);
+        if (originalStyles && element instanceof HTMLElement) {
+          element.style.backgroundColor = originalStyles.backgroundColor;
+          this.originalStyles.delete(element);
+        }
         element.classList.remove(this.highlightClass);
       });
+
       this.highlightedElements.clear();
       this.lastHighlightedElement = null;
       console.log("[HighlightManager] Cleared all highlights");
@@ -131,6 +165,10 @@ export class HighlightManager {
     });
 
     elementsToRemove.forEach((element) => {
+      const originalStyles = this.originalStyles.get(element);
+      if (originalStyles) {
+        this.originalStyles.delete(element);
+      }
       this.highlightedElements.delete(element);
       if (this.lastHighlightedElement === element) {
         this.lastHighlightedElement = null;
@@ -153,6 +191,10 @@ export class HighlightManager {
     if (this.rafId) {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
+    }
+    if (this.styleElement) {
+      this.styleElement.remove();
+      this.styleElement = null;
     }
   }
 }

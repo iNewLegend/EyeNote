@@ -1,5 +1,5 @@
 /* CSS Variables */
-:root {
+:host {
   --primary-color: #4804ad;
   --primary-light: rgba(72, 4, 173, 0.1);
   --x: 50%;
@@ -13,9 +13,8 @@
 }
 
 /* Base cursor styles with hardware acceleration */
-body.shift-pressed,
-body.shift-pressed *:not(.notes-plugin *) {
-  cursor: url('chrome-extension://__MSG_@@extension_id__/cursor.png') 6 6, auto !important;
+:host-context(body.shift-pressed) .notes-plugin,
+:host-context(body.shift-pressed) .notes-plugin * {
   transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   perspective: 1000px;
@@ -44,7 +43,7 @@ body.shift-pressed *:not(.notes-plugin *) {
 }
 
 /* Hardware accelerated cursor overlay */
-body.shift-pressed::before {
+:host-context(body.shift-pressed) .notes-plugin::before {
   content: '';
   position: fixed;
   top: 0;
@@ -58,7 +57,7 @@ body.shift-pressed::before {
 }
 
 /* Optimized glow effect */
-body.shift-pressed::after {
+:host-context(body.shift-pressed) .notes-plugin::after {
   content: '';
   position: fixed;
   top: 0;
