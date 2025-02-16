@@ -11,26 +11,63 @@ const iconsDir = path.join(extensionDir, 'icons');
 const assetsDir = path.join(extensionDir, 'assets');
 const cursorsDir = path.join(extensionDir, 'cursors');
 
+async function ensureDirectoryExists(dir) {
+  try {
+    await fs.access(dir);
+    // If directory exists, remove it and its contents
+    await fs.rm(dir, { recursive: true, force: true });
+  } catch (err) {
+    // Directory doesn't exist, that's fine
+  }
+  await fs.mkdir(dir, { recursive: true });
+}
+
 async function copyFile(src, dest) {
   try {
     await fs.mkdir(path.dirname(dest), { recursive: true });
     await fs.copyFile(src, dest);
     console.log(`Copied ${path.basename(src)} to ${path.relative(rootDir, dest)}`);
   } catch (err) {
-    console.error(`Error copying ${src}: ${err.message}`);
+    if (err.code === 'ENOENT') {
+      console.log(`Skipping ${path.basename(src)}: File not found`);
+    } else {
+      console.error(`Error copying ${src}: ${err.message}`);
+    }
+  }
+}
+
+async function copyDirectory(src, dest) {
+  try {
+    await fs.mkdir(dest, { recursive: true });
+    const entries = await fs.readdir(src, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      const srcPath = path.join(src, entry.name);
+      const destPath = path.join(dest, entry.name);
+      
+      if (entry.isDirectory()) {
+        await copyDirectory(srcPath, destPath);
+      } else {
+        await copyFile(srcPath, destPath);
+      }
+    }
+    console.log(`Copied directory ${path.basename(src)} to extension/`);
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      console.log(`Skipping directory ${path.basename(src)}: Directory not found`);
+    } else {
+      console.error(`Error copying directory ${src}: ${err.message}`);
+    }
   }
 }
 
 async function prepareExtension() {
   try {
     // Ensure extension directory exists and is clean
-    await fs.rm(extensionDir, { recursive: true, force: true });
-    await fs.mkdir(extensionDir, { recursive: true });
-    await fs.mkdir(assetsDir, { recursive: true });
-    await fs.mkdir(cursorsDir, { recursive: true });
-
-    // Create icons directory if it doesn't exist
-    await fs.mkdir(iconsDir, { recursive: true });
+    await ensureDirectoryExists(extensionDir);
+    await ensureDirectoryExists(iconsDir);
+    await ensureDirectoryExists(assetsDir);
+    await ensureDirectoryExists(cursorsDir);
 
     // Convert and copy icons from icon.svg
     const sourceIcon = path.join(rootDir, 'public', 'icons', 'icon.svg');
@@ -56,22 +93,20 @@ async function prepareExtension() {
           position: 'center',
           background: { r: 0, g: 0, b: 0, alpha: 0 }
         })
-        .png({ quality: 100, compressionLevel: 9 })
+        .png()
         .toFile(path.join(extensionDir, 'cursor.png'));
       console.log('Created cursor.png');
 
     } catch (error) {
       console.error('Error processing icons:', error);
-      throw error;
     }
 
-    // Copy manifest
+    // Copy files
     await copyFile(
       path.join(rootDir, 'manifest.json'),
       path.join(extensionDir, 'manifest.json')
     );
 
-    // Copy content script and style files directly
     await copyFile(
       path.join(distDir, 'content.iife.js'),
       path.join(extensionDir, 'content.iife.js')
@@ -82,23 +117,17 @@ async function prepareExtension() {
       path.join(extensionDir, 'style.css')
     );
 
-    // Copy other dist files
-    const distFiles = await fs.readdir(distDir);
-    for (const file of distFiles) {
-      // Skip files we've already copied
-      if (file === 'content.iife.js' || file === 'style.css') continue;
-
-      const srcPath = path.join(distDir, file);
-      const destPath = path.join(extensionDir, file);
+    // Copy dist directory contents
+    const distEntries = await fs.readdir(distDir, { withFileTypes: true });
+    for (const entry of distEntries) {
+      const srcPath = path.join(distDir, entry.name);
+      const destPath = path.join(extensionDir, entry.name);
       
-      const stat = await fs.stat(srcPath);
-      if (stat.isDirectory()) {
-        // Copy directory recursively
-        await fs.cp(srcPath, destPath, { recursive: true });
-        console.log(`Copied directory ${file} to extension/`);
+      if (entry.isDirectory()) {
+        await copyDirectory(srcPath, destPath);
       } else {
-        // For index.html, copy it directly as popup.html
-        if (file === 'index.html') {
+        // For index.html, copy it as popup.html
+        if (entry.name === 'index.html') {
           await copyFile(srcPath, path.join(extensionDir, 'popup.html'));
         } else {
           await copyFile(srcPath, destPath);

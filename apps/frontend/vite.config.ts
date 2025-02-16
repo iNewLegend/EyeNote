@@ -34,6 +34,10 @@ const contentScriptBuild = defineConfig({
     rollupOptions: {
       external: [],
     },
+    watch: {
+      buildDelay: 100,
+      clearScreen: false,
+    },
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
@@ -61,6 +65,10 @@ const mainBuild = defineConfig({
     emptyOutDir: true,
     sourcemap: true,
     assetsDir: "assets",
+    watch: {
+      buildDelay: 100,
+      clearScreen: false,
+    },
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),

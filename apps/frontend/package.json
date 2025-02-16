@@ -7,10 +7,11 @@
     "dev": "vite",
     "build": "tsc && vite build && CONTENT_SCRIPT=1 vite build",
     "build:extension": "pnpm build && node scripts/prepare-extension.js",
-    "watch": "vite build --watch",
+    "watch:main": "vite build --watch",
+    "watch:content": "CONTENT_SCRIPT=1 vite build --watch",
     "watch:extension": "nodemon --watch dist --exec 'node scripts/prepare-extension.js' --delay 1",
     "watch:ide": "node scripts/ide-watcher.js",
-    "dev:extension": "concurrently \"pnpm watch\" \"pnpm watch:extension\" \"pnpm watch:ide\"",
+    "dev:extension": "concurrently \"pnpm watch:main\" \"pnpm watch:content\" \"pnpm watch:extension\" \"pnpm watch:ide\"",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "clean": "rm -rf dist extension node_modules"
