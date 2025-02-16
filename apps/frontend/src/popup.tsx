@@ -12,7 +12,7 @@ import {
 } from "./components/ui/card";
 import { Switch } from "./components/ui/switch";
 import { Label } from "./components/ui/label";
-import "./popup.css";
+import "./styles/popup.css";
 
 interface User {
   id: string;

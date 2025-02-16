@@ -1,20 +1,17 @@
 import React from "react";
-import ReactDOM from "react-dom/client";
+import { createRoot } from "react-dom/client";
 import { Popup } from "./popup";
 import { ToastContextProvider } from "./components/ui/toast-context";
-import "./index.css";
-import "./popup.css";
+import { ThemeProvider } from "./components/theme-provider";
+import "./styles/index.css";
+import "./styles/popup.css";
 
-const root = document.getElementById("root");
-
-if (!root) {
-  throw new Error("Root element not found");
-}
-
-ReactDOM.createRoot(root).render(
+createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ToastContextProvider>
-      <Popup />
-    </ToastContextProvider>
+    <ThemeProvider defaultTheme="dark">
+      <ToastContextProvider>
+        <Popup />
+      </ToastContextProvider>
+    </ThemeProvider>
   </React.StrictMode>
 );

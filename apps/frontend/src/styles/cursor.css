@@ -1,3 +1,9 @@
+/* CSS Variables */
+:root {
+  --primary-color: #4804ad;
+  --primary-light: rgba(72, 4, 173, 0.1);
+}
+
 /* Add a transition for smooth cursor changes */
 * {
   cursor-transition: 150ms ease;
@@ -5,29 +11,36 @@
 
 /* Base cursor styles */
 body.shift-pressed,
-body.shift-pressed *:not(.notes-plugin),
 body.shift-pressed *:not(.notes-plugin *) {
   cursor: url('chrome-extension://__MSG_@@extension_id__/cursor.png') 6 6, auto !important;
 }
 
-/* Ensure highlighted elements maintain the cursor */
+/* Ensure highlighted elements maintain the cursor and are visible */
 .eye-note-highlight {
   outline: 2px solid var(--primary-color) !important;
   outline-offset: 2px !important;
   background-color: var(--primary-light) !important;
   z-index: 999996 !important;
   position: relative !important;
-  pointer-events: auto !important;
   cursor: url('chrome-extension://__MSG_@@extension_id__/cursor.png') 6 6, auto !important;
+  transition: all 0.2s ease !important;
 }
 
 .eye-note-highlight * {
-  pointer-events: auto !important;
+  background-color: var(--primary-light) !important;
   cursor: url('chrome-extension://__MSG_@@extension_id__/cursor.png') 6 6, auto !important;
 }
 
-body.shift-pressed {
-  position: relative;
+/* Ensure cursor persists during shift mode */
+body.shift-pressed::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999995;
+  pointer-events: none;
 }
 
 /* Glow effect */
@@ -41,8 +54,8 @@ body.shift-pressed::after {
   pointer-events: none;
   background: radial-gradient(
     circle at var(--x, 50%) var(--y, 50%),
-    rgba(72, 4, 173, 0.1) 0%,
-    transparent 50px
+    rgba(72, 4, 173, 0.15) 0%,
+    transparent 100px
   );
   z-index: 999997;
   transition: opacity 0.3s ease;

@@ -71,9 +71,23 @@ async function prepareExtension() {
       path.join(extensionDir, 'manifest.json')
     );
 
-    // Copy assets from dist
+    // Copy content script and style files directly
+    await copyFile(
+      path.join(distDir, 'content.iife.js'),
+      path.join(extensionDir, 'content.iife.js')
+    );
+
+    await copyFile(
+      path.join(distDir, 'style.css'),
+      path.join(extensionDir, 'style.css')
+    );
+
+    // Copy other dist files
     const distFiles = await fs.readdir(distDir);
     for (const file of distFiles) {
+      // Skip files we've already copied
+      if (file === 'content.iife.js' || file === 'style.css') continue;
+
       const srcPath = path.join(distDir, file);
       const destPath = path.join(extensionDir, file);
       
@@ -90,21 +104,6 @@ async function prepareExtension() {
           await copyFile(srcPath, destPath);
         }
       }
-    }
-
-    // Extract CSS from content.iife.js and save as style.css
-    const contentScriptPath = path.join(extensionDir, 'content.iife.js');
-    const contentScript = await fs.readFile(contentScriptPath, 'utf-8');
-    const cssMatch = contentScript.match(/var style = document\.createElement\('style'\);[\s\S]*?style\.textContent = `([\s\S]*?)`;/);
-    if (cssMatch && cssMatch[1]) {
-      let cssContent = cssMatch[1];
-      // Replace the cursor placeholder with the base64 data
-      cssContent = cssContent.replace(
-        /url\("CURSOR_PLACEHOLDER"\)/g,
-        `url("data:image/png;base64,${base64Cursor}")`
-      );
-      await fs.writeFile(path.join(extensionDir, 'style.css'), cssContent);
-      console.log('Created style.css with base64 cursor');
     }
 
     console.log('Extension files prepared successfully!');

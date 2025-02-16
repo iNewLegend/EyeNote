@@ -3,16 +3,8 @@ import { createRoot } from "react-dom/client";
 import App from "./app";
 import { ToastContextProvider } from "./components/ui/toast-context";
 import { ThemeProvider } from "./components/theme-provider";
-import "./index.css";
-import "./cursor.css";
-
-// Add mouse move handler for glow effect
-document.addEventListener("mousemove", (e) => {
-  if (document.body.classList.contains("shift-pressed")) {
-    document.body.style.setProperty("--x", `${e.clientX}px`);
-    document.body.style.setProperty("--y", `${e.clientY}px`);
-  }
-});
+import "./styles/index.css";
+import "./styles/cursor.css";
 
 // Ensure we don't inject multiple instances
 if (!document.getElementById("eye-note-root")) {
