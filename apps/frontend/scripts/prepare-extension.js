@@ -9,7 +9,7 @@ const distDir = path.join(rootDir, 'dist');
 const extensionDir = path.join(rootDir, 'extension');
 const iconsDir = path.join(extensionDir, 'icons');
 const assetsDir = path.join(extensionDir, 'assets');
-const cursorsDir = path.join(extensionDir, 'cursors');
+const chunksDir = path.join(extensionDir, 'chunks');
 
 async function ensureDirectoryExists(dir) {
   try {
@@ -67,7 +67,7 @@ async function prepareExtension() {
     await ensureDirectoryExists(extensionDir);
     await ensureDirectoryExists(iconsDir);
     await ensureDirectoryExists(assetsDir);
-    await ensureDirectoryExists(cursorsDir);
+    await ensureDirectoryExists(chunksDir);
 
     // Convert and copy icons from icon.svg
     const sourceIcon = path.join(rootDir, 'public', 'icons', 'icon.svg');
@@ -101,12 +101,13 @@ async function prepareExtension() {
       console.error('Error processing icons:', error);
     }
 
-    // Copy files
+    // Copy manifest.json
     await copyFile(
       path.join(rootDir, 'manifest.json'),
       path.join(extensionDir, 'manifest.json')
     );
 
+    // Copy content script and styles
     await copyFile(
       path.join(distDir, 'content.iife.js'),
       path.join(extensionDir, 'content.iife.js')
@@ -116,6 +117,22 @@ async function prepareExtension() {
       path.join(distDir, 'style.css'),
       path.join(extensionDir, 'style.css')
     );
+
+    // Copy background script
+    await copyFile(
+      path.join(distDir, 'background.js'),
+      path.join(extensionDir, 'background.js')
+    );
+
+    // Copy background script map if it exists
+    try {
+      await copyFile(
+        path.join(distDir, 'background.js.map'),
+        path.join(extensionDir, 'background.js.map')
+      );
+    } catch (error) {
+      console.log('No source map for background script');
+    }
 
     // Copy dist directory contents
     const distEntries = await fs.readdir(distDir, { withFileTypes: true });
@@ -129,7 +146,9 @@ async function prepareExtension() {
         // For index.html, copy it as popup.html
         if (entry.name === 'index.html') {
           await copyFile(srcPath, path.join(extensionDir, 'popup.html'));
-        } else {
+        } 
+        // Skip files we've already copied
+        else if (!['content.iife.js', 'style.css', 'background.js', 'background.js.map'].includes(entry.name)) {
           await copyFile(srcPath, destPath);
         }
       }

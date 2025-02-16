@@ -12,7 +12,6 @@ export function useShiftHover(notes: Note[]) {
   const stateRef = useRef({
     isShiftMode: false,
     hoveredElement: null as Element | null,
-    mouseHandler: null as ((e: MouseEvent) => void) | null,
   });
 
   const cursorManager = CursorManager.getInstance();
@@ -55,9 +54,9 @@ export function useShiftHover(notes: Note[]) {
     [notes]
   );
 
-  // Create the mouse handler once and store it in the ref
-  useEffect(() => {
-    stateRef.current.mouseHandler = (e: MouseEvent) => {
+  // Handle mouse events
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
       if (!stateRef.current.isShiftMode) return;
 
       const x = e.clientX;
@@ -66,6 +65,17 @@ export function useShiftHover(notes: Note[]) {
 
       if (!element) return;
 
+      // First, clear any existing highlight
+      if (stateRef.current.hoveredElement) {
+        highlightManager.removeHighlight(stateRef.current.hoveredElement);
+        stateRef.current.hoveredElement = null;
+        setHoveredElement(null);
+      }
+
+      // Don't proceed if hovering over plugin elements
+      if (element.closest(".notes-plugin")) return;
+
+      // Find the most relevant parent element
       let targetElement = element;
       let parentElement = element.parentElement;
 
@@ -81,23 +91,17 @@ export function useShiftHover(notes: Note[]) {
         parentElement = parentElement.parentElement;
       }
 
+      // Don't add highlight if it's a plugin element or the same as current
       if (targetElement.closest(".notes-plugin")) return;
       if (targetElement === stateRef.current.hoveredElement) return;
 
-      console.log("[useShiftHover] Mouse over element:", targetElement);
-
-      if (
-        stateRef.current.hoveredElement &&
-        stateRef.current.hoveredElement !== targetElement
-      ) {
-        clearHighlight(stateRef.current.hoveredElement);
-      }
-
+      // Add highlight to new element
       highlightManager.addHighlight(targetElement);
-      setHoveredElement(targetElement);
       stateRef.current.hoveredElement = targetElement;
-    };
-  }, [clearHighlight]);
+      setHoveredElement(targetElement);
+    },
+    [] // Remove clearHighlight dependency as we're using highlightManager directly
+  );
 
   // Handle shift key events
   useEffect(() => {
@@ -110,22 +114,18 @@ export function useShiftHover(notes: Note[]) {
         cursorManager.enableShiftMode();
         stateRef.current.isShiftMode = true;
         setIsShiftMode(true);
-
-        if (stateRef.current.mouseHandler) {
-          document.addEventListener("mousemove", stateRef.current.mouseHandler);
-        }
+        document.addEventListener("mousemove", handleMouseMove);
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === "Shift" && stateRef.current.isShiftMode) {
         console.log("[useShiftHover] Shift key released");
+        document.removeEventListener("mousemove", handleMouseMove);
 
-        if (stateRef.current.mouseHandler) {
-          document.removeEventListener(
-            "mousemove",
-            stateRef.current.mouseHandler
-          );
+        // Clear highlight from currently hovered element
+        if (stateRef.current.hoveredElement) {
+          clearHighlight(stateRef.current.hoveredElement);
         }
 
         stateRef.current.isShiftMode = false;
@@ -141,12 +141,8 @@ export function useShiftHover(notes: Note[]) {
     return () => {
       window.removeEventListener("keydown", handleKeyDown, { capture: true });
       window.removeEventListener("keyup", handleKeyUp, { capture: true });
-      if (stateRef.current.mouseHandler) {
-        document.removeEventListener(
-          "mousemove",
-          stateRef.current.mouseHandler
-        );
-      }
+      document.removeEventListener("mousemove", handleMouseMove);
+
       if (stateRef.current.isShiftMode) {
         stateRef.current.isShiftMode = false;
         setIsShiftMode(false);
@@ -154,18 +150,29 @@ export function useShiftHover(notes: Note[]) {
         clearAllHighlights();
       }
     };
-  }, [clearAllHighlights]);
+  }, [clearAllHighlights, handleMouseMove, cursorManager]);
+
+  // Handle mouseout/mouseleave events
+  useEffect(() => {
+    const handleMouseLeave = () => {
+      if (stateRef.current.isShiftMode && stateRef.current.hoveredElement) {
+        clearHighlight(stateRef.current.hoveredElement);
+        stateRef.current.hoveredElement = null;
+        setHoveredElement(null);
+      }
+    };
+
+    document.addEventListener("mouseleave", handleMouseLeave);
+    return () => {
+      document.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, [clearHighlight]);
 
   // Clear highlights when notes change
   useEffect(() => {
     if (notes.some((note) => note.isEditing)) {
       console.log("[useShiftHover] Note dialog opened");
-      if (stateRef.current.mouseHandler) {
-        document.removeEventListener(
-          "mousemove",
-          stateRef.current.mouseHandler
-        );
-      }
+      document.removeEventListener("mousemove", handleMouseMove);
       stateRef.current.isShiftMode = false;
       setIsShiftMode(false);
       cursorManager.disableShiftMode();
@@ -178,7 +185,7 @@ export function useShiftHover(notes: Note[]) {
         setSelectedElement(editingNote.highlightedElement);
       }
     }
-  }, [notes, clearAllHighlights]);
+  }, [notes, clearAllHighlights, handleMouseMove, cursorManager]);
 
   return {
     hoveredElement,

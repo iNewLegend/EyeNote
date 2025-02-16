@@ -32,12 +32,12 @@ const contentScriptBuild = defineConfig({
     outDir: "dist",
     emptyOutDir: false,
     rollupOptions: {
-      external: [],
+      output: {
+        extend: true,
+        inlineDynamicImports: true,
+      },
     },
-    watch: {
-      buildDelay: 100,
-      clearScreen: false,
-    },
+    watch: null, // Remove watch config to prevent hanging
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
@@ -65,10 +65,7 @@ const mainBuild = defineConfig({
     emptyOutDir: true,
     sourcemap: true,
     assetsDir: "assets",
-    watch: {
-      buildDelay: 100,
-      clearScreen: false,
-    },
+    watch: null, // Remove watch config to prevent hanging
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),

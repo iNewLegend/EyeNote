@@ -2,35 +2,48 @@
 :root {
   --primary-color: #4804ad;
   --primary-light: rgba(72, 4, 173, 0.1);
+  --x: 50%;
+  --y: 50%;
 }
 
-/* Add a transition for smooth cursor changes */
+/* Optimize cursor transitions */
 * {
   cursor-transition: 150ms ease;
+  will-change: cursor;
 }
 
-/* Base cursor styles */
+/* Base cursor styles with hardware acceleration */
 body.shift-pressed,
 body.shift-pressed *:not(.notes-plugin *) {
   cursor: url('chrome-extension://__MSG_@@extension_id__/cursor.png') 6 6, auto !important;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Ensure highlighted elements maintain the cursor and are visible */
+/* Performance optimized highlight styles */
 .eye-note-highlight {
   outline: 2px solid var(--primary-color) !important;
   outline-offset: 2px !important;
   background-color: var(--primary-light) !important;
   position: relative !important;
   cursor: url('chrome-extension://__MSG_@@extension_id__/cursor.png') 6 6, auto !important;
-  transition: all 0.2s ease !important;
+  transition: outline-color 0.2s ease, background-color 0.2s ease !important;
+  transform: translate3d(0, 0, 0);
+  will-change: outline-color, background-color;
+  contain: layout style paint;
 }
 
 .eye-note-highlight * {
   background-color: var(--primary-light) !important;
   cursor: url('chrome-extension://__MSG_@@extension_id__/cursor.png') 6 6, auto !important;
+  transform: translate3d(0, 0, 0);
+  contain: layout style paint;
 }
 
-/* Ensure cursor persists during shift mode */
+/* Hardware accelerated cursor overlay */
 body.shift-pressed::before {
   content: '';
   position: fixed;
@@ -39,9 +52,12 @@ body.shift-pressed::before {
   right: 0;
   bottom: 0;
   pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  contain: strict;
 }
 
-/* Glow effect */
+/* Optimized glow effect */
 body.shift-pressed::after {
   content: '';
   position: fixed;
@@ -51,9 +67,14 @@ body.shift-pressed::after {
   bottom: 0;
   pointer-events: none;
   background: radial-gradient(
-    circle at var(--x, 50%) var(--y, 50%),
+    circle at var(--x) var(--y),
     rgba(72, 4, 173, 0.15) 0%,
     transparent 100px
   );
   transition: opacity 0.3s ease;
+  transform: translate3d(0, 0, 0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  contain: strict;
+  z-index: var(--cursor-effect-z-index);
 } 
