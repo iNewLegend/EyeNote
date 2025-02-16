@@ -43,7 +43,15 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["assets/*", "chunks/*", "cursor.png"],
+      "resources": [
+        "assets/*",
+        "chunks/*",
+        "cursor.png",
+        "style.css",
+        "icons/*",
+        "*.css",
+        "*.css.map"
+      ],
       "matches": ["<all_urls>"]
     }
   ],

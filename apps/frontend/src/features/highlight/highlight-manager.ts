@@ -47,6 +47,24 @@ export class HighlightManager {
     console.log("[HighlightManager] Initialized");
   }
 
+  private logHighlightOperation(operation: string, element: Element): void {
+    console.log(`[HighlightManager] ${operation}:`, {
+      element: {
+        tag: element.tagName,
+        id: element.id,
+        class: element.className,
+        text: element.textContent?.slice(0, 50),
+      },
+      currentHighlighted: this.currentHighlightedElement
+        ? {
+            tag: this.currentHighlightedElement.tagName,
+            id: this.currentHighlightedElement.id,
+            class: this.currentHighlightedElement.className,
+          }
+        : null,
+    });
+  }
+
   static getInstance(): HighlightManager {
     if (!HighlightManager.instance) {
       HighlightManager.instance = new HighlightManager();
@@ -78,6 +96,8 @@ export class HighlightManager {
         return;
       }
 
+      this.logHighlightOperation("Adding highlight", element);
+
       // Cancel any pending RAF
       if (this.rafId) {
         cancelAnimationFrame(this.rafId);
@@ -98,8 +118,6 @@ export class HighlightManager {
       if (element instanceof HTMLElement) {
         element.style.cursor = "crosshair";
       }
-
-      console.log("[HighlightManager] Added highlight to:", element);
     } catch (error) {
       console.error("[HighlightManager] Error adding highlight:", error);
     }
@@ -109,6 +127,13 @@ export class HighlightManager {
     if (!element) return;
 
     try {
+      // Only remove if it's the current highlighted element
+      if (element !== this.currentHighlightedElement) {
+        return;
+      }
+
+      this.logHighlightOperation("Removing highlight", element);
+
       // Cancel any pending RAF
       if (this.rafId) {
         cancelAnimationFrame(this.rafId);
@@ -120,12 +145,8 @@ export class HighlightManager {
       }
 
       // Clear current highlighted element and hide overlay
-      if (this.currentHighlightedElement === element) {
-        this.currentHighlightedElement = null;
-        this.updateOverlay(null);
-      }
-
-      console.log("[HighlightManager] Removed highlight from:", element);
+      this.currentHighlightedElement = null;
+      this.updateOverlay(null);
     } catch (error) {
       console.error("[HighlightManager] Error removing highlight:", error);
     }
@@ -133,6 +154,8 @@ export class HighlightManager {
 
   clearAllHighlights(): void {
     try {
+      console.log("[HighlightManager] Clearing all highlights");
+
       // Cancel any pending RAF
       if (this.rafId) {
         cancelAnimationFrame(this.rafId);
@@ -146,8 +169,6 @@ export class HighlightManager {
       // Clear current highlighted element and hide overlay
       this.currentHighlightedElement = null;
       this.updateOverlay(null);
-
-      console.log("[HighlightManager] Cleared all highlights");
     } catch (error) {
       console.error("[HighlightManager] Error clearing highlights:", error);
     }

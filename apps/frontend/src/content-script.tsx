@@ -51,8 +51,9 @@ if (!document.getElementById("eye-note-root")) {
   const handleMouseMove = (e: MouseEvent) => {
     if (!document.body.classList.contains("shift-pressed")) {
       if (currentHighlightedElement) {
-        updateOverlay(null);
+        currentHighlightedElement.style.cursor = "";
         currentHighlightedElement = null;
+        updateOverlay(null);
       }
       return;
     }
@@ -67,7 +68,12 @@ if (!document.getElementById("eye-note-root")) {
     }
 
     if (element instanceof HTMLElement) {
-      // Update cursor style
+      // Remove highlight from previous element if different
+      if (currentHighlightedElement && currentHighlightedElement !== element) {
+        currentHighlightedElement.style.cursor = "";
+      }
+
+      // Update cursor style and highlight new element
       element.style.cursor = "crosshair";
       currentHighlightedElement = element;
       updateOverlay(element);
@@ -100,6 +106,15 @@ if (!document.getElementById("eye-note-root")) {
   // Create root element for the app
   const root = document.createElement("div");
   root.id = "eye-note-root";
+  root.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2147483646;
+  `;
 
   // Create shadow root for style isolation
   const shadowRoot = root.attachShadow({ mode: "open" });
@@ -112,18 +127,17 @@ if (!document.getElementById("eye-note-root")) {
   // Add app styles to shadow root
   const styles = document.createElement("style");
   styles.textContent = `
-    @import url('${chrome.runtime.getURL("style.css")}');
-    
-    /* Ensure our styles only affect elements within our shadow DOM */
     :host {
       all: initial;
+      display: block;
       position: fixed;
       top: 0;
       left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 9999;
+      width: 100%;
+      height: 100%;
       pointer-events: none;
+      z-index: 2147483646;
+      contain: strict;
     }
 
     .notes-plugin {
@@ -133,10 +147,25 @@ if (!document.getElementById("eye-note-root")) {
       width: 100%;
       height: 100%;
       pointer-events: none;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    .notes-plugin * {
+      box-sizing: border-box;
+    }
+
+    /* Make sure interactive elements can receive pointer events */
+    .note-marker,
+    .note-content,
+    button,
+    input,
+    textarea {
+      pointer-events: auto;
     }
   `;
   shadowRoot.appendChild(styles);
 
+  // Add the root element to the page
   document.body.appendChild(root);
 
   // Initialize React app
