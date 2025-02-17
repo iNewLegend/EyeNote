@@ -52,13 +52,6 @@ if (!document.getElementById("eye-note-root")) {
   cursorDot.className = "cursor-dot";
   document.body.appendChild(cursorDot);
 
-  // Create cursor glow element
-  const cursorGlow = document.createElement("div");
-  cursorGlow.className = "cursor-glow";
-  cursorGlow.innerHTML =
-    '<span class="absolute inset-0 rounded-full animate-ping bg-primary-glow/20"></span>';
-  document.body.appendChild(cursorGlow);
-
   // Create highlight overlay element
   const overlay = document.createElement("div");
   overlay.id = "eye-note-highlight-overlay";
@@ -91,12 +84,6 @@ if (!document.getElementById("eye-note-root")) {
       if (cursorDot) {
         cursorDot.style.left = `${x}px`;
         cursorDot.style.top = `${y}px`;
-      }
-
-      // Update cursor glow position
-      if (cursorGlow) {
-        cursorGlow.style.left = `${x}px`;
-        cursorGlow.style.top = `${y}px`;
       }
     });
 

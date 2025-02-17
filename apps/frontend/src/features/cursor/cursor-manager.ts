@@ -1,13 +1,9 @@
-import { GlowEffectManager } from "./glow-effect-manager";
-
 export class CursorManager {
   private static instance: CursorManager;
   private isShiftMode: boolean = false;
-  private glowEffectManager: GlowEffectManager;
   private lastStateChange: number = 0;
 
   private constructor() {
-    this.glowEffectManager = GlowEffectManager.getInstance();
     this.isShiftMode = false;
     this.lastStateChange = 0;
     console.log("[CursorManager] Initialized");
@@ -33,7 +29,6 @@ export class CursorManager {
     document.body.style.cursor = `url(${chrome.runtime.getURL(
       "cursor.png"
     )}) 6 6, crosshair`;
-    this.glowEffectManager.enable();
     console.log(
       "[CursorManager] Shift mode enabled, body classes:",
       document.body.classList.toString()
@@ -51,7 +46,6 @@ export class CursorManager {
     this.lastStateChange = now;
     document.body.classList.remove("shift-pressed");
     document.body.style.cursor = "";
-    this.glowEffectManager.disable();
     console.log(
       "[CursorManager] Shift mode disabled, body classes:",
       document.body.classList.toString()
