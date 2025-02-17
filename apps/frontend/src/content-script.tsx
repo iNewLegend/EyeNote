@@ -16,33 +16,50 @@ if (!document.getElementById("eye-note-root")) {
       position: fixed;
       pointer-events: none;
       z-index: 2147483647;
-      border: 2px solid #4804ad;
-      background: rgba(72, 4, 173, 0.1);
+      border: 2px solid #55006a;
+      background: rgba(85, 0, 106, 0.1);
       transition: all 0.2s ease;
       box-sizing: border-box;
       display: none;
     }
 
     body.shift-pressed {
-      cursor: url('${chrome.runtime.getURL(
-        "cursor.png"
-      )}') 5 5, crosshair !important;
+      cursor: none !important;
     }
 
     .eye-note-highlight {
-      outline: 2px solid #4804ad !important;
+      outline: 2px solid #55006a !important;
       outline-offset: 2px !important;
-      background: rgba(72, 4, 173, 0.1) !important;
-      cursor: url('${chrome.runtime.getURL(
-        "cursor.png"
-      )}') 5 5, crosshair !important;
+      background: rgba(85, 0, 106, 0.1) !important;
+      cursor: none !important;
+    }
+
+    .cursor-dot {
+      width: 8px;
+      height: 8px;
+      background: #4804ad;
+      border-radius: 50%;
+      position: fixed;
+      pointer-events: none;
+      z-index: 2147483647;
+      transform: translate(-50%, -50%);
     }
   `;
   document.head.appendChild(highlightStyles);
 
+  // Create cursor dot element
+  const cursorDot = document.createElement("div");
+  cursorDot.className =
+    "fixed w-2 h-2 rounded-full bg-[#55006a] pointer-events-none z-[2147483647] -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-200";
+  document.body.appendChild(cursorDot);
+
   // Create cursor glow element
   const cursorGlow = document.createElement("div");
-  cursorGlow.className = "cursor-glow";
+  cursorGlow.className =
+    "fixed w-2.5 h-2.5 pointer-events-none z-[2147483646] opacity-0 transition-opacity duration-200 -translate-x-1/2 -translate-y-1/2";
+  cursorGlow.innerHTML = `
+    <span class="absolute inset-0 rounded-full [animation:ping_1.3s_cubic-bezier(0,0,0.1,0.5)_infinite] bg-[#d42aff]/20"></span>
+  `;
   document.body.appendChild(cursorGlow);
 
   // Create highlight overlay element
@@ -69,6 +86,23 @@ if (!document.getElementById("eye-note-root")) {
 
   // Handle mouse movement
   const handleMouseMove = (e: MouseEvent) => {
+    const x = e.clientX;
+    const y = e.clientY;
+
+    requestAnimationFrame(() => {
+      // Update cursor dot position
+      if (cursorDot) {
+        cursorDot.style.left = `${x}px`;
+        cursorDot.style.top = `${y}px`;
+      }
+
+      // Update cursor glow position
+      if (cursorGlow) {
+        cursorGlow.style.left = `${x}px`;
+        cursorGlow.style.top = `${y}px`;
+      }
+    });
+
     if (!document.body.classList.contains("shift-pressed")) {
       if (currentHighlightedElement) {
         currentHighlightedElement.style.cursor = "";
@@ -78,7 +112,7 @@ if (!document.getElementById("eye-note-root")) {
       return;
     }
 
-    const element = document.elementFromPoint(e.clientX, e.clientY);
+    const element = document.elementFromPoint(x, y);
     if (
       !element ||
       element === currentHighlightedElement ||
@@ -94,9 +128,7 @@ if (!document.getElementById("eye-note-root")) {
       }
 
       // Update cursor style and highlight new element
-      element.style.cursor = `url(${chrome.runtime.getURL(
-        "cursor.png"
-      )}) 5 5, crosshair`;
+      element.style.cursor = "none";
       currentHighlightedElement = element;
       updateOverlay(element);
     }
@@ -106,9 +138,8 @@ if (!document.getElementById("eye-note-root")) {
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === "Shift") {
       document.body.classList.add("shift-pressed");
-      document.body.style.cursor = `url(${chrome.runtime.getURL(
-        "cursor.png"
-      )}) 5 5, crosshair`;
+      cursorDot.style.opacity = "1";
+      cursorGlow.style.opacity = "1";
     }
   };
 
@@ -120,7 +151,8 @@ if (!document.getElementById("eye-note-root")) {
         currentHighlightedElement = null;
         updateOverlay(null);
       }
-      document.body.style.cursor = "";
+      cursorDot.style.opacity = "0";
+      cursorGlow.style.opacity = "0";
     }
   };
 
@@ -128,12 +160,6 @@ if (!document.getElementById("eye-note-root")) {
   document.addEventListener("mousemove", handleMouseMove);
   document.addEventListener("keydown", handleKeyDown);
   document.addEventListener("keyup", handleKeyUp);
-
-  // Set cursor URL
-  document.documentElement.style.setProperty(
-    "--cursor-url",
-    `url('${chrome.runtime.getURL("cursor.png")}') 5 5`
-  );
 
   // Create root element for the app
   const root = document.createElement("div");

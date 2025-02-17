@@ -24,72 +24,32 @@ body.shift-pressed {
   cursor: var(--cursor-url), crosshair !important;
 }
 
-/* Simple glow effect */
+/* Tailwind pulse animation for cursor */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+
 .cursor-glow {
   position: fixed;
   pointer-events: none;
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at center,
-    rgba(72, 4, 173, 0.4) 0%,
-    transparent 100%
-  );
   z-index: 2147483646;
-  will-change: transform;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 body.shift-pressed .cursor-glow {
   opacity: 1;
-}
-
-.cursor-glow::before,
-.cursor-glow::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  will-change: background;
-  transform: translate3d(0, 0, 0);
-}
-
-.cursor-glow::before {
-  background: radial-gradient(
-    circle at var(--x) var(--y),
-    rgba(72, 4, 173, 0.6) 0%,
-    rgba(72, 4, 173, 0.4) 4px,
-    rgba(72, 4, 173, 0.2) 8px,
-    transparent 12px
-  );
-  mix-blend-mode: screen;
-}
-
-.cursor-glow::after {
-  background: 
-    radial-gradient(
-      circle at var(--x) var(--y),
-      rgba(94, 29, 120, 0.4) 0%,
-      rgba(94, 29, 120, 0.2) 6px,
-      transparent 15px
-    ),
-    radial-gradient(
-      circle at var(--x) var(--y),
-      rgba(72, 4, 173, 0.3) 0%,
-      transparent 20px
-    );
-  mix-blend-mode: screen;
-  filter: blur(0.5px);
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.85; }
 }
 
 :host-context(body.shift-pressed) .notes-plugin,

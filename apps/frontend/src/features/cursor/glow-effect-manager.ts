@@ -4,7 +4,14 @@ export class GlowEffectManager {
   private glowElement: HTMLDivElement | null = null;
 
   private constructor() {
-    this.glowElement = document.querySelector(".cursor-glow");
+    // Create glow element if it doesn't exist
+    if (!document.querySelector(".cursor-glow")) {
+      this.glowElement = document.createElement("div");
+      this.glowElement.className = "cursor-glow";
+      document.body.appendChild(this.glowElement);
+    } else {
+      this.glowElement = document.querySelector(".cursor-glow");
+    }
   }
 
   static getInstance(): GlowEffectManager {
@@ -22,7 +29,6 @@ export class GlowEffectManager {
   enable(): void {
     if (!this.isEnabled) {
       this.isEnabled = true;
-      this.glowElement = document.querySelector(".cursor-glow");
       document.addEventListener("mousemove", this.handleMouseMove, {
         passive: true,
       });
