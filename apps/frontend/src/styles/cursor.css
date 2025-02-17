@@ -24,18 +24,8 @@ body.shift-pressed {
   @apply w-2 h-2 bg-primary rounded-full fixed pointer-events-none z-max -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-200;
 }
 
-/* Cursor glow */
-.cursor-glow {
-  @apply fixed pointer-events-none w-6 h-6 -translate-x-1/2 -translate-y-1/2 z-plugin opacity-0 transition-opacity duration-200;
-}
-
-.cursor-glow span {
-  @apply block w-full h-full rounded-full bg-primary-glow/20 animate-ping;
-}
-
 /* Show cursor elements when shift is pressed */
-body.shift-pressed .cursor-dot,
-body.shift-pressed .cursor-glow {
+body.shift-pressed .cursor-dot {
   @apply opacity-100;
 }
 

@@ -7,8 +7,6 @@
     /* Base colors in HSL */
     --primary: 272 95% 34%;
     --primary-light: 272 95% 34% / 0.1;
-    --primary-glow: 288 100% 58%;
-    --primary-glow-light: 288 100% 58% / 0.2;
     
     /* Dark theme defaults */
     --background: 272 20% 12%;
@@ -124,35 +122,6 @@
 /* Toast should always be on top */
 [role="status"][data-state] {
   z-index: var(--toast-z-index);
-}
-
-/* Cursor effects */
-:host-context(body.shift-pressed) .notes-plugin::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: var(--cursor-glow-z-index);
-  pointer-events: none;
-}
-
-:host-context(body.shift-pressed) .notes-plugin::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    circle at var(--x, 50%) var(--y, 50%),
-    rgba(72, 4, 173, 0.15) 0%,
-    transparent 100px
-  );
-  z-index: var(--cursor-effect-z-index);
-  transition: opacity 0.3s ease;
 }
 
 body {
