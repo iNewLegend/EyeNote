@@ -116,7 +116,9 @@ export class HighlightManager {
 
       // Update cursor style if element is HTMLElement
       if (element instanceof HTMLElement) {
-        element.style.cursor = "crosshair";
+        element.style.cursor = `url(${chrome.runtime.getURL(
+          "cursor.png"
+        )}) 6 6, crosshair`;
       }
     } catch (error) {
       console.error("[HighlightManager] Error adding highlight:", error);

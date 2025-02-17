@@ -30,6 +30,9 @@ export class CursorManager {
     this.isShiftMode = true;
     this.lastStateChange = now;
     document.body.classList.add("shift-pressed");
+    document.body.style.cursor = `url(${chrome.runtime.getURL(
+      "cursor.png"
+    )}) 6 6, crosshair`;
     this.glowEffectManager.enable();
     console.log(
       "[CursorManager] Shift mode enabled, body classes:",
@@ -47,6 +50,7 @@ export class CursorManager {
     this.isShiftMode = false;
     this.lastStateChange = now;
     document.body.classList.remove("shift-pressed");
+    document.body.style.cursor = "";
     this.glowEffectManager.disable();
     console.log(
       "[CursorManager] Shift mode disabled, body classes:",
