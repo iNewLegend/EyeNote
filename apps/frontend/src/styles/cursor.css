@@ -7,56 +7,48 @@
 
 /* Base cursor styles */
 body.shift-pressed {
-  cursor: var(--cursor-url), crosshair !important;
+  @apply cursor-none;
 }
 
 /* Performance optimized highlight styles */
 .eye-note-highlight {
-  outline: 2px solid var(--primary-color) !important;
-  outline-offset: 2px !important;
-  background-color: var(--primary-light) !important;
-  position: relative !important;
-  cursor: var(--cursor-url), crosshair !important;
+  @apply outline outline-2 outline-primary outline-offset-2 bg-primary-light relative cursor-none;
 }
 
 .eye-note-highlight * {
-  background-color: var(--primary-light) !important;
-  cursor: var(--cursor-url), crosshair !important;
+  @apply bg-primary-light cursor-none;
 }
 
-/* Tailwind pulse animation for cursor */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: .5;
-  }
+/* Cursor dot */
+.cursor-dot {
+  @apply w-2 h-2 bg-primary rounded-full fixed pointer-events-none z-max -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-200;
 }
 
+/* Cursor glow */
 .cursor-glow {
-  position: fixed;
-  pointer-events: none;
-  width: 24px;
-  height: 24px;
-  transform: translate(-50%, -50%);
-  z-index: 2147483646;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  border-radius: 50%;
-  background-color: var(--primary-color);
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  @apply fixed pointer-events-none w-6 h-6 -translate-x-1/2 -translate-y-1/2 z-plugin opacity-0 transition-opacity duration-200;
 }
 
+.cursor-glow span {
+  @apply block w-full h-full rounded-full bg-primary-glow/20 animate-ping;
+}
+
+/* Show cursor elements when shift is pressed */
+body.shift-pressed .cursor-dot,
 body.shift-pressed .cursor-glow {
-  opacity: 1;
+  @apply opacity-100;
 }
 
+/* Tailwind ping animation */
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Performance optimizations */
 :host-context(body.shift-pressed) .notes-plugin,
 :host-context(body.shift-pressed) .notes-plugin * {
-  transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
-  perspective: 1000px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  @apply gpu-accelerated;
 } 

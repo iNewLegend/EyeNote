@@ -49,17 +49,14 @@ if (!document.getElementById("eye-note-root")) {
 
   // Create cursor dot element
   const cursorDot = document.createElement("div");
-  cursorDot.className =
-    "fixed w-2 h-2 rounded-full bg-[#55006a] pointer-events-none z-[2147483647] -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-200";
+  cursorDot.className = "cursor-dot";
   document.body.appendChild(cursorDot);
 
   // Create cursor glow element
   const cursorGlow = document.createElement("div");
-  cursorGlow.className =
-    "fixed w-2.5 h-2.5 pointer-events-none z-[2147483646] opacity-0 transition-opacity duration-200 -translate-x-1/2 -translate-y-1/2";
-  cursorGlow.innerHTML = `
-    <span class="absolute inset-0 rounded-full [animation:ping_1.3s_cubic-bezier(0,0,0.1,0.5)_infinite] bg-[#d42aff]/20"></span>
-  `;
+  cursorGlow.className = "cursor-glow";
+  cursorGlow.innerHTML =
+    '<span class="absolute inset-0 rounded-full animate-ping bg-primary-glow/20"></span>';
   document.body.appendChild(cursorGlow);
 
   // Create highlight overlay element
@@ -138,8 +135,6 @@ if (!document.getElementById("eye-note-root")) {
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === "Shift") {
       document.body.classList.add("shift-pressed");
-      cursorDot.style.opacity = "1";
-      cursorGlow.style.opacity = "1";
     }
   };
 
@@ -151,8 +146,6 @@ if (!document.getElementById("eye-note-root")) {
         currentHighlightedElement = null;
         updateOverlay(null);
       }
-      cursorDot.style.opacity = "0";
-      cursorGlow.style.opacity = "0";
     }
   };
 

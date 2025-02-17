@@ -4,13 +4,19 @@
 
 @layer base {
   :host {
+    /* Base colors in HSL */
+    --primary: 272 95% 34%;
+    --primary-light: 272 95% 34% / 0.1;
+    --primary-glow: 288 100% 58%;
+    --primary-glow-light: 288 100% 58% / 0.2;
+    
+    /* Dark theme defaults */
     --background: 272 20% 12%;
     --foreground: 0 0% 100%;
     --card: 272 20% 12%;
     --card-foreground: 0 0% 100%;
     --popover: 272 20% 12%;
     --popover-foreground: 0 0% 100%;
-    --primary: 272 93% 35%;
     --primary-foreground: 0 0% 100%;
     --secondary: 272 93% 95%;
     --secondary-foreground: 272 93% 35%;
@@ -28,7 +34,6 @@
     /* Custom theme colors */
     --primary-color: #4804ad;
     --primary-hover: #5e1d78;
-    --primary-light: rgba(72, 4, 173, 0.1);
     --text-color: #ffffff;
     --background-color: #1a1325;
     --border-color: #2f1136;
@@ -42,7 +47,6 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 272 93% 35%;
     --primary-foreground: 0 0% 100%;
     --secondary: 272 93% 95%;
     --secondary-foreground: 272 93% 35%;
@@ -67,7 +71,8 @@
   }
 
   * {
-    @apply m-0 p-0 box-border border-border;
+    @apply m-0 p-0 box-border;
+    border-color: hsl(var(--border));
   }
 
   .notes-plugin {
@@ -88,9 +93,9 @@
   .note-content {
     @apply w-[300px] max-h-[80vh] overflow-y-auto bg-background text-foreground rounded-lg shadow-lg;
     position: fixed;
-    background: var(--background-color);
+    background: hsl(var(--background));
     border-radius: 8px;
-    box-shadow: 0 2px 10px var(--shadow-color);
+    box-shadow: 0 2px 10px hsl(var(--primary) / 0.2);
     padding: 16px;
     width: 300px;
     pointer-events: auto;
@@ -98,9 +103,9 @@
   }
 
   .eye-note-highlight {
-    outline: 2px solid var(--primary-color) !important;
+    outline: 2px solid hsl(var(--primary)) !important;
     outline-offset: 2px !important;
-    background-color: var(--primary-light) !important;
+    background: hsl(var(--primary-light)) !important;
     position: static !important;
     pointer-events: auto !important;
   }

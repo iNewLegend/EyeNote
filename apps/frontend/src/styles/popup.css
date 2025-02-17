@@ -10,7 +10,9 @@
 }
 
 @layer components {
-  html, body {
+
+  html,
+  body {
     @apply m-0 p-0 w-[350px] h-[500px] bg-background text-foreground overflow-hidden;
   }
 
@@ -23,11 +25,11 @@
   }
 
   .popup h1 {
-    @apply text-2xl font-semibold text-text;
+    @apply text-2xl font-semibold text-foreground;
   }
 
   .popup h2 {
-    @apply text-lg font-medium my-4 text-text;
+    @apply text-lg font-medium my-4 text-foreground;
   }
 
   .settings {
@@ -59,6 +61,6 @@
   }
 
   .instructions p {
-    @apply m-0 text-text text-sm;
+    @apply m-0 text-foreground text-sm;
   }
-} 
+}

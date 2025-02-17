@@ -17,19 +17,21 @@ module.exports = {
     },
     extend: {
       colors: {
-        primary: {
-          DEFAULT: '#646cff',
-          hover: '#535bf2',
-          light: 'rgba(100, 108, 255, 0.1)',
-        },
-        text: '#213547',
-        background: '#ffffff',
-        border: '#ddd',
-        shadow: 'rgba(0, 0, 0, 0.1)',
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+          light: "hsl(var(--primary-light))",
+          glow: "hsl(var(--primary-glow))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
@@ -68,15 +70,49 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: 0 },
         },
+        ping: {
+          "75%, 100%": {
+            transform: "scale(2)",
+            opacity: "0",
+          },
+        },
+        cursor: {
+          "0%": {
+            opacity: "0",
+          },
+          "100%": {
+            opacity: "1",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        ping: "ping 1.3s cubic-bezier(0, 0, 0.2, 1) infinite",
+        cursor: "cursor 0.2s ease-in-out forwards",
       },
       zIndex: {
-        'max': '999999',
+        'max': '2147483647',
+        'plugin': '2147483646',
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
-} 
+  plugins: [
+    require("tailwindcss-animate"),
+    function({ addUtilities }) {
+      addUtilities({
+        '.backface-hidden': {
+          'backface-visibility': 'hidden',
+          '-webkit-backface-visibility': 'hidden',
+        },
+        '.gpu-accelerated': {
+          'transform': 'translate3d(0, 0, 0)',
+          'backface-visibility': 'hidden',
+          'perspective': '1000px',
+          '-webkit-font-smoothing': 'antialiased',
+          '-moz-osx-font-smoothing': 'grayscale',
+        },
+      });
+    },
+  ],
+}; 
