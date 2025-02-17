@@ -26,7 +26,7 @@ if (!document.getElementById("eye-note-root")) {
     body.shift-pressed {
       cursor: url('${chrome.runtime.getURL(
         "cursor.png"
-      )}') 6 6, crosshair !important;
+      )}') 5 5, crosshair !important;
     }
 
     .eye-note-highlight {
@@ -35,10 +35,15 @@ if (!document.getElementById("eye-note-root")) {
       background: rgba(72, 4, 173, 0.1) !important;
       cursor: url('${chrome.runtime.getURL(
         "cursor.png"
-      )}') 6 6, crosshair !important;
+      )}') 5 5, crosshair !important;
     }
   `;
   document.head.appendChild(highlightStyles);
+
+  // Create cursor glow element
+  const cursorGlow = document.createElement("div");
+  cursorGlow.className = "cursor-glow";
+  document.body.appendChild(cursorGlow);
 
   // Create highlight overlay element
   const overlay = document.createElement("div");
@@ -91,7 +96,7 @@ if (!document.getElementById("eye-note-root")) {
       // Update cursor style and highlight new element
       element.style.cursor = `url(${chrome.runtime.getURL(
         "cursor.png"
-      )}) 6 6, crosshair`;
+      )}) 5 5, crosshair`;
       currentHighlightedElement = element;
       updateOverlay(element);
     }
@@ -103,7 +108,7 @@ if (!document.getElementById("eye-note-root")) {
       document.body.classList.add("shift-pressed");
       document.body.style.cursor = `url(${chrome.runtime.getURL(
         "cursor.png"
-      )}) 6 6, crosshair`;
+      )}) 5 5, crosshair`;
     }
   };
 
@@ -127,7 +132,7 @@ if (!document.getElementById("eye-note-root")) {
   // Set cursor URL
   document.documentElement.style.setProperty(
     "--cursor-url",
-    `url('${chrome.runtime.getURL("cursor.png")}') 6 6`
+    `url('${chrome.runtime.getURL("cursor.png")}') 5 5`
   );
 
   // Create root element for the app

@@ -1,30 +1,13 @@
 /* CSS Variables */
-:host {
+:root {
   --primary-color: #4804ad;
   --primary-light: rgba(72, 4, 173, 0.1);
-  --x: 50%;
-  --y: 50%;
   --cursor-url: '';
 }
 
-/* Optimize cursor transitions */
-* {
-  cursor-transition: 150ms ease;
-  will-change: cursor;
-}
-
-/* Base cursor styles with hardware acceleration */
+/* Base cursor styles */
 body.shift-pressed {
   cursor: var(--cursor-url), crosshair !important;
-}
-
-:host-context(body.shift-pressed) .notes-plugin,
-:host-context(body.shift-pressed) .notes-plugin * {
-  transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
-  perspective: 1000px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Performance optimized highlight styles */
@@ -34,35 +17,36 @@ body.shift-pressed {
   background-color: var(--primary-light) !important;
   position: relative !important;
   cursor: var(--cursor-url), crosshair !important;
-  transition: outline-color 0.2s ease, background-color 0.2s ease !important;
-  transform: translate3d(0, 0, 0);
-  will-change: outline-color, background-color;
-  contain: layout style paint;
 }
 
 .eye-note-highlight * {
   background-color: var(--primary-light) !important;
   cursor: var(--cursor-url), crosshair !important;
-  transform: translate3d(0, 0, 0);
-  contain: layout style paint;
 }
 
-/* Hardware accelerated cursor overlay */
-:host-context(body.shift-pressed) .notes-plugin::before {
-  content: '';
+/* Simple glow effect */
+.cursor-glow {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
   pointer-events: none;
-  transform: translate3d(0, 0, 0);
+  width: 16px;
+  height: 16px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    rgba(72, 4, 173, 0.4) 0%,
+    transparent 100%
+  );
+  z-index: 2147483646;
   will-change: transform;
-  contain: strict;
 }
 
-/* Optimized glow effect */
-:host-context(body.shift-pressed) .notes-plugin::after {
+body.shift-pressed .cursor-glow {
+  opacity: 1;
+}
+
+.cursor-glow::before,
+.cursor-glow::after {
   content: '';
   position: fixed;
   top: 0;
@@ -70,15 +54,49 @@ body.shift-pressed {
   right: 0;
   bottom: 0;
   pointer-events: none;
+  will-change: background;
+  transform: translate3d(0, 0, 0);
+}
+
+.cursor-glow::before {
   background: radial-gradient(
     circle at var(--x) var(--y),
-    rgba(72, 4, 173, 0.15) 0%,
-    transparent 100px
+    rgba(72, 4, 173, 0.6) 0%,
+    rgba(72, 4, 173, 0.4) 4px,
+    rgba(72, 4, 173, 0.2) 8px,
+    transparent 12px
   );
-  transition: opacity 0.3s ease;
+  mix-blend-mode: screen;
+}
+
+.cursor-glow::after {
+  background: 
+    radial-gradient(
+      circle at var(--x) var(--y),
+      rgba(94, 29, 120, 0.4) 0%,
+      rgba(94, 29, 120, 0.2) 6px,
+      transparent 15px
+    ),
+    radial-gradient(
+      circle at var(--x) var(--y),
+      rgba(72, 4, 173, 0.3) 0%,
+      transparent 20px
+    );
+  mix-blend-mode: screen;
+  filter: blur(0.5px);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+:host-context(body.shift-pressed) .notes-plugin,
+:host-context(body.shift-pressed) .notes-plugin * {
   transform: translate3d(0, 0, 0);
-  will-change: transform, opacity;
   backface-visibility: hidden;
-  contain: strict;
-  z-index: var(--cursor-effect-z-index);
+  perspective: 1000px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 } 

@@ -86,11 +86,35 @@ async function prepareExtension() {
       );
 
       // Generate cursor image
-      await sharp(svgBuffer)
-        .resize(12, 12, {
+      await sharp(Buffer.from(`<svg width="16" height="16" viewBox="0 0 16 16">
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blur"/>
+            <feColorMatrix in="blur" type="matrix" values="
+              1 0 0 0 0.282
+              0 1 0 0 0.016
+              0 0 1 0 0.678
+              0 0 0 1 0
+            " result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <circle cx="8" cy="8" r="4" fill="#4804ad" filter="url(#glow)"/>
+      </svg>`))
+        .resize(10, 10, {
           kernel: sharp.kernel.lanczos3,
           fit: 'contain',
           position: 'center',
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
+        })
+        .extend({
+          top: 1,
+          bottom: 1,
+          left: 1,
+          right: 1,
           background: { r: 0, g: 0, b: 0, alpha: 0 }
         })
         .png()

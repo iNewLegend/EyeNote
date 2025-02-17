@@ -1,12 +1,11 @@
 export class GlowEffectManager {
   private static instance: GlowEffectManager;
   private isEnabled: boolean = false;
-  private rafId: number | null = null;
-  private lastX: number = 0;
-  private lastY: number = 0;
-  private updateThreshold: number = 5; // Minimum pixel distance for update
+  private glowElement: HTMLDivElement | null = null;
 
-  private constructor() {}
+  private constructor() {
+    this.glowElement = document.querySelector(".cursor-glow");
+  }
 
   static getInstance(): GlowEffectManager {
     if (!GlowEffectManager.instance) {
@@ -15,31 +14,15 @@ export class GlowEffectManager {
     return GlowEffectManager.instance;
   }
 
-  private shouldUpdate(x: number, y: number): boolean {
-    const dx = Math.abs(x - this.lastX);
-    const dy = Math.abs(y - this.lastY);
-    return dx > this.updateThreshold || dy > this.updateThreshold;
-  }
-
   updatePosition(x: number, y: number): void {
-    if (!this.isEnabled || !this.shouldUpdate(x, y)) return;
-
-    if (this.rafId) {
-      cancelAnimationFrame(this.rafId);
-    }
-
-    this.rafId = requestAnimationFrame(() => {
-      document.documentElement.style.setProperty("--x", `${x}px`);
-      document.documentElement.style.setProperty("--y", `${y}px`);
-      this.lastX = x;
-      this.lastY = y;
-      this.rafId = null;
-    });
+    if (!this.isEnabled || !this.glowElement) return;
+    this.glowElement.style.transform = `translate(${x}px, ${y}px)`;
   }
 
   enable(): void {
     if (!this.isEnabled) {
       this.isEnabled = true;
+      this.glowElement = document.querySelector(".cursor-glow");
       document.addEventListener("mousemove", this.handleMouseMove, {
         passive: true,
       });
@@ -50,10 +33,6 @@ export class GlowEffectManager {
     if (this.isEnabled) {
       this.isEnabled = false;
       document.removeEventListener("mousemove", this.handleMouseMove);
-      if (this.rafId) {
-        cancelAnimationFrame(this.rafId);
-        this.rafId = null;
-      }
     }
   }
 
