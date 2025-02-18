@@ -13,8 +13,8 @@ export class HighlightManager {
       position: fixed;
       pointer-events: none;
       z-index: 2147483647;
-      border: 2px solid #4804ad;
-      background: rgba(72, 4, 173, 0.1);
+      border: 2px solid var(--primary-color);
+      background: var(--primary-light);
       transition: all 0.2s ease;
       box-sizing: border-box;
       display: none;

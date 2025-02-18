@@ -16,8 +16,8 @@ if (!document.getElementById("eye-note-root")) {
       position: fixed;
       pointer-events: none;
       z-index: 2147483647;
-      border: 2px solid #55006a;
-      background: rgba(85, 0, 106, 0.1);
+      border: 2px solid var(--primary-color);
+      background: var(--primary-light);
       transition: all 0.2s ease;
       box-sizing: border-box;
       display: none;
@@ -28,16 +28,16 @@ if (!document.getElementById("eye-note-root")) {
     }
 
     .eye-note-highlight {
-      outline: 2px solid #55006a !important;
+      outline: 2px solid var(--primary-color) !important;
       outline-offset: 2px !important;
-      background: rgba(85, 0, 106, 0.1) !important;
+      background: var(--primary-light) !important;
       cursor: none !important;
     }
 
     .cursor-dot {
       width: 8px;
       height: 8px;
-      background: #4804ad;
+      background: var(--primary-color);
       border-radius: 50%;
       position: fixed;
       pointer-events: none;
