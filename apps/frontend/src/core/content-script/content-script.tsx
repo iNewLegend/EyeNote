@@ -2,7 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "../../app.tsx";
 import { ToastContextProvider } from "../../components/ui/toast-context.tsx";
-import { ThemeProvider } from "../../components/theme-provider.tsx";
+import { ThemeProvider } from "../theme/theme-provider.tsx";
 import "../../styles/index.css";
 import "../../features/cursor/cursor.css";
 

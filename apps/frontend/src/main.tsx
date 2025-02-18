@@ -2,7 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { Popup } from "./popup";
 import { ToastContextProvider } from "./components/ui/toast-context";
-import { ThemeProvider } from "./components/theme-provider";
+import { ThemeProvider } from "./core/theme/theme-provider.tsx";
 import "./styles/index.css";
 import "./styles/popup.css";
 
