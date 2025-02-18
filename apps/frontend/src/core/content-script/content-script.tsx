@@ -4,7 +4,7 @@ import App from "../../app.tsx";
 import { ToastContextProvider } from "../../components/ui/toast-context.tsx";
 import { ThemeProvider } from "../../components/theme-provider.tsx";
 import "../../styles/index.css";
-import "../../styles/cursor.css";
+import "../../features/cursor/cursor.css";
 
 // Ensure we don't inject multiple instances
 if (!document.getElementById("eye-note-root")) {
