@@ -1,10 +1,10 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import App from "./app";
-import { ToastContextProvider } from "./components/ui/toast-context";
-import { ThemeProvider } from "./components/theme-provider";
-import "./styles/index.css";
-import "./styles/cursor.css";
+import App from "../../app.tsx";
+import { ToastContextProvider } from "../../components/ui/toast-context.tsx";
+import { ThemeProvider } from "../../components/theme-provider.tsx";
+import "../../styles/index.css";
+import "../../styles/cursor.css";
 
 // Ensure we don't inject multiple instances
 if (!document.getElementById("eye-note-root")) {

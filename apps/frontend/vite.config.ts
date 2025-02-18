@@ -24,7 +24,7 @@ const ideIntegrationPlugin = () => ({
 const contentScriptBuild = defineConfig({
   build: {
     lib: {
-      entry: resolve(__dirname, "src/content-script.tsx"),
+      entry: resolve(__dirname, "src/core/content-script/content-script.tsx"),
       name: "content",
       fileName: () => "content.iife.js",
       formats: ["iife"],
