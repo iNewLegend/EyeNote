@@ -2,6 +2,7 @@ const { fontFamily } = require("tailwindcss/defaultTheme");
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  safelist: ["animate-cursor"],
   darkMode: ["class"],
   content: [
     "./index.html",
@@ -84,20 +85,16 @@ module.exports = {
             opacity: "0",
           },
         },
-        cursor: {
-          "0%": {
-            opacity: "0",
-          },
-          "100%": {
-            opacity: "1",
-          },
+        "cursor-ping": {
+          "0%": { transform: "translate(-50%, -50%) scale(1)", opacity: "1" },
+          "75%, 100%": { transform: "translate(-50%, -50%) scale(2)", opacity: "0" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         ping: "ping 1.3s cubic-bezier(0, 0, 0.2, 1) infinite",
-        cursor: "cursor 0.2s ease-in-out forwards",
+        cursor: "cursor-ping 1.3s cubic-bezier(0, 0, 0.2, 1) infinite",
       },
     },
   },
