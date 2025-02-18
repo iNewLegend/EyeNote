@@ -1,18 +1,18 @@
 import { useState, useEffect } from "react";
-import { AuthDialog } from "./components/auth-dialog";
-import { Button } from "./components/ui/button";
-import { ToastContextProvider } from "./components/ui/toast-context";
-import { useToast } from "./components/ui/toast-context";
+import { AuthDialog } from "../../components/auth-dialog.tsx";
+import { Button } from "../../components/ui/button.tsx";
+import { ToastContextProvider } from "../../components/ui/toast-context.tsx";
+import { useToast } from "../../components/ui/toast-context.tsx";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "./components/ui/card";
-import { Switch } from "./components/ui/switch";
-import { Label } from "./components/ui/label";
-import "./styles/popup.css";
+} from "../../components/ui/card.tsx";
+import { Switch } from "../../components/ui/switch.tsx";
+import { Label } from "../../components/ui/label.tsx";
+import "./extension-popup.css";
 
 interface User {
   id: string;
@@ -21,7 +21,7 @@ interface User {
   picture: string;
 }
 
-export function Popup() {
+export function ExtensionPopup() {
   const [settings, setSettings] = useState({
     enabled: true,
     notificationSound: true,
