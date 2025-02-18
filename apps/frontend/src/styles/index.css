@@ -1,76 +1,12 @@
+@import "theme.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  :host {
-    /* Base colors in HSL */
-    --primary: 272 95% 34%;
-    --primary-light: 272 95% 34% / 0.1;
-
-    /* Dark theme defaults */
-    --background: 272 20% 12%;
-    --foreground: 0 0% 100%;
-    --card: 272 20% 12%;
-    --card-foreground: 0 0% 100%;
-    --popover: 272 20% 12%;
-    --popover-foreground: 0 0% 100%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 272 93% 95%;
-    --secondary-foreground: 272 93% 35%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 65%;
-    --accent: 272 93% 95%;
-    --accent-foreground: 272 93% 35%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 272 20% 25%;
-    --input: 272 30% 15%;
-    --ring: 272 93% 35%;
-    --radius: 0.5rem;
-
-    /* Custom theme colors */
-    --primary-color: #4804ad;
-    --primary-hover: #5e1d78;
-    --text-color: #ffffff;
-    --background-color: #1a1325;
-    --border-color: #2f1136;
-    --shadow-color: rgba(0, 0, 0, 0.3);
-  }
-
-  :host(.light) {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 272 93% 95%;
-    --secondary-foreground: 272 93% 35%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 272 93% 95%;
-    --accent-foreground: 272 93% 35%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 272 93% 35%;
-
-    /* Custom theme colors */
-    --primary-color: #4804ad;
-    --primary-hover: #5e1d78;
-    --primary-light: rgba(72, 4, 173, 0.1);
-    --text-color: #213547;
-    --background-color: #ffffff;
-    --border-color: #ddd;
-    --shadow-color: rgba(0, 0, 0, 0.1);
-  }
-
   * {
     @apply m-0 p-0 box-border;
-    border-color: hsl(var(--border));
   }
 
   .notes-plugin {
@@ -100,8 +36,7 @@ body {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: var(--text-color);
-  background-color: var(--background-color);
+  @apply text-foreground bg-background;
 }
 
 .notes-plugin {
@@ -113,8 +48,7 @@ body {
   position: absolute;
   width: 24px;
   height: 24px;
-  background-color: var(--primary-color);
-  border-radius: 50%;
+  @apply bg-primary rounded-full;
   cursor: pointer;
   pointer-events: auto;
   transition: transform 0.2s ease;
@@ -122,17 +56,7 @@ body {
 
 .note-marker:hover {
   transform: scale(1.1);
-  background-color: var(--primary-hover);
-}
-
-.note-content {
-  position: absolute;
-  background: var(--background-color);
-  border-radius: 8px;
-  box-shadow: 0 2px 10px var(--shadow-color);
-  padding: 16px;
-  width: 300px;
-  pointer-events: auto;
+  @apply hover:bg-primary-hover;
 }
 
 /* Add improved cursor-dot styling */
