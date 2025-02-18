@@ -15,9 +15,11 @@ export class HighlightManager {
       pointer-events: none;
       border: 2px solid var(--primary-color);
       background: var(--primary-light);
-      transition: all 0.2s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 0 0 rgba(100, 108, 255, 0.1);
       box-sizing: border-box;
-      display: none;
+      opacity: 0;
+      transform: scale(0.98);
     `;
     document.body.appendChild(this.overlay);
 
@@ -74,7 +76,8 @@ export class HighlightManager {
 
   private updateOverlay(element: Element | null): void {
     if (!element) {
-      this.overlay.style.display = "none";
+      this.overlay.style.opacity = "0";
+      this.overlay.style.transform = "scale(0.98)";
       return;
     }
     const rect = element.getBoundingClientRect();
@@ -83,6 +86,12 @@ export class HighlightManager {
     this.overlay.style.left = rect.left + "px";
     this.overlay.style.width = rect.width + "px";
     this.overlay.style.height = rect.height + "px";
+
+    // Use RAF to ensure smooth animation
+    requestAnimationFrame(() => {
+      this.overlay.style.opacity = "1";
+      this.overlay.style.transform = "scale(1)";
+    });
   }
 
   addHighlight(element: Element): void {

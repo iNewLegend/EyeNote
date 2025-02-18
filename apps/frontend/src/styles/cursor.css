@@ -12,16 +12,24 @@ body.shift-pressed {
 
 /* Performance optimized highlight styles */
 .eye-note-highlight {
-  @apply outline outline-2 outline-primary outline-offset-2 bg-primary-light relative cursor-none;
+  @apply outline outline-2 outline-primary outline-offset-2 bg-primary-light/5 relative cursor-none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.eye-note-highlight:hover {
+  @apply bg-primary-light/10 outline-offset-4;
 }
 
 .eye-note-highlight * {
-  @apply bg-primary-light cursor-none;
+  @apply bg-primary-light/5 cursor-none;
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Cursor dot */
 .cursor-dot {
-  @apply w-2 h-2 bg-primary rounded-full fixed pointer-events-none z-highlight-element -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-200;
+  @apply w-2 h-2 bg-primary rounded-full fixed pointer-events-none z-highlight-element -translate-x-1/2 -translate-y-1/2 opacity-0;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 0 4px rgba(72, 4, 173, 0.3));
 }
 
 /* Show cursor elements when shift is pressed */
