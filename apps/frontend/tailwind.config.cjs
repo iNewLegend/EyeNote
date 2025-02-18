@@ -16,6 +16,15 @@ module.exports = {
       },
     },
     extend: {
+      zIndex: {
+        'highlight': '10',
+        'plugin': '2147483646',
+        'note': '200',
+        'dialog': '300',
+        'overlay': '400',
+        'toast': '500',
+        'max': '2147483647'
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -90,10 +99,6 @@ module.exports = {
         ping: "ping 1.3s cubic-bezier(0, 0, 0.2, 1) infinite",
         cursor: "cursor 0.2s ease-in-out forwards",
       },
-      zIndex: {
-        'max': '2147483647',
-        'plugin': '2147483646',
-      },
     },
   },
   plugins: [
@@ -114,4 +119,4 @@ module.exports = {
       });
     },
   ],
-}; 
+};

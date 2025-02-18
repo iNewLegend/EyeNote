@@ -59,7 +59,6 @@
   max-height: 200px;
   overflow-y: auto;
 }
-
 .comment {
   padding: 8px;
   background: #f5f5f5;
@@ -86,16 +85,32 @@
 /* Element highlighting styles */
 .eye-note-highlight {
   position: relative !important;
+  @apply z-highlight;
   outline: 2px solid #646cff !important;
   outline-offset: 2px !important;
   cursor: crosshair !important;
   background-color: rgba(100, 108, 255, 0.1) !important;
   transition: outline-color 0.2s ease, background-color 0.2s ease !important;
-  z-index: var(--highlight-element-z-index) !important;
+}
+.notes-plugin {
+  @apply fixed z-plugin pointer-events-none top-0 left-0 w-full h-full;
+}
+
+.note-content {
+  @apply absolute z-note bg-white rounded-lg shadow-md p-4 w-[300px] pointer-events-auto max-h-[80vh] overflow-y-auto;
 }
 
 .eye-note-highlight * {
   pointer-events: none !important;
+}
+
+.eye-note-highlight {
+  @apply relative z-highlight;
+  outline: 2px solid #646cff !important;
+  outline-offset: 2px !important;
+  cursor: crosshair !important;
+  background-color: rgba(100, 108, 255, 0.1) !important;
+  transition: outline-color 0.2s ease, background-color 0.2s ease !important;
 }
 
 /* Remove default outlines that might interfere */
@@ -103,4 +118,4 @@
 .eye-note-highlight:active {
   outline: 2px solid #646cff !important;
   outline-offset: 2px !important;
-} 
+}
