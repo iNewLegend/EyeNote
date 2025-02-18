@@ -16,15 +16,15 @@
 
 @layer components {
   .notes-plugin {
-    @apply fixed pointer-events-none top-0 left-0 w-full h-full z-plugin;
+    @apply fixed pointer-events-none top-0 left-0 w-full h-full z-plugin-container;
   }
 
   .note-content {
-    @apply w-[300px] max-h-[80vh] overflow-y-auto bg-background text-foreground rounded-lg shadow-lg z-note;
+    @apply w-[300px] max-h-[80vh] overflow-y-auto bg-background text-foreground rounded-lg shadow-lg z-note-content;
   }
 
   [data-radix-dialog-overlay] {
-    @apply bg-background/80 backdrop-blur-sm fixed inset-0 z-overlay;
+    @apply bg-background/80 backdrop-blur-sm fixed inset-0 z-dialog-overlay;
   }
 }
 

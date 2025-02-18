@@ -9,10 +9,10 @@ export class HighlightManager {
     // Create highlight overlay element
     this.overlay = document.createElement("div");
     this.overlay.id = "eye-note-highlight-overlay";
+    this.overlay.className = "z-highlight-element";
     this.overlay.style.cssText = `
       position: fixed;
       pointer-events: none;
-      z-index: 2147483647;
       border: 2px solid var(--primary-color);
       background: var(--primary-light);
       transition: all 0.2s ease;

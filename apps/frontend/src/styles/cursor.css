@@ -21,7 +21,7 @@ body.shift-pressed {
 
 /* Cursor dot */
 .cursor-dot {
-  @apply w-2 h-2 bg-primary rounded-full fixed pointer-events-none z-max -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-200;
+  @apply w-2 h-2 bg-primary rounded-full fixed pointer-events-none z-highlight-element -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-200;
 }
 
 /* Show cursor elements when shift is pressed */

@@ -18,13 +18,15 @@ module.exports = {
     },
     extend: {
       zIndex: {
-        'highlight': '10',
-        'plugin': '2147483646',
-        'note': '200',
-        'dialog': '300',
-        'overlay': '400',
-        'toast': '500',
-        'max': '2147483647'
+        // Base plugin container
+        'plugin-container': '9999',
+        
+        // UI Elements
+        'highlight-element': '99999',
+        'note-content': '100000',
+        'dialog-overlay': '100001',
+        'dialog-content': '100002',
+        'toast': '100003',
       },
       colors: {
         border: "hsl(var(--border))",

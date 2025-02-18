@@ -15,7 +15,7 @@ if (!document.getElementById("eye-note-root")) {
     #eye-note-highlight-overlay {
       position: fixed;
       pointer-events: none;
-      z-index: 2147483647;
+      @apply z-highlight-element;
       border: 2px solid var(--primary-color);
       background: var(--primary-light);
       transition: all 0.2s ease;
@@ -41,7 +41,7 @@ if (!document.getElementById("eye-note-root")) {
       border-radius: 50%;
       position: fixed;
       pointer-events: none;
-      z-index: 2147483647;
+      @apply z-highlight-element;
       transform: translate(-50%, -50%);
     }
   `;
@@ -151,7 +151,7 @@ if (!document.getElementById("eye-note-root")) {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 2147483646;
+    @apply z-plugin-container;
   `;
 
   // Create shadow root for style isolation

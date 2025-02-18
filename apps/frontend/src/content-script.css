@@ -1,11 +1,5 @@
 .notes-plugin {
-  position: fixed;
-  z-index: var(--plugin-container-z-index);
-  pointer-events: none;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  @apply fixed z-plugin-container pointer-events-none top-0 left-0 w-full h-full;
 }
 
 .note-marker {
@@ -26,16 +20,7 @@
 }
 
 .note-content {
-  position: absolute;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 16px;
-  width: 300px;
-  pointer-events: auto;
-  z-index: var(--note-content-z-index);
-  max-height: 80vh;
-  overflow-y: auto;
+  @apply absolute z-note-content bg-white rounded-lg shadow-md p-4 w-[300px] pointer-events-auto max-h-[80vh] overflow-y-auto;
 }
 
 .note-header {
@@ -85,32 +70,16 @@
 /* Element highlighting styles */
 .eye-note-highlight {
   position: relative !important;
-  @apply z-highlight;
+  @apply z-highlight-element;
   outline: 2px solid #646cff !important;
   outline-offset: 2px !important;
   cursor: crosshair !important;
   background-color: rgba(100, 108, 255, 0.1) !important;
   transition: outline-color 0.2s ease, background-color 0.2s ease !important;
-}
-.notes-plugin {
-  @apply fixed z-plugin pointer-events-none top-0 left-0 w-full h-full;
-}
-
-.note-content {
-  @apply absolute z-note bg-white rounded-lg shadow-md p-4 w-[300px] pointer-events-auto max-h-[80vh] overflow-y-auto;
 }
 
 .eye-note-highlight * {
   pointer-events: none !important;
-}
-
-.eye-note-highlight {
-  @apply relative z-highlight;
-  outline: 2px solid #646cff !important;
-  outline-offset: 2px !important;
-  cursor: crosshair !important;
-  background-color: rgba(100, 108, 255, 0.1) !important;
-  transition: outline-color 0.2s ease, background-color 0.2s ease !important;
 }
 
 /* Remove default outlines that might interfere */
