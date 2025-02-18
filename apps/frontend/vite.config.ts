@@ -53,7 +53,7 @@ const mainBuild = defineConfig({
     rollupOptions: {
       input: {
         popup: resolve(__dirname, "index.html"),
-        background: resolve(__dirname, "src/background-script.ts"),
+        background: resolve(__dirname, "src/core/background-script.ts"),
       },
       output: {
         entryFileNames: "[name].js",
