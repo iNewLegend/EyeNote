@@ -1,64 +1,23 @@
 import type { Note } from "../../types";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
-import { HighlightManager } from "../highlight/highlight-manager";
-import { NoteManager } from "./note-manager";
-import { useCallback } from "react";
+import { useHighlightStore } from "../../stores/highlight-store";
+import { useNotesStore } from "../../stores/notes-store";
 
 interface NoteComponentProps {
     note: Note;
-    onUpdate: (notes: Note[]) => void;
     setSelectedElement: (element: Element | null) => void;
     onUpdateToast: (title: string, description: string) => void;
 }
 
-export function NoteComponent({
-    note,
-    onUpdate,
-    setSelectedElement,
-    onUpdateToast,
-}: NoteComponentProps) {
-    const highlightManager = HighlightManager.getInstance();
-    const noteManager = NoteManager.getInstance();
-
-    const calculatePosition = useCallback(() => {
-        const DIALOG_WIDTH = 300; // Width of the dialog
-        const DIALOG_PADDING = 20; // Padding from viewport edges
-        const MARKER_SIZE = 24; // Size of the note marker
-
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-
-        let x = (note.x ?? 0) + MARKER_SIZE; // Default position next to marker
-        let y = note.y ?? 0; // Default position at marker's top
-
-        // Adjust horizontal position if dialog would overflow viewport
-        if (x + DIALOG_WIDTH + DIALOG_PADDING > viewportWidth) {
-            x = (note.x ?? 0) - DIALOG_WIDTH - MARKER_SIZE / 2; // Position to the left of marker
-        }
-
-        // Adjust vertical position if dialog would overflow viewport
-        if (y + 300 + DIALOG_PADDING > viewportHeight) {
-            // 300 is an approximate max height
-            y = Math.max(DIALOG_PADDING, viewportHeight - 300 - DIALOG_PADDING);
-        }
-
-        // Ensure dialog doesn't go off the left edge
-        x = Math.max(DIALOG_PADDING, x);
-
-        // Ensure dialog doesn't go off the top edge
-        y = Math.max(DIALOG_PADDING, y);
-
-        return { x, y };
-    }, [note.x, note.y]);
+export function NoteComponent({ note, setSelectedElement, onUpdateToast }: NoteComponentProps) {
+    const { updateNote, deleteNote, setNoteEditing } = useNotesStore();
+    const { addHighlight, removeHighlight } = useHighlightStore();
 
     const handleNoteUpdate = (id: number, content: string) => {
-        noteManager.updateNote(id, content);
-        onUpdate(noteManager.getNotes());
-        onUpdateToast("Note Updated", "Your note has been saved.");
+        updateNote(id, content);
+        onUpdateToast("Note updated", "Your note has been saved successfully");
     };
-
-    const position = calculatePosition();
 
     return (
         <div>
@@ -72,10 +31,9 @@ export function NoteComponent({
                     const element = note.highlightedElement;
                     if (element) {
                         setSelectedElement(element);
-                        highlightManager.addHighlight(element);
+                        addHighlight(element);
                     }
-                    noteManager.setNoteEditing(note.id, true);
-                    onUpdate(noteManager.getNotes());
+                    setNoteEditing(note.id, true);
                 }}
             />
             <Dialog
@@ -84,24 +42,13 @@ export function NoteComponent({
                     if (!open) {
                         const element = note.highlightedElement;
                         if (element) {
-                            const otherNotesEditing = noteManager
-                                .getNotes()
-                                .some(
-                                    (n) =>
-                                        n.id !== note.id &&
-                                        n.isEditing &&
-                                        n.highlightedElement === element
-                                );
-                            if (!otherNotesEditing) {
-                                highlightManager.removeHighlight(element);
-                                setSelectedElement(null);
-                            }
+                            removeHighlight(element);
+                            setSelectedElement(null);
                         }
-                        noteManager.setNoteEditing(note.id, false);
-                        onUpdate(noteManager.getNotes());
+                        setNoteEditing(note.id, false);
                     } else {
                         if (note.highlightedElement) {
-                            highlightManager.addHighlight(note.highlightedElement);
+                            addHighlight(note.highlightedElement);
                             setSelectedElement(note.highlightedElement);
                         }
                     }
@@ -111,8 +58,8 @@ export function NoteComponent({
                     className="note-content"
                     style={{
                         position: "absolute",
-                        left: `${position.x}px`,
-                        top: `${position.y}px`,
+                        left: `${note.x}px`,
+                        top: `${note.y}px`,
                         transform: "none",
                     }}
                 >
@@ -134,11 +81,10 @@ export function NoteComponent({
                             onClick={() => {
                                 const element = note.highlightedElement;
                                 if (element) {
-                                    highlightManager.removeHighlight(element);
+                                    removeHighlight(element);
                                     setSelectedElement(null);
                                 }
-                                noteManager.deleteNote(note.id);
-                                onUpdate(noteManager.getNotes());
+                                deleteNote(note.id);
                             }}
                         >
                             Delete

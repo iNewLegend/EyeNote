@@ -1,17 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
-import type { Note } from "./types";
+import { useEffect, useCallback } from "react";
 import { useToast } from "./components/ui/toast-context";
-import { useShiftHover } from "./hooks/use-shift-hover";
-import { NoteManager } from "./features/notes/note-manager";
+import { useNotesStore } from "./stores/notes-store";
+import { useHighlightStore } from "./stores/highlight-store";
 import { NoteComponent } from "./features/notes/note-component";
 
 function App() {
-    const [notes, setNotes] = useState<Note[]>([]);
     const { toast } = useToast();
-    const noteManager = NoteManager.getInstance();
-
+    const { notes, createNote } = useNotesStore();
     const { hoveredElement, setHoveredElement, setSelectedElement, isShiftMode } =
-        useShiftHover(notes);
+        useHighlightStore();
 
     const handleClick = useCallback(
         (e: MouseEvent) => {
@@ -20,8 +17,7 @@ function App() {
             if ((e.target as Element).closest(".notes-plugin")) return;
 
             // Create the note
-            const newNote = noteManager.createNote(hoveredElement);
-            setNotes((prevNotes) => [...prevNotes, newNote]);
+            createNote(hoveredElement);
             setHoveredElement(null);
             setSelectedElement(hoveredElement);
 
@@ -29,7 +25,7 @@ function App() {
             e.preventDefault();
             e.stopPropagation();
         },
-        [isShiftMode, hoveredElement, setHoveredElement, setSelectedElement]
+        [isShiftMode, hoveredElement, setHoveredElement, setSelectedElement, createNote]
     );
 
     useEffect(() => {
@@ -45,7 +41,6 @@ function App() {
                 <NoteComponent
                     key={note.id}
                     note={note}
-                    onUpdate={setNotes}
                     setSelectedElement={setSelectedElement}
                     onUpdateToast={(title, description) => toast({ title, description })}
                 />
