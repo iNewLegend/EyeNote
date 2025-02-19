@@ -1,0 +1,51 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Watch Extension",
+            "type": "shell",
+            "command": "cd apps/frontend && pnpm watch",
+            "isBackground": true,
+            "problemMatcher": [
+                {
+                    "pattern": [
+                        {
+                            "regexp": ".",
+                            "file": 1,
+                            "location": 2,
+                            "message": 3
+                        }
+                    ],
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": ".",
+                        "endsPattern": "(?=VITE v\\d+\\.\\d+\\.\\d+|built in|✓ built in)"
+                    }
+                }
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Build Extension",
+            "type": "shell",
+            "command": "cd apps/frontend && pnpm build",
+            "group": "build",
+            "problemMatcher": ["$tsc"]
+        },
+        {
+            "label": "Clean Extension",
+            "type": "shell",
+            "command": "cd apps/frontend && pnpm clean",
+            "problemMatcher": []
+        },
+        {
+            "label": "Lint",
+            "type": "shell",
+            "command": "cd apps/frontend && pnpm lint",
+            "problemMatcher": ["$eslint-stylish"]
+        }
+    ]
+}

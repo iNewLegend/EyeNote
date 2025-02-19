@@ -21,6 +21,53 @@ interface User {
     picture: string;
 }
 
+// Development mocks
+const DEV_MODE = process.env.NODE_ENV === "development";
+const mockStorage = {
+    settings: {
+        enabled: true,
+        notificationSound: true,
+        showUnreadBadge: true,
+    },
+    activeGroups: ["Development Group"],
+};
+
+const mockChromeAPI = {
+    storage: {
+        local: {
+            get: (key: string, callback: (result: any) => void) => {
+                callback({ [key]: mockStorage[key as keyof typeof mockStorage] });
+            },
+            set: (items: object) => {
+                Object.assign(mockStorage, items);
+            },
+        },
+    },
+    runtime: {
+        sendMessage: (message: any, callback?: (response: any) => void) => {
+            if (callback) {
+                if (message.type === "GET_AUTH_STATUS") {
+                    callback({
+                        isAuthenticated: true,
+                        user: {
+                            id: "dev",
+                            email: "dev@example.com",
+                            name: "Developer",
+                            picture: "https://via.placeholder.com/40",
+                        },
+                    });
+                } else if (message.type === "SIGN_OUT") {
+                    callback({ success: true });
+                }
+            }
+            return Promise.resolve({ success: true });
+        },
+    },
+};
+
+// Use mock or real Chrome API
+const chromeAPI = DEV_MODE ? mockChromeAPI : chrome;
+
 export function ExtensionPopup() {
     const [settings, setSettings] = useState({
         enabled: true,
@@ -36,21 +83,21 @@ export function ExtensionPopup() {
 
     useEffect(() => {
         // Load settings
-        chrome.storage.local.get("settings", (result) => {
+        chromeAPI.storage.local.get("settings", (result) => {
             if (result.settings) {
                 setSettings(result.settings);
             }
         });
 
         // Load active groups
-        chrome.storage.local.get("activeGroups", (result) => {
+        chromeAPI.storage.local.get("activeGroups", (result) => {
             if (result.activeGroups) {
                 setActiveGroups(result.activeGroups);
             }
         });
 
         // Check authentication status
-        chrome.runtime.sendMessage({ type: "GET_AUTH_STATUS" }, (response) => {
+        chromeAPI.runtime.sendMessage({ type: "GET_AUTH_STATUS" }, (response) => {
             setIsAuthenticated(response.isAuthenticated);
             setUser(response.user || null);
         });
@@ -58,7 +105,7 @@ export function ExtensionPopup() {
 
     const handleSignOut = async () => {
         try {
-            const response = await chrome.runtime.sendMessage({ type: "SIGN_OUT" });
+            const response = await chromeAPI.runtime.sendMessage({ type: "SIGN_OUT" });
             if (response.success) {
                 setIsAuthenticated(false);
                 setUser(null);
@@ -81,7 +128,7 @@ export function ExtensionPopup() {
             [key]: !settings[key],
         };
         setSettings(newSettings);
-        chrome.storage.local.set({ settings: newSettings });
+        chromeAPI.storage.local.set({ settings: newSettings });
     };
 
     return (

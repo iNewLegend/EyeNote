@@ -2,36 +2,17 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 
-// Custom plugin for IDE integration
-const ideIntegrationPlugin = () => ({
-    name: "ide-integration",
-    configureServer(server) {
-        server.watcher.on("change", (path) => {
-            console.log(`[IDE] File changed: ${path}`);
-        });
-
-        server.watcher.on("add", (path) => {
-            console.log(`[IDE] File added: ${path}`);
-        });
-
-        server.watcher.on("unlink", (path) => {
-            console.log(`[IDE] File deleted: ${path}`);
-        });
-    },
-});
-
 export default defineConfig(({ mode }) => {
     const isDev = mode === "development";
     const isContentScript = process.env.CONTENT_SCRIPT === "1";
 
     const commonConfig = {
-        plugins: [react(), ideIntegrationPlugin()],
+        plugins: [react()],
         build: {
             minify: !isDev,
             sourcemap: true,
             outDir: "dist",
             emptyOutDir: !isContentScript,
-            watch: null, // Remove watch config to prevent hanging
         },
         define: {
             "process.env.NODE_ENV": JSON.stringify(mode),
@@ -44,6 +25,7 @@ export default defineConfig(({ mode }) => {
             build: {
                 ...commonConfig.build,
                 cssCodeSplit: false,
+                write: true,
                 rollupOptions: {
                     input: {
                         content: resolve(__dirname, "src/core/content-script/content-script.tsx"),
@@ -58,6 +40,14 @@ export default defineConfig(({ mode }) => {
                         extend: true,
                         inlineDynamicImports: true,
                     },
+                },
+                target: "chrome102",
+                modulePreload: false,
+            },
+            optimizeDeps: {
+                include: ["react", "react-dom"],
+                esbuildOptions: {
+                    target: "chrome102",
                 },
             },
         };

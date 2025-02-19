@@ -1,0 +1,28 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Chrome Extension",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/apps/frontend",
+            "sourceMaps": true,
+            "runtimeExecutable": "stable",
+            "runtimeArgs": [
+                "--load-extension=${workspaceFolder}/apps/frontend/extension",
+                "--disable-web-security",
+                "--user-data-dir=${workspaceFolder}/.vscode/chrome-debug-profile"
+            ],
+            "preLaunchTask": "Watch Extension"
+        },
+        {
+            "name": "Attach to Chrome",
+            "type": "chrome",
+            "request": "attach",
+            "port": 9222,
+            "webRoot": "${workspaceFolder}/apps/frontend",
+            "sourceMaps": true
+        }
+    ]
+}
