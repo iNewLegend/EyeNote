@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
-import { resolve } from "path";
 import react from "@vitejs/plugin-react";
+import { resolve } from "path";
 
 // Custom plugin for IDE integration
 const ideIntegrationPlugin = () => ({
@@ -20,78 +20,85 @@ const ideIntegrationPlugin = () => ({
     },
 });
 
-// Build content script separately
-const contentScriptBuild = defineConfig({
-    build: {
-        lib: {
-            entry: resolve(__dirname, "src/core/content-script/content-script.tsx"),
-            name: "content",
-            fileName: () => "content.iife.js",
-            formats: ["iife"],
-        },
-        outDir: "dist",
-        emptyOutDir: false,
-        rollupOptions: {
-            output: {
-                extend: true,
-                inlineDynamicImports: true,
-            },
-        },
-        watch: null, // Remove watch config to prevent hanging
-    },
-    define: {
-        "process.env.NODE_ENV": JSON.stringify("production"),
-        "process.env": JSON.stringify({}),
-    },
-    plugins: [react()],
-});
+export default defineConfig(({ mode }) => {
+    const isDev = mode === "development";
+    const isContentScript = process.env.CONTENT_SCRIPT === "1";
 
-// Main extension build
-const mainBuild = defineConfig({
-    plugins: [react(), ideIntegrationPlugin()],
-    build: {
-        rollupOptions: {
-            input: {
-                popup: resolve(__dirname, "index.html"),
-                background: resolve(__dirname, "src/core/background-script.ts"),
-            },
-            output: {
-                entryFileNames: "[name].js",
-                chunkFileNames: "chunks/[name].[hash].js",
-                assetFileNames: "assets/[name].[ext]",
-            },
+    const commonConfig = {
+        plugins: [react(), ideIntegrationPlugin()],
+        build: {
+            minify: !isDev,
+            sourcemap: true,
+            outDir: "dist",
+            emptyOutDir: !isContentScript,
+            watch: null, // Remove watch config to prevent hanging
         },
-        outDir: "dist",
-        emptyOutDir: true,
-        sourcemap: true,
-        assetsDir: "assets",
-        watch: null, // Remove watch config to prevent hanging
-    },
-    define: {
-        "process.env.NODE_ENV": JSON.stringify("production"),
-        "process.env": JSON.stringify({}),
-    },
-    css: {
-        modules: {
-            localsConvention: "camelCase",
+        define: {
+            "process.env.NODE_ENV": JSON.stringify(mode),
         },
-    },
-    optimizeDeps: {
-        include: ["react", "react-dom"],
-    },
-    publicDir: "public",
-    resolve: {
-        alias: {
-            "@": resolve(__dirname, "src"),
-        },
-    },
-    server: {
-        watch: {
-            ignored: ["**/node_modules/**", "**/dist/**", "**/extension/**"],
-            usePolling: true,
-            interval: 100,
-        },
-    },
-});
+    };
 
-export default process.env.CONTENT_SCRIPT ? contentScriptBuild : mainBuild;
+    if (isContentScript) {
+        return {
+            ...commonConfig,
+            build: {
+                ...commonConfig.build,
+                cssCodeSplit: false,
+                rollupOptions: {
+                    input: {
+                        content: resolve(__dirname, "src/core/content-script/content-script.tsx"),
+                    },
+                    output: {
+                        entryFileNames: "[name].iife.js",
+                        assetFileNames: (assetInfo) => {
+                            if (assetInfo.name === "style.css") return "style.css";
+                            return "assets/[name][extname]";
+                        },
+                        format: "iife",
+                        extend: true,
+                        inlineDynamicImports: true,
+                    },
+                },
+            },
+        };
+    }
+
+    return {
+        ...commonConfig,
+        build: {
+            ...commonConfig.build,
+            rollupOptions: {
+                input: {
+                    popup: resolve(__dirname, "src/core/extension-popup/extension-popup.tsx"),
+                    background: resolve(__dirname, "src/core/background-script/background.ts"),
+                },
+                output: {
+                    entryFileNames: "[name].js",
+                    chunkFileNames: "chunks/[name].[hash].js",
+                    assetFileNames: "assets/[name][extname]",
+                },
+            },
+        },
+        css: {
+            modules: {
+                localsConvention: "camelCase",
+            },
+        },
+        optimizeDeps: {
+            include: ["react", "react-dom"],
+        },
+        publicDir: "public",
+        resolve: {
+            alias: {
+                "@": resolve(__dirname, "src"),
+            },
+        },
+        server: {
+            watch: {
+                ignored: ["**/node_modules/**", "**/dist/**", "**/extension/**"],
+                usePolling: true,
+                interval: 100,
+            },
+        },
+    };
+});
