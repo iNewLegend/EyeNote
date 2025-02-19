@@ -5,76 +5,76 @@
 @tailwind utilities;
 
 @layer base {
-  * {
-    @apply m-0 p-0 box-border;
-  }
+    * {
+        @apply m-0 p-0 box-border;
+    }
 
-  .notes-plugin {
-    @apply font-sans text-foreground bg-background;
-  }
+    .notes-plugin {
+        @apply font-sans text-foreground bg-background;
+    }
 }
 
 @layer components {
-  .notes-plugin {
-    @apply fixed pointer-events-none top-0 left-0 w-full h-full z-plugin-container;
-  }
+    .notes-plugin {
+        @apply fixed pointer-events-none top-0 left-0 w-full h-full z-plugin-container;
+    }
 
-  .note-content {
-    @apply w-[300px] max-h-[80vh] overflow-y-auto bg-background text-foreground rounded-lg shadow-lg z-note-content;
-  }
+    .note-content {
+        @apply w-[300px] max-h-[80vh] overflow-y-auto bg-background text-foreground rounded-lg shadow-lg z-note-content;
+    }
 
-  [data-radix-dialog-overlay] {
-    @apply bg-background/80 backdrop-blur-sm fixed inset-0 z-dialog-overlay;
-  }
+    [data-radix-dialog-overlay] {
+        @apply bg-background/80 backdrop-blur-sm fixed inset-0 z-dialog-overlay;
+    }
 }
 
 [role="status"][data-state] {
-  @apply z-toast;
+    @apply z-toast;
 }
 
 body {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  @apply text-foreground bg-background;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    @apply text-foreground bg-background;
 }
 
 .notes-plugin {
-  position: fixed;
-  pointer-events: none;
+    position: fixed;
+    pointer-events: none;
 }
 
 .note-marker {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  @apply bg-primary rounded-full;
-  cursor: pointer;
-  pointer-events: auto;
-  transition: transform 0.2s ease;
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    @apply bg-primary rounded-full;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: transform 0.2s ease;
 }
 
 .note-marker:hover {
-  transform: scale(1.1);
-  @apply hover:bg-primary-hover;
+    transform: scale(1.1);
+    @apply hover:bg-primary-hover;
 }
 
 /* Add improved cursor-dot styling */
 @layer utilities {
-  .cursor-dot {
-    position: relative;
-  }
-  .cursor-dot::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100%;
-    height: 100%;
-    border-radius: 9999px;
-    background-color: currentColor;
-    animation: cursor-ping 1.3s cubic-bezier(0, 0, 0.2, 1) infinite;
-    pointer-events: none;
-  }
+    .cursor-dot {
+        position: relative;
+    }
+    .cursor-dot::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        border-radius: 9999px;
+        background-color: currentColor;
+        animation: cursor-ping 1.3s cubic-bezier(0, 0, 0.2, 1) infinite;
+        pointer-events: none;
+    }
 }

@@ -1,52 +1,55 @@
 /* CSS Variables */
 :root {
-  --primary-color: #4804ad;
-  --primary-light: rgba(72, 4, 173, 0.1);
-  --cursor-url: '';
+    --primary-color: #4804ad;
+    --primary-light: rgba(72, 4, 173, 0.1);
+    --cursor-url: "";
 }
 
 /* Base cursor styles */
 body.shift-pressed {
-  @apply cursor-none;
+    @apply cursor-none;
 }
 
 /* Performance optimized highlight styles */
 .eye-note-highlight {
-  @apply outline outline-2 outline-primary outline-offset-2 bg-primary-light/5 relative cursor-none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    @apply outline outline-2 outline-primary outline-offset-2 bg-primary-light/5 relative cursor-none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .eye-note-highlight:hover {
-  @apply bg-primary-light/10 outline-offset-4;
+    @apply bg-primary-light/10 outline-offset-4;
 }
 
 .eye-note-highlight * {
-  @apply bg-primary-light/5 cursor-none;
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    @apply bg-primary-light/5 cursor-none;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Cursor dot */
 .cursor-dot {
-  @apply w-2 h-2 bg-primary rounded-full fixed pointer-events-none z-highlight-element -translate-x-1/2 -translate-y-1/2 opacity-0;
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  filter: drop-shadow(0 0 4px rgba(72, 4, 173, 0.3));
+    @apply w-2 h-2 bg-primary rounded-full fixed pointer-events-none z-highlight-element -translate-x-1/2 -translate-y-1/2 opacity-0;
+    transition:
+        opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 0 4px rgba(72, 4, 173, 0.3));
 }
 
 /* Show cursor elements when shift is pressed */
 body.shift-pressed .cursor-dot {
-  @apply opacity-100;
+    @apply opacity-100;
 }
 
 /* Tailwind ping animation */
 @keyframes ping {
-  75%, 100% {
-    transform: scale(2);
-    opacity: 0;
-  }
+    75%,
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
 }
 
 /* Performance optimizations */
 :host-context(body.shift-pressed) .notes-plugin,
 :host-context(body.shift-pressed) .notes-plugin * {
-  @apply gpu-accelerated;
-} 
+    @apply gpu-accelerated;
+}

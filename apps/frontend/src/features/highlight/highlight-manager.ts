@@ -1,16 +1,16 @@
 export class HighlightManager {
-  private static instance: HighlightManager;
-  private currentHighlightedElement: Element | null = null;
-  private mutationObserver: MutationObserver;
-  private rafId: number | null = null;
-  private overlay: HTMLDivElement;
+    private static instance: HighlightManager;
+    private currentHighlightedElement: Element | null = null;
+    private mutationObserver: MutationObserver;
+    private rafId: number | null = null;
+    private overlay: HTMLDivElement;
 
-  private constructor() {
-    // Create highlight overlay element
-    this.overlay = document.createElement("div");
-    this.overlay.id = "eye-note-highlight-overlay";
-    this.overlay.className = "z-highlight-element";
-    this.overlay.style.cssText = `
+    private constructor() {
+        // Create highlight overlay element
+        this.overlay = document.createElement("div");
+        this.overlay.id = "eye-note-highlight-overlay";
+        this.overlay.className = "z-highlight-element";
+        this.overlay.style.cssText = `
       position: fixed;
       pointer-events: none;
       border: 2px solid var(--primary-color);
@@ -21,187 +21,182 @@ export class HighlightManager {
       opacity: 0;
       transform: scale(0.98);
     `;
-    document.body.appendChild(this.overlay);
+        document.body.appendChild(this.overlay);
 
-    // Create mutation observer to clean up highlights for removed elements
-    this.mutationObserver = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type === "childList") {
-          for (const node of mutation.removedNodes) {
-            if (
-              node instanceof Element &&
-              node === this.currentHighlightedElement
-            ) {
-              this.currentHighlightedElement = null;
-              this.updateOverlay(null);
+        // Create mutation observer to clean up highlights for removed elements
+        this.mutationObserver = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                if (mutation.type === "childList") {
+                    for (const node of mutation.removedNodes) {
+                        if (node instanceof Element && node === this.currentHighlightedElement) {
+                            this.currentHighlightedElement = null;
+                            this.updateOverlay(null);
+                        }
+                    }
+                }
             }
-          }
+        });
+
+        // Start observing document for removed nodes
+        this.mutationObserver.observe(document.body, {
+            childList: true,
+            subtree: true,
+        });
+
+        console.log("[HighlightManager] Initialized");
+    }
+
+    private logHighlightOperation(operation: string, element: Element): void {
+        console.log(`[HighlightManager] ${operation}:`, {
+            element: {
+                tag: element.tagName,
+                id: element.id,
+                class: element.className,
+                text: element.textContent?.slice(0, 50),
+            },
+            currentHighlighted: this.currentHighlightedElement
+                ? {
+                      tag: this.currentHighlightedElement.tagName,
+                      id: this.currentHighlightedElement.id,
+                      class: this.currentHighlightedElement.className,
+                  }
+                : null,
+        });
+    }
+
+    static getInstance(): HighlightManager {
+        if (!HighlightManager.instance) {
+            HighlightManager.instance = new HighlightManager();
         }
-      }
-    });
-
-    // Start observing document for removed nodes
-    this.mutationObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-
-    console.log("[HighlightManager] Initialized");
-  }
-
-  private logHighlightOperation(operation: string, element: Element): void {
-    console.log(`[HighlightManager] ${operation}:`, {
-      element: {
-        tag: element.tagName,
-        id: element.id,
-        class: element.className,
-        text: element.textContent?.slice(0, 50),
-      },
-      currentHighlighted: this.currentHighlightedElement
-        ? {
-            tag: this.currentHighlightedElement.tagName,
-            id: this.currentHighlightedElement.id,
-            class: this.currentHighlightedElement.className,
-          }
-        : null,
-    });
-  }
-
-  static getInstance(): HighlightManager {
-    if (!HighlightManager.instance) {
-      HighlightManager.instance = new HighlightManager();
-    }
-    return HighlightManager.instance;
-  }
-
-  private updateOverlay(element: Element | null): void {
-    if (!element) {
-      this.overlay.style.opacity = "0";
-      this.overlay.style.transform = "scale(0.98)";
-      return;
-    }
-    const rect = element.getBoundingClientRect();
-    this.overlay.style.display = "block";
-    this.overlay.style.top = rect.top + "px";
-    this.overlay.style.left = rect.left + "px";
-    this.overlay.style.width = rect.width + "px";
-    this.overlay.style.height = rect.height + "px";
-
-    // Use RAF to ensure smooth animation
-    requestAnimationFrame(() => {
-      this.overlay.style.opacity = "1";
-      this.overlay.style.transform = "scale(1)";
-    });
-  }
-
-  addHighlight(element: Element): void {
-    if (!element || element.closest(".notes-plugin")) {
-      return;
+        return HighlightManager.instance;
     }
 
-    try {
-      // Skip if element is already highlighted
-      if (element === this.currentHighlightedElement) {
-        return;
-      }
-
-      this.logHighlightOperation("Adding highlight", element);
-
-      // Cancel any pending RAF
-      if (this.rafId) {
-        cancelAnimationFrame(this.rafId);
-      }
-
-      // Remove highlight from previous element
-      if (this.currentHighlightedElement) {
-        if (this.currentHighlightedElement instanceof HTMLElement) {
-          this.currentHighlightedElement.style.cursor = "";
+    private updateOverlay(element: Element | null): void {
+        if (!element) {
+            this.overlay.style.opacity = "0";
+            this.overlay.style.transform = "scale(0.98)";
+            return;
         }
-      }
+        const rect = element.getBoundingClientRect();
+        this.overlay.style.display = "block";
+        this.overlay.style.top = rect.top + "px";
+        this.overlay.style.left = rect.left + "px";
+        this.overlay.style.width = rect.width + "px";
+        this.overlay.style.height = rect.height + "px";
 
-      // Update current highlighted element and overlay
-      this.currentHighlightedElement = element;
-      this.updateOverlay(element);
-
-      // Update cursor style if element is HTMLElement
-      if (element instanceof HTMLElement) {
-        element.style.cursor = `url(${chrome.runtime.getURL(
-          "cursor.png"
-        )}) 6 6, crosshair`;
-      }
-    } catch (error) {
-      console.error("[HighlightManager] Error adding highlight:", error);
+        // Use RAF to ensure smooth animation
+        requestAnimationFrame(() => {
+            this.overlay.style.opacity = "1";
+            this.overlay.style.transform = "scale(1)";
+        });
     }
-  }
 
-  removeHighlight(element: Element): void {
-    if (!element) return;
+    addHighlight(element: Element): void {
+        if (!element || element.closest(".notes-plugin")) {
+            return;
+        }
 
-    try {
-      // Only remove if it's the current highlighted element
-      if (element !== this.currentHighlightedElement) {
-        return;
-      }
+        try {
+            // Skip if element is already highlighted
+            if (element === this.currentHighlightedElement) {
+                return;
+            }
 
-      this.logHighlightOperation("Removing highlight", element);
+            this.logHighlightOperation("Adding highlight", element);
 
-      // Cancel any pending RAF
-      if (this.rafId) {
-        cancelAnimationFrame(this.rafId);
-      }
+            // Cancel any pending RAF
+            if (this.rafId) {
+                cancelAnimationFrame(this.rafId);
+            }
 
-      // Reset cursor style if element is HTMLElement
-      if (element instanceof HTMLElement) {
-        element.style.cursor = "";
-      }
+            // Remove highlight from previous element
+            if (this.currentHighlightedElement) {
+                if (this.currentHighlightedElement instanceof HTMLElement) {
+                    this.currentHighlightedElement.style.cursor = "";
+                }
+            }
 
-      // Clear current highlighted element and hide overlay
-      this.currentHighlightedElement = null;
-      this.updateOverlay(null);
-    } catch (error) {
-      console.error("[HighlightManager] Error removing highlight:", error);
+            // Update current highlighted element and overlay
+            this.currentHighlightedElement = element;
+            this.updateOverlay(element);
+
+            // Update cursor style if element is HTMLElement
+            if (element instanceof HTMLElement) {
+                element.style.cursor = `url(${chrome.runtime.getURL("cursor.png")}) 6 6, crosshair`;
+            }
+        } catch (error) {
+            console.error("[HighlightManager] Error adding highlight:", error);
+        }
     }
-  }
 
-  clearAllHighlights(): void {
-    try {
-      console.log("[HighlightManager] Clearing all highlights");
+    removeHighlight(element: Element): void {
+        if (!element) return;
 
-      // Cancel any pending RAF
-      if (this.rafId) {
-        cancelAnimationFrame(this.rafId);
-      }
+        try {
+            // Only remove if it's the current highlighted element
+            if (element !== this.currentHighlightedElement) {
+                return;
+            }
 
-      // Reset cursor style if current element is HTMLElement
-      if (this.currentHighlightedElement instanceof HTMLElement) {
-        this.currentHighlightedElement.style.cursor = "";
-      }
+            this.logHighlightOperation("Removing highlight", element);
 
-      // Clear current highlighted element and hide overlay
-      this.currentHighlightedElement = null;
-      this.updateOverlay(null);
-    } catch (error) {
-      console.error("[HighlightManager] Error clearing highlights:", error);
+            // Cancel any pending RAF
+            if (this.rafId) {
+                cancelAnimationFrame(this.rafId);
+            }
+
+            // Reset cursor style if element is HTMLElement
+            if (element instanceof HTMLElement) {
+                element.style.cursor = "";
+            }
+
+            // Clear current highlighted element and hide overlay
+            this.currentHighlightedElement = null;
+            this.updateOverlay(null);
+        } catch (error) {
+            console.error("[HighlightManager] Error removing highlight:", error);
+        }
     }
-  }
 
-  isHighlighted(element: Element): boolean {
-    return this.currentHighlightedElement === element;
-  }
+    clearAllHighlights(): void {
+        try {
+            console.log("[HighlightManager] Clearing all highlights");
 
-  getHighlightedElements(): Set<Element> {
-    return this.currentHighlightedElement
-      ? new Set([this.currentHighlightedElement])
-      : new Set();
-  }
+            // Cancel any pending RAF
+            if (this.rafId) {
+                cancelAnimationFrame(this.rafId);
+            }
 
-  destroy(): void {
-    this.clearAllHighlights();
-    this.mutationObserver.disconnect();
-    if (this.rafId) {
-      cancelAnimationFrame(this.rafId);
-      this.rafId = null;
+            // Reset cursor style if current element is HTMLElement
+            if (this.currentHighlightedElement instanceof HTMLElement) {
+                this.currentHighlightedElement.style.cursor = "";
+            }
+
+            // Clear current highlighted element and hide overlay
+            this.currentHighlightedElement = null;
+            this.updateOverlay(null);
+        } catch (error) {
+            console.error("[HighlightManager] Error clearing highlights:", error);
+        }
     }
-    this.overlay.remove();
-  }
+
+    isHighlighted(element: Element): boolean {
+        return this.currentHighlightedElement === element;
+    }
+
+    getHighlightedElements(): Set<Element> {
+        return this.currentHighlightedElement
+            ? new Set([this.currentHighlightedElement])
+            : new Set();
+    }
+
+    destroy(): void {
+        this.clearAllHighlights();
+        this.mutationObserver.disconnect();
+        if (this.rafId) {
+            cancelAnimationFrame(this.rafId);
+            this.rafId = null;
+        }
+        this.overlay.remove();
+    }
 }

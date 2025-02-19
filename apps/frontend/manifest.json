@@ -1,61 +1,61 @@
 {
-  "manifest_version": 3,
-  "name": "EyeNote",
-  "version": "1.0.0",
-  "description": "Create and share notes on any webpage element - see what others see!",
-  "permissions": ["activeTab", "storage", "scripting", "identity"],
-  "host_permissions": [
-    "<all_urls>",
-    "https://accounts.google.com/*",
-    "https://www.googleapis.com/*"
-  ],
-  "oauth2": {
-    "client_id": "655366359218-u22o0btbt68bhisgae68qsvisci1gdtg.apps.googleusercontent.com",
-    "scopes": [
-      "https://www.googleapis.com/auth/userinfo.email",
-      "https://www.googleapis.com/auth/userinfo.profile"
-    ]
-  },
-  "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
+    "manifest_version": 3,
+    "name": "EyeNote",
+    "version": "1.0.0",
+    "description": "Create and share notes on any webpage element - see what others see!",
+    "permissions": ["activeTab", "storage", "scripting", "identity"],
+    "host_permissions": [
+        "<all_urls>",
+        "https://accounts.google.com/*",
+        "https://www.googleapis.com/*"
+    ],
+    "oauth2": {
+        "client_id": "655366359218-u22o0btbt68bhisgae68qsvisci1gdtg.apps.googleusercontent.com",
+        "scopes": [
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile"
+        ]
+    },
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "icons/icon16.png",
+            "48": "icons/icon48.png",
+            "128": "icons/icon128.png"
+        }
+    },
+    "background": {
+        "service_worker": "background.js",
+        "type": "module"
+    },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["content.iife.js"],
+            "css": ["style.css"],
+            "run_at": "document_end"
+        }
+    ],
+    "icons": {
+        "16": "icons/icon16.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "assets/*",
+                "chunks/*",
+                "cursor.png",
+                "style.css",
+                "icons/*",
+                "*.css",
+                "*.css.map"
+            ],
+            "matches": ["<all_urls>"]
+        }
+    ],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'"
     }
-  },
-  "background": {
-    "service_worker": "background.js",
-    "type": "module"
-  },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.iife.js"],
-      "css": ["style.css"],
-      "run_at": "document_end"
-    }
-  ],
-  "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
-  },
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "assets/*",
-        "chunks/*",
-        "cursor.png",
-        "style.css",
-        "icons/*",
-        "*.css",
-        "*.css.map"
-      ],
-      "matches": ["<all_urls>"]
-    }
-  ],
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
-  }
 }

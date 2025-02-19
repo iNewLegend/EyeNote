@@ -7,11 +7,11 @@ import "./styles/index.css";
 import "./core/extension-popup/extension-popup.css";
 
 createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <ThemeProvider defaultTheme="dark">
-      <ToastContextProvider>
-        <ExtensionPopup />
-      </ToastContextProvider>
-    </ThemeProvider>
-  </React.StrictMode>
+    <React.StrictMode>
+        <ThemeProvider defaultTheme="dark">
+            <ToastContextProvider>
+                <ExtensionPopup />
+            </ToastContextProvider>
+        </ThemeProvider>
+    </React.StrictMode>
 );

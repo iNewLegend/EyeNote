@@ -3,64 +3,63 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-  }
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
+    }
 }
 
 @layer components {
+    html,
+    body {
+        @apply m-0 p-0 w-[350px] h-[500px] bg-background text-foreground overflow-hidden;
+    }
 
-  html,
-  body {
-    @apply m-0 p-0 w-[350px] h-[500px] bg-background text-foreground overflow-hidden;
-  }
+    #root {
+        @apply w-full h-full flex flex-col;
+    }
 
-  #root {
-    @apply w-full h-full flex flex-col;
-  }
+    .popup {
+        @apply w-full h-full font-sans;
+    }
 
-  .popup {
-    @apply w-full h-full font-sans;
-  }
+    .popup h1 {
+        @apply text-2xl font-semibold text-foreground;
+    }
 
-  .popup h1 {
-    @apply text-2xl font-semibold text-foreground;
-  }
+    .popup h2 {
+        @apply text-lg font-medium my-4 text-foreground;
+    }
 
-  .popup h2 {
-    @apply text-lg font-medium my-4 text-foreground;
-  }
+    .settings {
+        @apply mb-6 space-y-3;
+    }
 
-  .settings {
-    @apply mb-6 space-y-3;
-  }
+    .settings label {
+        @apply flex items-center gap-2 cursor-pointer hover:bg-accent/50 p-2 rounded-md transition-colors;
+    }
 
-  .settings label {
-    @apply flex items-center gap-2 cursor-pointer hover:bg-accent/50 p-2 rounded-md transition-colors;
-  }
+    .settings input[type="checkbox"] {
+        @apply h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer;
+    }
 
-  .settings input[type="checkbox"] {
-    @apply h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer;
-  }
+    .groups {
+        @apply mb-6;
+    }
 
-  .groups {
-    @apply mb-6;
-  }
+    .groups ul {
+        @apply list-none p-0 m-0 space-y-2;
+    }
 
-  .groups ul {
-    @apply list-none p-0 m-0 space-y-2;
-  }
+    .groups li {
+        @apply p-2 bg-accent rounded-md text-sm font-medium;
+    }
 
-  .groups li {
-    @apply p-2 bg-accent rounded-md text-sm font-medium;
-  }
+    .instructions {
+        @apply p-3 bg-primary/10 rounded-md border border-primary/20;
+    }
 
-  .instructions {
-    @apply p-3 bg-primary/10 rounded-md border border-primary/20;
-  }
-
-  .instructions p {
-    @apply m-0 text-foreground text-sm;
-  }
+    .instructions p {
+        @apply m-0 text-foreground text-sm;
+    }
 }

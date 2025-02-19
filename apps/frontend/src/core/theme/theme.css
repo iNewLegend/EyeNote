@@ -1,60 +1,60 @@
 /* Updated Theme CSS: Use only :host selectors for plugin isolation */
 
 :host {
-  /* Base colors in HSL */
-  --primary: 272 95% 34%;
-  --primary-light: 272 95% 34% / 0.1;
+    /* Base colors in HSL */
+    --primary: 272 95% 34%;
+    --primary-light: 272 95% 34% / 0.1;
 
-  --background: 272 20% 12%;
-  --foreground: 0 0% 100%;
-  --card: 272 20% 12%;
-  --card-foreground: 0 0% 100%;
-  --popover: 272 20% 12%;
-  --popover-foreground: 0 0% 100%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 272 93% 95%;
-  --secondary-foreground: 272 93% 35%;
-  --muted: 0 0% 15%;
-  --muted-foreground: 0 0% 65%;
-  --accent: 272 93% 95%;
-  --accent-foreground: 272 93% 35%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 272 20% 25%;
-  --input: 272 30% 15%;
-  --ring: 272 93% 35%;
-  --radius: 0.5rem;
+    --background: 272 20% 12%;
+    --foreground: 0 0% 100%;
+    --card: 272 20% 12%;
+    --card-foreground: 0 0% 100%;
+    --popover: 272 20% 12%;
+    --popover-foreground: 0 0% 100%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 272 93% 95%;
+    --secondary-foreground: 272 93% 35%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 272 93% 95%;
+    --accent-foreground: 272 93% 35%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 272 20% 25%;
+    --input: 272 30% 15%;
+    --ring: 272 93% 35%;
+    --radius: 0.5rem;
 
-  /* Custom theme colors */
-  --primary-color: #4804ad;
-  --primary-hover: 283 61% 29%;
-  --text-color: #ffffff;
-  --background-color: #1a1325;
-  --border-color: #2f1136;
-  --shadow-color: rgba(0, 0, 0, 0.3);
+    /* Custom theme colors */
+    --primary-color: #4804ad;
+    --primary-hover: 283 61% 29%;
+    --text-color: #ffffff;
+    --background-color: #1a1325;
+    --border-color: #2f1136;
+    --shadow-color: rgba(0, 0, 0, 0.3);
 }
 
 /** Currently not in use */
 :host.light {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 272 93% 95%;
-  --secondary-foreground: 272 93% 35%;
-  --muted: 0 0% 96.1%;
-  --muted-foreground: 0 0% 45.1%;
-  --accent: 272 93% 95%;
-  --accent-foreground: 272 93% 35%;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 272 93% 95%;
+    --secondary-foreground: 272 93% 35%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 272 93% 95%;
+    --accent-foreground: 272 93% 35%;
 
-  /* Custom theme colors - adjusted for light mode */
-  --primary-color: #6209e5;
-  --primary-light: rgba(98, 9, 229, 0.15);
-  --text-color: #1a1325;
-  --background-color: #ffffff;
-  --border-color: #e5e7eb;
-  --shadow-color: rgba(0, 0, 0, 0.1);
-} 
+    /* Custom theme colors - adjusted for light mode */
+    --primary-color: #6209e5;
+    --primary-light: rgba(98, 9, 229, 0.15);
+    --text-color: #1a1325;
+    --background-color: #ffffff;
+    --border-color: #e5e7eb;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+}

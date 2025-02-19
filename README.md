@@ -26,18 +26,18 @@ See what others see! EyeNote is a browser extension that lets you create and sha
 
 1. Clone this repository
 2. Install dependencies:
-   ```bash
-   pnpm install
-   ```
+    ```bash
+    pnpm install
+    ```
 3. Start development:
-   ```bash
-   pnpm watch
-   ```
+    ```bash
+    pnpm watch
+    ```
 4. Load the extension in Chrome:
-   - Go to `chrome://extensions/`
-   - Enable "Developer mode"
-   - Click "Load unpacked"
-   - Select the `apps/frontend/extension` directory
+    - Go to `chrome://extensions/`
+    - Enable "Developer mode"
+    - Click "Load unpacked"
+    - Select the `apps/frontend/extension` directory
 
 ## Usage
 
