@@ -12,6 +12,7 @@ export function useShiftHover() {
         isShiftMode,
         setShiftMode,
         clearAllHighlights,
+        highlightedElements,
     } = useHighlightStore();
     const { hasNoteForElement } = useNotesStore();
 
@@ -35,8 +36,8 @@ export function useShiftHover() {
             const element = document.elementFromPoint(e.clientX, e.clientY);
             if (!element || element === lastProcessedElement.current) return;
 
-            // Don't highlight elements that already have notes
-            if (hasNoteForElement(element)) {
+            // Don't highlight elements that already have notes, unless they're already highlighted
+            if (hasNoteForElement(element) && !highlightedElements.has(element)) {
                 setHoveredElement(null);
                 lastProcessedElement.current = element;
                 return;
@@ -64,7 +65,14 @@ export function useShiftHover() {
             setShiftMode(false);
             clearAllHighlights();
         };
-    }, [isShiftMode, setShiftMode, setHoveredElement, clearAllHighlights, hasNoteForElement]);
+    }, [
+        isShiftMode,
+        setShiftMode,
+        setHoveredElement,
+        clearAllHighlights,
+        hasNoteForElement,
+        highlightedElements,
+    ]);
 
     return {
         hoveredElement,
