@@ -16,6 +16,7 @@ export function useShiftHover() {
     } = useHighlightStore();
     const { hasNoteForElement } = useNotesStore();
 
+    // Handle shift key events
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Shift" && !isShiftMode) {
@@ -30,8 +31,25 @@ export function useShiftHover() {
             }
         };
 
+        document.addEventListener("keydown", handleKeyDown);
+        document.addEventListener("keyup", handleKeyUp);
+
+        return () => {
+            document.removeEventListener("keydown", handleKeyDown);
+            document.removeEventListener("keyup", handleKeyUp);
+        };
+    }, [isShiftMode, setShiftMode, clearAllHighlights]);
+
+    // Handle mouse movement
+    useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
-            if (!isShiftMode) return;
+            if (!isShiftMode) {
+                if (lastProcessedElement.current) {
+                    setHoveredElement(null);
+                    lastProcessedElement.current = null;
+                }
+                return;
+            }
 
             const element = document.elementFromPoint(e.clientX, e.clientY);
             if (!element || element === lastProcessedElement.current) return;
@@ -54,25 +72,22 @@ export function useShiftHover() {
             lastProcessedElement.current = element;
         };
 
-        document.addEventListener("keydown", handleKeyDown);
-        document.addEventListener("keyup", handleKeyUp);
         document.addEventListener("mousemove", handleMouseMove);
 
         return () => {
-            document.removeEventListener("keydown", handleKeyDown);
-            document.removeEventListener("keyup", handleKeyUp);
             document.removeEventListener("mousemove", handleMouseMove);
-            setShiftMode(false);
-            clearAllHighlights();
         };
-    }, [
-        isShiftMode,
-        setShiftMode,
-        setHoveredElement,
-        clearAllHighlights,
-        hasNoteForElement,
-        highlightedElements,
-    ]);
+    }, [isShiftMode, setHoveredElement, hasNoteForElement, highlightedElements]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (isShiftMode) {
+                clearAllHighlights();
+                setShiftMode(false);
+            }
+        };
+    }, []);
 
     return {
         hoveredElement,
