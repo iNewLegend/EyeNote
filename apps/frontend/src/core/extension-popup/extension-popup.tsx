@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { createRoot } from "react-dom/client";
 import { AuthDialog } from "../../components/auth-dialog.tsx";
 import { Button } from "../../components/ui/button.tsx";
 import { toast } from "sonner";
@@ -12,6 +13,7 @@ import {
 } from "../../components/ui/card.tsx";
 import { Switch } from "../../components/ui/switch.tsx";
 import { Label } from "../../components/ui/label.tsx";
+import { ThemeProvider } from "../theme/theme-provider";
 import "./extension-popup.css";
 
 interface User {
@@ -238,4 +240,32 @@ export function ExtensionPopup() {
             <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
         </>
     );
+}
+
+// Mount the app
+console.log("Popup mounting...");
+
+try {
+    const rootElement = document.getElementById("root");
+    console.log("Found root element:", rootElement);
+
+    if (!rootElement) {
+        throw new Error("Root element not found");
+    }
+
+    const root = createRoot(rootElement);
+    console.log("Created React root");
+
+    root.render(
+        <React.StrictMode>
+            <ThemeProvider defaultTheme="dark">
+                <ExtensionPopup />
+                <Toaster />
+            </ThemeProvider>
+        </React.StrictMode>
+    );
+
+    console.log("Rendered React app");
+} catch (error) {
+    console.error("Error mounting React app:", error);
 }
