@@ -55,7 +55,8 @@ const mockChromeAPI = {
                             id: "dev",
                             email: "dev@example.com",
                             name: "Developer",
-                            picture: "https://via.placeholder.com/40",
+                            picture:
+                                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQCAvE4NQuOnrjboZSCZCOfDv7ry3l4yysuLg&s",
                         },
                     });
                 } else if (message.type === "SIGN_OUT") {
@@ -133,43 +134,50 @@ export function ExtensionPopup() {
     return (
         <>
             <Toaster />
-            <Card className="w-full h-full border-none shadow-none rounded-none bg-background">
-                <CardHeader className="pb-4 bg-background sticky top-0 z-10">
+            <Card className="w-[350px] h-[500px] border-none shadow-none rounded-none bg-background overflow-hidden flex flex-col">
+                <CardHeader className="pb-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 border-b">
                     <div className="flex items-center justify-between">
-                        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary/90 to-primary bg-clip-text text-transparent">
-                            EyeNote
-                        </CardTitle>
+                        <div className="space-y-1">
+                            <CardTitle className="text-xl font-bold bg-gradient-to-r from-primary/90 to-primary bg-clip-text text-transparent">
+                                EyeNote
+                            </CardTitle>
+                            {isAuthenticated && user && (
+                                <CardDescription className="text-sm">{user.name}</CardDescription>
+                            )}
+                        </div>
                         {isAuthenticated ? (
                             <div className="flex items-center gap-2">
                                 {user?.picture && (
                                     <img
                                         src={user.picture}
                                         alt={user.name}
-                                        className="w-8 h-8 rounded-full"
+                                        className="w-8 h-8 rounded-full ring-1 ring-border"
                                     />
                                 )}
-                                <Button variant="outline" size="sm" onClick={handleSignOut}>
+                                <Button variant="ghost" size="sm" onClick={handleSignOut}>
                                     Sign Out
                                 </Button>
                             </div>
                         ) : (
-                            <Button variant="outline" size="sm" onClick={() => setIsAuthOpen(true)}>
+                            <Button variant="default" size="sm" onClick={() => setIsAuthOpen(true)}>
                                 Sign In
                             </Button>
                         )}
                     </div>
-                    {isAuthenticated && user && (
-                        <CardDescription className="mt-2">Signed in as {user.name}</CardDescription>
-                    )}
                 </CardHeader>
 
                 {isAuthenticated ? (
-                    <CardContent className="space-y-6 pb-6">
+                    <CardContent className="p-6 space-y-8 flex-1 overflow-auto">
                         <div className="space-y-4">
-                            <h2 className="text-lg font-semibold">Settings</h2>
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <Label htmlFor="enable-notes" className="flex-1">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-sm font-semibold">Settings</h2>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between space-x-4">
+                                    <Label
+                                        htmlFor="enable-notes"
+                                        className="flex-1 text-sm font-normal"
+                                    >
                                         Enable Notes
                                     </Label>
                                     <Switch
@@ -178,8 +186,11 @@ export function ExtensionPopup() {
                                         onCheckedChange={() => toggleSetting("enabled")}
                                     />
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <Label htmlFor="notification-sound" className="flex-1">
+                                <div className="flex items-center justify-between space-x-4">
+                                    <Label
+                                        htmlFor="notification-sound"
+                                        className="flex-1 text-sm font-normal"
+                                    >
                                         Notification Sound
                                     </Label>
                                     <Switch
@@ -188,8 +199,11 @@ export function ExtensionPopup() {
                                         onCheckedChange={() => toggleSetting("notificationSound")}
                                     />
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <Label htmlFor="unread-badge" className="flex-1">
+                                <div className="flex items-center justify-between space-x-4">
+                                    <Label
+                                        htmlFor="unread-badge"
+                                        className="flex-1 text-sm font-normal"
+                                    >
                                         Show Unread Badge
                                     </Label>
                                     <Switch
@@ -202,18 +216,21 @@ export function ExtensionPopup() {
                         </div>
 
                         <div className="space-y-4">
-                            <h2 className="text-lg font-semibold">Active Groups</h2>
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-sm font-semibold">Active Groups</h2>
+                            </div>
                             {activeGroups.length === 0 ? (
-                                <CardDescription>
+                                <div className="text-sm text-muted-foreground">
                                     No active groups. Join a group to start collaborating!
-                                </CardDescription>
+                                </div>
                             ) : (
                                 <div className="space-y-2">
                                     {activeGroups.map((group) => (
                                         <div
                                             key={group}
-                                            className="p-2 bg-secondary rounded-md text-sm font-medium"
+                                            className="flex items-center p-2 bg-secondary/50 rounded-md text-sm"
                                         >
+                                            <span className="w-2 h-2 rounded-full bg-primary mr-2" />
                                             {group}
                                         </div>
                                     ))}
@@ -221,18 +238,57 @@ export function ExtensionPopup() {
                             )}
                         </div>
 
-                        <div className="rounded-md bg-primary/10 border border-primary/20 p-3">
-                            <p className="text-sm text-muted-foreground">
-                                Hold SHIFT + Click to create a note on any webpage element.
-                            </p>
+                        <div className="rounded-lg bg-primary/10 border border-primary/20 p-4">
+                            <div className="flex gap-3 items-start">
+                                <div className="p-1.5 bg-primary/20 rounded-md">
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="text-primary"
+                                    >
+                                        <circle cx="12" cy="12" r="10" />
+                                        <path d="M12 16v-4" />
+                                        <path d="M12 8h.01" />
+                                    </svg>
+                                </div>
+                                <p className="text-sm text-primary-foreground/80">
+                                    Hold{" "}
+                                    <kbd className="px-1.5 py-0.5 text-[10px] font-mono border rounded-md bg-muted">
+                                        SHIFT
+                                    </kbd>{" "}
+                                    + Click to create a note on any webpage element.
+                                </p>
+                            </div>
                         </div>
                     </CardContent>
                 ) : (
-                    <CardContent className="text-center py-6">
-                        <CardDescription className="text-base mb-6">
-                            Sign in to start creating and sharing notes across the web.
-                        </CardDescription>
-                        <Button onClick={() => setIsAuthOpen(true)}>Get Started</Button>
+                    <CardContent className="flex-1 flex flex-col items-center justify-center p-6">
+                        <div className="space-y-8 text-center">
+                            <div className="space-y-6">
+                                <div className="mx-auto w-fit">
+                                    <img
+                                        src="/icons/icon.svg"
+                                        alt="EyeNote Logo"
+                                        className="w-24 h-24 animate-in zoom-in duration-500"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-xl font-semibold">Welcome to EyeNote</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        Sign in to start creating and sharing notes across the web.
+                                    </p>
+                                </div>
+                            </div>
+                            <Button size="lg" onClick={() => setIsAuthOpen(true)}>
+                                Get Started
+                            </Button>
+                        </div>
                     </CardContent>
                 )}
             </Card>
