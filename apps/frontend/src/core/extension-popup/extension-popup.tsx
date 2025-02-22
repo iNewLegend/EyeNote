@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { AuthDialog } from "../../components/auth-dialog.tsx";
 import { Button } from "../../components/ui/button.tsx";
-import { ToastContextProvider } from "../../components/ui/toast-context.tsx";
-import { useToast } from "../../components/ui/toast-context.tsx";
+import { toast } from "sonner";
+import { Toaster } from "../../components/ui/sonner.tsx";
 import {
     Card,
     CardContent,
@@ -79,7 +79,6 @@ export function ExtensionPopup() {
     const [isAuthOpen, setIsAuthOpen] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [user, setUser] = useState<User | null>(null);
-    const { toast } = useToast();
 
     useEffect(() => {
         // Load settings
@@ -109,14 +108,12 @@ export function ExtensionPopup() {
             if (response.success) {
                 setIsAuthenticated(false);
                 setUser(null);
-                toast({
-                    title: "Signed out",
+                toast("Signed out", {
                     description: "You have been successfully signed out",
                 });
             }
         } catch (error) {
-            toast({
-                title: "Error",
+            toast("Error", {
                 description: "Failed to sign out. Please try again.",
             });
         }
@@ -132,7 +129,8 @@ export function ExtensionPopup() {
     };
 
     return (
-        <ToastContextProvider>
+        <>
+            <Toaster />
             <Card className="w-full h-full border-none shadow-none rounded-none bg-background">
                 <CardHeader className="pb-4 bg-background sticky top-0 z-10">
                     <div className="flex items-center justify-between">
@@ -238,6 +236,6 @@ export function ExtensionPopup() {
             </Card>
 
             <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
-        </ToastContextProvider>
+        </>
     );
 }

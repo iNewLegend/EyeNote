@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Button } from "./ui/button";
-import { useToast } from "./ui/toast-context";
+import { toast } from "sonner";
 import { useAuthStore } from "../stores/auth-store";
 
 interface AuthDialogProps {
@@ -10,19 +10,16 @@ interface AuthDialogProps {
 
 export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
     const { signIn } = useAuthStore();
-    const { toast } = useToast();
 
     const handleSignIn = async () => {
         try {
             await signIn();
             onClose();
-            toast({
-                title: "Success",
+            toast("Success", {
                 description: "You have been successfully signed in",
             });
         } catch (error) {
-            toast({
-                title: "Error",
+            toast("Error", {
                 description: "Failed to sign in. Please try again.",
             });
         }

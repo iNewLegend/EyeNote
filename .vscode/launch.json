@@ -5,7 +5,7 @@
             "name": "Launch Chrome Extension",
             "type": "chrome",
             "request": "launch",
-            "url": "https://index.co.il",
+            "url": "https://github.com/iNewLegend/iNewLegend",
             "webRoot": "${workspaceFolder}/apps/frontend",
             "sourceMaps": true,
             "runtimeExecutable": "stable",

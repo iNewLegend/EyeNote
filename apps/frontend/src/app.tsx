@@ -1,11 +1,10 @@
 import { useEffect, useCallback } from "react";
-import { useToast } from "./components/ui/toast-context";
+import { toast } from "sonner";
 import { useNotesStore } from "./stores/notes-store";
 import { NoteComponent } from "./features/notes/note-component";
 import { useShiftHover } from "./hooks/use-shift-hover";
 
 function App() {
-    const { toast } = useToast();
     const { notes, createNote } = useNotesStore();
     const { hoveredElement, setHoveredElement, setSelectedElement, isShiftMode } = useShiftHover();
 
@@ -48,7 +47,7 @@ function App() {
                     key={note.id}
                     note={note}
                     setSelectedElement={setSelectedElement}
-                    onUpdateToast={(title, description) => toast({ title, description })}
+                    onUpdateToast={(title, description) => toast(title, { description })}
                 />
             ))}
         </div>
