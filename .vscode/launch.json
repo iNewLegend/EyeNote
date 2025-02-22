@@ -5,16 +5,22 @@
             "name": "Launch Chrome Extension",
             "type": "chrome",
             "request": "launch",
-            "url": "https://dzen.ru",
+            "url": "https://index.co.il",
             "webRoot": "${workspaceFolder}/apps/frontend",
             "sourceMaps": true,
             "runtimeExecutable": "stable",
             "runtimeArgs": [
+                "--disable-web-security",
                 "--load-extension=${workspaceFolder}/apps/frontend/extension",
                 "--user-data-dir=${workspaceFolder}/.vscode/chrome-debug-profile"
             ],
             "preLaunchTask": "Watch Extension",
-            "skipFiles": ["chrome-extension://*", "chrome-error://*", "<node_internals>/**"],
+            "skipFiles": [
+                "chrome-extension://*",
+                "chrome-error://*",
+                "<node_internals>/**",
+                "**/node_modules/**"
+            ],
             "presentation": {
                 "hidden": false,
                 "group": "Extension",

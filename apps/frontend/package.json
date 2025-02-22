@@ -4,7 +4,7 @@
     "version": "0.0.0",
     "type": "module",
     "scripts": {
-        "watch": "concurrently \"cross-env CONTENT_SCRIPT=1 vite build --watch --mode development\" \"nodemon --watch dist --exec 'node scripts/prepare-extension.js'\"",
+        "watch": "concurrently \"vite build --watch --mode development\" \"cross-env CONTENT_SCRIPT=1 vite build --watch --mode development\" \"nodemon --watch dist --exec 'node scripts/prepare-extension.js'\"",
         "build": "tsc && vite build && cross-env CONTENT_SCRIPT=1 vite build && node scripts/prepare-extension.js",
         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "preview": "vite preview",
