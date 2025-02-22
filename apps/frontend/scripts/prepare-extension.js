@@ -5,8 +5,6 @@ import sharp from "sharp";
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
-const execAsync = promisify(exec);
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 const distDir = path.join(rootDir, "dist");
