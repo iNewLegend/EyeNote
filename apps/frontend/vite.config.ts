@@ -12,7 +12,9 @@ export default defineConfig(({ mode }) => {
             minify: !isDev,
             sourcemap: true,
             outDir: "dist",
-            emptyOutDir: !isContentScript,
+            emptyOutDir: false,
+            copyPublicDir: true,
+            assetsDir: "assets",
         },
         define: {
             "process.env.NODE_ENV": JSON.stringify(mode),

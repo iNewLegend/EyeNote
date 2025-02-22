@@ -17,7 +17,97 @@ chrome.runtime.onInstalled.addListener((details) => {
     } else if (details.reason === "update") {
         console.log("Extension updated");
     }
+
+    startBuildInfoCheck();
 });
+
+// Function to check build info
+async function checkBuildInfo() {
+    try {
+        const response = await fetch(chrome.runtime.getURL("build-info.json"));
+        if (!response.ok) {
+            throw new Error("Failed to fetch build info");
+        }
+
+        const buildInfo = await response.json();
+        const { currentBuildInfo } = await chrome.storage.local.get("currentBuildInfo");
+
+        // If there's no current build info, just set it without reloading
+        if (!currentBuildInfo) {
+            console.log("Setting initial build info:", buildInfo);
+            await chrome.storage.local.set({
+                currentBuildInfo: {
+                    version: buildInfo.version,
+                    buildId: buildInfo.buildId,
+                    timestamp: buildInfo.timestamp,
+                },
+            });
+            return;
+        }
+
+        // If we have current build info, check if it actually changed
+        if (
+            currentBuildInfo.version !== buildInfo.version ||
+            currentBuildInfo.buildId !== buildInfo.buildId
+        ) {
+            console.log("Build info changed:", {
+                from: {
+                    version: currentBuildInfo.version,
+                    buildId: currentBuildInfo.buildId,
+                },
+                to: {
+                    version: buildInfo.version,
+                    buildId: buildInfo.buildId,
+                },
+            });
+
+            // Store new build info
+            await chrome.storage.local.set({
+                currentBuildInfo: {
+                    version: buildInfo.version,
+                    buildId: buildInfo.buildId,
+                    timestamp: buildInfo.timestamp,
+                },
+            });
+
+            // Notify all tabs about the update
+            const tabs = await chrome.tabs.query({});
+            tabs.forEach((tab) => {
+                if (tab.id) {
+                    chrome.tabs
+                        .sendMessage(tab.id, {
+                            type: "BUILD_INFO_UPDATED",
+                            buildInfo,
+                        })
+                        .catch(() => {
+                            // Ignore errors for inactive tabs
+                        });
+                }
+            });
+
+            console.log("Reloading the extension due to build changes");
+            chrome.runtime.reload();
+        }
+    } catch (error) {
+        console.error("Error checking build info:", error);
+    }
+}
+
+// Keep track of the interval ID
+let buildInfoCheckInterval: NodeJS.Timeout | null = null;
+
+// Function to start build info check interval
+function startBuildInfoCheck() {
+    // Clear any existing interval
+    if (buildInfoCheckInterval !== null) {
+        clearInterval(buildInfoCheckInterval);
+    }
+
+    // Check immediately
+    checkBuildInfo();
+
+    buildInfoCheckInterval = setInterval(checkBuildInfo, 1000);
+}
 
 // Listen for messages from content script
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -125,8 +215,3 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         }
     }
 });
-setInterval(() => {
-    console.log("Reloading extension");
-    chrome.runtime.reload();
-}, 5000);
-

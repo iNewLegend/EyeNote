@@ -3,7 +3,7 @@
     "name": "EyeNote",
     "version": "1.0.0",
     "description": "Create and share notes on any webpage element - see what others see!",
-    "permissions": ["activeTab", "storage", "scripting", "identity"],
+    "permissions": ["activeTab", "storage", "scripting", "identity", "management"],
     "host_permissions": [
         "<all_urls>",
         "https://accounts.google.com/*",

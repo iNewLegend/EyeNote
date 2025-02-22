@@ -2,6 +2,10 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import sharp from "sharp";
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -14,29 +18,61 @@ const chunksDir = path.join(extensionDir, "chunks");
 async function ensureDirectoryExists(dir) {
     try {
         await fs.access(dir);
-        // If directory exists, remove it and its contents
-        await fs.rm(dir, { recursive: true, force: true });
+        // Instead of removing the directory, just ensure it exists
+        return;
     } catch (err) {
-        // Directory doesn't exist, that's fine
+        // Directory doesn't exist, create it
+        await fs.mkdir(dir, { recursive: true });
     }
-    await fs.mkdir(dir, { recursive: true });
 }
 
-async function copyFile(src, dest) {
+// Function to safely clean a directory without removing it
+async function cleanDirectory(dir) {
     try {
-        await fs.mkdir(path.dirname(dest), { recursive: true });
-        await fs.copyFile(src, dest);
-        console.log(`Copied ${path.basename(src)} to ${path.relative(rootDir, dest)}`);
+        await fs.access(dir);
+        const entries = await fs.readdir(dir, { withFileTypes: true });
+        
+        for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name);
+            try {
+                if (entry.isDirectory()) {
+                    await fs.rm(fullPath, { recursive: true, force: true });
+                } else {
+                    await fs.unlink(fullPath);
+                }
+            } catch (err) {
+                console.warn(`Warning: Could not remove ${fullPath}:`, err.message);
+            }
+        }
     } catch (err) {
-        if (err.code === "ENOENT") {
-            console.log(`Skipping ${path.basename(src)}: File not found`);
-        } else {
-            console.error(`Error copying ${src}: ${err.message}`);
+        // Directory doesn't exist, that's fine
+        await fs.mkdir(dir, { recursive: true });
+    }
+}
+
+async function copyFileWithRetry(src, dest, maxRetries = 3, delay = 1000) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            await fs.mkdir(path.dirname(dest), { recursive: true });
+            await fs.copyFile(src, dest);
+            console.log(`Copied ${path.basename(src)} to ${path.relative(rootDir, dest)}`);
+            return;
+        } catch (err) {
+            if (err.code === "ENOENT" && attempt < maxRetries) {
+                console.log(`Retry ${attempt}/${maxRetries} for ${path.basename(src)}: waiting ${delay}ms`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            } else if (attempt === maxRetries) {
+                if (err.code === "ENOENT") {
+                    console.log(`Skipping ${path.basename(src)}: File not found after ${maxRetries} attempts`);
+                } else {
+                    console.error(`Error copying ${src}: ${err.message}`);
+                }
+            }
         }
     }
 }
 
-async function copyDirectory(src, dest) {
+async function copyDirectoryWithRetry(src, dest, maxRetries = 3) {
     try {
         await fs.mkdir(dest, { recursive: true });
         const entries = await fs.readdir(src, { withFileTypes: true });
@@ -46,9 +82,9 @@ async function copyDirectory(src, dest) {
             const destPath = path.join(dest, entry.name);
 
             if (entry.isDirectory()) {
-                await copyDirectory(srcPath, destPath);
+                await copyDirectoryWithRetry(srcPath, destPath, maxRetries);
             } else {
-                await copyFile(srcPath, destPath);
+                await copyFileWithRetry(srcPath, destPath, maxRetries);
             }
         }
         console.log(`Copied directory ${path.basename(src)} to extension/`);
@@ -61,13 +97,43 @@ async function copyDirectory(src, dest) {
     }
 }
 
+async function getBuildHash() {
+    try {
+        // Get hash from key files that represent the build state
+        const files = [
+            path.join(distDir, "content.iife.js"),
+            path.join(distDir, "background.js"),
+            path.join(distDir, "popup.js")
+        ];
+
+        let contentHash = '';
+        for (const file of files) {
+            try {
+                const content = await fs.readFile(file);
+                contentHash += content.length.toString(); // Simple but effective for detecting changes
+            } catch (err) {
+                console.warn(`Warning: Could not read ${file} for build hash`);
+            }
+        }
+
+        return contentHash || Date.now().toString();
+    } catch (error) {
+        return Date.now().toString();
+    }
+}
+
 async function prepareExtension() {
     try {
-        // Ensure extension directory exists and is clean
+        // First ensure all directories exist
         await ensureDirectoryExists(extensionDir);
         await ensureDirectoryExists(iconsDir);
         await ensureDirectoryExists(assetsDir);
         await ensureDirectoryExists(chunksDir);
+
+        // Then clean them safely
+        await cleanDirectory(iconsDir);
+        await cleanDirectory(assetsDir);
+        await cleanDirectory(chunksDir);
 
         // Convert and copy icons from icon.svg
         const sourceIcon = path.join(rootDir, "public", "icons", "icon.svg");
@@ -75,36 +141,44 @@ async function prepareExtension() {
 
         try {
             const svgBuffer = await fs.readFile(sourceIcon);
-            await Promise.all(
-                sizes.map(async (size) => {
+            
+            // Process icons sequentially instead of in parallel
+            for (const size of sizes) {
+                try {
                     await sharp(svgBuffer)
                         .resize(size, size)
                         .png()
                         .toFile(path.join(iconsDir, `icon${size}.png`));
                     console.log(`Created icon${size}.png from icon.svg`);
-                })
-            );
+                } catch (iconError) {
+                    console.error(`Error creating icon${size}.png:`, iconError);
+                    // Continue with other sizes even if one fails
+                }
+            }
+
+            // Add a small delay before generating cursor to ensure directory is ready
+            await new Promise(resolve => setTimeout(resolve, 100));
 
             // Generate cursor image
             await sharp(
                 Buffer.from(`<svg width="16" height="16" viewBox="0 0 16 16">
-        <defs>
-          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blur"/>
-            <feColorMatrix in="blur" type="matrix" values="
-              1 0 0 0 0.282
-              0 1 0 0 0.016
-              0 0 1 0 0.678
-              0 0 0 1 0
-            " result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-        <circle cx="8" cy="8" r="4" fill="#4804ad" filter="url(#glow)"/>
-      </svg>`)
+                    <defs>
+                        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blur"/>
+                            <feColorMatrix in="blur" type="matrix" values="
+                                1 0 0 0 0.282
+                                0 1 0 0 0.016
+                                0 0 1 0 0.678
+                                0 0 0 1 0
+                            " result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <circle cx="8" cy="8" r="4" fill="#4804ad" filter="url(#glow)"/>
+                </svg>`)
             )
                 .resize(10, 10, {
                     kernel: sharp.kernel.lanczos3,
@@ -124,31 +198,37 @@ async function prepareExtension() {
             console.log("Created cursor.png");
         } catch (error) {
             console.error("Error processing icons:", error);
+            // Continue with the rest of the process even if icon generation fails
         }
 
         // Copy manifest.json
-        await copyFile(
-            path.join(rootDir, "manifest.json"),
-            path.join(extensionDir, "manifest.json")
-        );
+        const manifestPath = path.join(extensionDir, "manifest.json");
+        const manifest = JSON.parse(await fs.readFile(path.join(rootDir, "manifest.json"), 'utf-8'));
+        
+        await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 4));
+        console.log("Updated manifest.json");
 
         // Copy content script and styles
-        await copyFile(
+        await copyFileWithRetry(
             path.join(distDir, "content.iife.js"),
             path.join(extensionDir, "content.iife.js")
         );
 
-        await copyFile(path.join(distDir, "style.css"), path.join(extensionDir, "style.css"));
+        await copyFileWithRetry(
+            path.join(distDir, "style.css"), 
+            path.join(extensionDir, "style.css")
+        );
 
         // Copy background script
-        await copyFile(
-            path.join(distDir, "background.js"),
-            path.join(extensionDir, "background.js")
-        );
+        const backgroundScriptPath = path.join(distDir, "background.js");
+        let backgroundContent = await fs.readFile(backgroundScriptPath, 'utf-8');
+        
+        await fs.writeFile(path.join(extensionDir, "background.js"), backgroundContent);
+        console.log("Modified and copied background.js");
 
         // Copy background script map if it exists
         try {
-            await copyFile(
+            await copyFileWithRetry(
                 path.join(distDir, "background.js.map"),
                 path.join(extensionDir, "background.js.map")
             );
@@ -156,18 +236,18 @@ async function prepareExtension() {
             console.log("No source map for background script");
         }
 
-        // Copy dist directory contents
+        // Copy dist directory contents using retry mechanism
         const distEntries = await fs.readdir(distDir, { withFileTypes: true });
         for (const entry of distEntries) {
             const srcPath = path.join(distDir, entry.name);
             const destPath = path.join(extensionDir, entry.name);
 
             if (entry.isDirectory()) {
-                await copyDirectory(srcPath, destPath);
+                await copyDirectoryWithRetry(srcPath, destPath);
             } else {
                 // For index.html, copy it as popup.html
                 if (entry.name === "index.html") {
-                    await copyFile(srcPath, path.join(extensionDir, "popup.html"));
+                    await copyFileWithRetry(srcPath, path.join(extensionDir, "popup.html"));
                 }
                 // Skip files we've already copied
                 else if (
@@ -178,12 +258,36 @@ async function prepareExtension() {
                         "background.js.map",
                     ].includes(entry.name)
                 ) {
-                    await copyFile(srcPath, destPath);
+                    await copyFileWithRetry(srcPath, destPath);
                 }
             }
         }
 
         console.log("Extension files prepared successfully!");
+
+        // Create or update build info file
+        const buildInfoPath = path.join(extensionDir, "build-info.json");
+        const buildInfo = {
+            timestamp: Date.now(),
+            version: manifest.version,
+            buildId: await getBuildHash()
+        };
+
+        // Only write if file doesn't exist or build has changed
+        let shouldWrite = true;
+        try {
+            const existingContent = await fs.readFile(buildInfoPath, 'utf-8');
+            const existing = JSON.parse(existingContent);
+            shouldWrite = existing.buildId !== buildInfo.buildId;
+        } catch (error) {
+            // File doesn't exist, we should write
+        }
+
+        if (shouldWrite) {
+            await fs.writeFile(buildInfoPath, JSON.stringify(buildInfo, null, 2));
+            console.log("Updated build-info.json");
+        }
+
     } catch (err) {
         console.error("Error preparing extension:", err);
         process.exit(1);
