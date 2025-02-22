@@ -4,14 +4,8 @@
     "version": "0.0.0",
     "type": "module",
     "scripts": {
-        "dev": "vite",
-        "build": "tsc && vite build && pnpm run build:content && node scripts/prepare-extension.js",
-        "build:content": "cross-env CONTENT_SCRIPT=1 vite build",
-        "watch:content": "cross-env CONTENT_SCRIPT=1 vite build --watch",
-        "watch:main": "vite build --watch",
-        "watch:prepare": "nodemon --watch dist --exec \"node scripts/prepare-extension.js\"",
-        "watch:dev": "vite",
-        "watch": "pnpm build && pnpm watch:content && wait-on file:dist/content.iife.js && concurrently \"pnpm watch:dev\" \"pnpm watch:main\" \"pnpm watch:prepare\"",
+        "watch": "concurrently \"cross-env CONTENT_SCRIPT=1 vite build --watch --mode development\" \"nodemon --watch dist --exec 'node scripts/prepare-extension.js'\"",
+        "build": "tsc && vite build && cross-env CONTENT_SCRIPT=1 vite build && node scripts/prepare-extension.js",
         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "preview": "vite preview",
         "clean": "rm -rf dist extension node_modules"

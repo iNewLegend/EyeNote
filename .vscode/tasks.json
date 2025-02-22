@@ -27,25 +27,6 @@
                 "kind": "build",
                 "isDefault": true
             }
-        },
-        {
-            "label": "Build Extension",
-            "type": "shell",
-            "command": "cd apps/frontend && pnpm build",
-            "group": "build",
-            "problemMatcher": ["$tsc"]
-        },
-        {
-            "label": "Clean Extension",
-            "type": "shell",
-            "command": "cd apps/frontend && pnpm clean",
-            "problemMatcher": []
-        },
-        {
-            "label": "Lint",
-            "type": "shell",
-            "command": "cd apps/frontend && pnpm lint",
-            "problemMatcher": ["$eslint-stylish"]
         }
     ]
 }
