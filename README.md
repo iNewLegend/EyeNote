@@ -4,7 +4,7 @@ See what others see! EyeNote is a browser extension that lets you create and sha
 
 ## Features
 
-- Create notes on any webpage element
+- Create notes on any webpage element using Inspector Mode
 - Join and manage note groups for collaboration
 - Select which groups are active for interaction
 - See notes from your active groups while browsing
@@ -17,7 +17,7 @@ See what others see! EyeNote is a browser extension that lets you create and sha
 
 1. **Join Groups**: Join different note groups based on your interests or team
 2. **Enable Groups**: Select which groups you want to interact with
-3. **Create Notes**: Hold SHIFT and click anywhere to create a note
+3. **Use Inspector Mode**: Hold SHIFT to activate Inspector Mode, then click on any element to create a note
 4. **Group Visibility**: Notes are only visible to members of the group they belong to
 5. **Real-time Chat**: Open any note to chat with group members
 6. **Automatic Discovery**: As you browse, see notes from your group members automatically
@@ -30,10 +30,10 @@ Our IDE integrations bring EyeNote's collaborative annotation power directly int
 
 **VSCode Extension:**
 
-- Select any code segment and add notes visible to your development team
+- Use Inspector Mode to select any code segment and add notes visible to your development team
 - Highlighted code sections show where teammates have left comments
-- Hover over highlighted code to preview notes without opening the full discussion
-- Click on highlighted sections to open a discussion panel with threaded conversations
+- Hover over inspected code to preview notes without opening the full discussion
+- Click on inspected sections to open a discussion panel with threaded conversations
 - Group-specific visibility ensures you only see notes from relevant teams (frontend, backend, design, etc.)
 - Real-time updates when team members add comments to code you're currently viewing
 - Notes persist between sessions and sync across team members
@@ -78,7 +78,7 @@ Both integrations help development teams:
 1. Click the EyeNote icon to open settings
 2. Join or create note groups
 3. Enable the groups you want to interact with
-4. Hold SHIFT and click anywhere to create a note
+4. Hold SHIFT to activate Inspector Mode, then click on any element to create a note
 5. Share and collaborate with your group members
 6. Chat with group members in any note
 
