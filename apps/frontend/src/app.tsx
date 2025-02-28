@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { toast } from "sonner";
 import { useNotesStore } from "./stores/notes-store";
 import { NoteComponent } from "./features/notes/note-component";
@@ -10,6 +10,7 @@ function App() {
     const { hoveredElement, setHoveredElement, setSelectedElement, isInspectorMode } =
         useInspectorMode();
     const { setAddingNote } = useHighlightStore();
+    const [isProcessingNoteDismissal, setIsProcessingNoteDismissal] = useState(false);
 
     const handleClick = useCallback(
         (e: MouseEvent) => {
@@ -20,7 +21,14 @@ function App() {
                 hoveredElement,
                 isInspectorMode,
                 isInteractionBlocker: (e.target as Element).id === "eye-note-interaction-blocker",
+                isProcessingNoteDismissal,
             });
+
+            // If we're processing a note dismissal, ignore the click
+            if (isProcessingNoteDismissal) {
+                console.log("Ignoring click during note dismissal processing");
+                return;
+            }
 
             if (!isInspectorMode || !hoveredElement) {
                 console.log("Not in inspector mode or no hovered element");
@@ -64,6 +72,7 @@ function App() {
             setSelectedElement,
             createNote,
             setAddingNote,
+            isProcessingNoteDismissal,
         ]
     );
 
@@ -77,10 +86,19 @@ function App() {
 
     // Function to handle note dismissal
     const handleNoteDismissed = useCallback(() => {
+        // Set a flag to prevent immediate click handling
+        setIsProcessingNoteDismissal(true);
+
+        // Turn off adding note state
         setAddingNote(false);
 
         // Dispatch a custom event to notify the content script that the note has been dismissed
         window.dispatchEvent(new CustomEvent("eye-note:note-dismissed"));
+
+        // Reset the flag after a short delay to allow the DOM to update
+        setTimeout(() => {
+            setIsProcessingNoteDismissal(false);
+        }, 100);
     }, [setAddingNote]);
 
     return (

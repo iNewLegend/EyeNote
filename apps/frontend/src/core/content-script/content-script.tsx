@@ -197,6 +197,16 @@ if (!document.getElementById("eye-note-root")) {
         if (!document.body.classList.contains("inspector-mode") || !currentInspectedElement) {
             document.body.classList.remove("inspector-mode");
             updateOverlay(null);
+        } else {
+            // If we're still in inspector mode (shift key is still pressed),
+            // make sure the interaction blocker is properly set up
+            interactionBlocker.style.display = "block";
+            interactionBlocker.style.pointerEvents = "none";
+
+            // If there's a currently inspected element, update the overlay to show it
+            if (currentInspectedElement) {
+                updateOverlay(currentInspectedElement);
+            }
         }
     }) as EventListener);
 

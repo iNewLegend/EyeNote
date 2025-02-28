@@ -73,11 +73,16 @@ export const useHighlightStore = create<HighlightStore>((set, get) => ({
             document.body.classList.add("adding-note");
         } else {
             document.body.classList.remove("adding-note");
-        }
 
-        // When we finish adding a note, remove inspector mode class if inspector mode is off
-        if (!isAddingNote && !get().isInspectorMode) {
-            document.body.classList.remove("inspector-mode");
+            // When we finish adding a note
+            if (!get().isInspectorMode) {
+                // If inspector mode is off, remove the inspector mode class
+                document.body.classList.remove("inspector-mode");
+            } else {
+                // If inspector mode is still on (shift key still pressed),
+                // make sure the inspector mode class is still applied
+                document.body.classList.add("inspector-mode");
+            }
         }
     },
 

@@ -49,8 +49,13 @@ export function useInspectorMode() {
     // Handle mouse movement for element inspection
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
+            // If we're adding a note, don't process mouse movements for highlighting
+            if (isAddingNote) {
+                return;
+            }
+
             if (!isInspectorMode) {
-                if (lastProcessedElement.current && !isAddingNote) {
+                if (lastProcessedElement.current) {
                     setHoveredElement(null);
                     lastProcessedElement.current = null;
                 }
