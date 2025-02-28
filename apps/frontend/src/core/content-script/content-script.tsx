@@ -24,8 +24,34 @@ if (!document.getElementById("eye-note-root")) {
     overlay.id = "eye-note-highlight-overlay";
     document.body.appendChild(overlay);
 
-    // Track the currently highlighted element
-    let currentHighlightedElement: HTMLElement | null = null;
+    // Create an interaction blocker overlay
+    const interactionBlocker = document.createElement("div");
+    interactionBlocker.id = "eye-note-interaction-blocker";
+    interactionBlocker.style.position = "fixed";
+    interactionBlocker.style.top = "0";
+    interactionBlocker.style.left = "0";
+    interactionBlocker.style.width = "100%";
+    interactionBlocker.style.height = "100%";
+    interactionBlocker.style.zIndex = "2147483644"; // Just below the highlight overlay
+    interactionBlocker.style.display = "none";
+    interactionBlocker.style.cursor = "none";
+    interactionBlocker.style.pointerEvents = "none"; // Allow clicks to pass through
+    interactionBlocker.style.userSelect = "none"; // Prevent text selection
+    (interactionBlocker.style as any).webkitUserSelect = "none"; // For Safari
+    (interactionBlocker.style as any).msUserSelect = "none"; // For IE/Edge
+    (interactionBlocker.style as any).mozUserSelect = "none"; // For Firefox
+
+    // Add click event listener to the interaction blocker
+    interactionBlocker.addEventListener("click", (e) => {
+        // Let the click event pass through to the app's click handler
+        // by not calling preventDefault or stopPropagation
+        console.log("Interaction blocker clicked", e);
+    });
+
+    document.body.appendChild(interactionBlocker);
+
+    // Track the currently inspected element
+    let currentInspectedElement: HTMLElement | null = null;
 
     // Update overlay position
     const updateOverlay = (element: Element | null) => {
@@ -54,50 +80,72 @@ if (!document.getElementById("eye-note-root")) {
             }
         });
 
-        if (!document.body.classList.contains("shift-pressed")) {
-            if (currentHighlightedElement) {
-                currentHighlightedElement.style.cursor = "";
-                currentHighlightedElement = null;
+        if (!document.body.classList.contains("inspector-mode")) {
+            if (currentInspectedElement) {
+                currentInspectedElement.style.cursor = "";
+                currentInspectedElement = null;
                 updateOverlay(null);
             }
             return;
         }
 
+        // No need to hide the interaction blocker since it has pointer-events: none
         const element = document.elementFromPoint(x, y);
+
         if (
             !element ||
-            element === currentHighlightedElement ||
-            element.closest("#eye-note-root")
+            element === currentInspectedElement ||
+            element.closest("#eye-note-root") ||
+            element.closest(".notes-plugin")
         ) {
             return;
         }
 
         if (element instanceof HTMLElement) {
             // Remove highlight from previous element if different
-            if (currentHighlightedElement && currentHighlightedElement !== element) {
-                currentHighlightedElement.style.cursor = "";
+            if (currentInspectedElement && currentInspectedElement !== element) {
+                currentInspectedElement.style.cursor = "";
             }
 
             // Update cursor style and highlight new element
             element.style.cursor = "none";
-            currentHighlightedElement = element;
+            currentInspectedElement = element;
             updateOverlay(element);
+
+            // Log the element for debugging
+            console.log("Inspected element", {
+                element,
+                tagName: element.tagName,
+                id: element.id,
+                className: element.className,
+                rect: element.getBoundingClientRect(),
+            });
         }
     };
 
-    // Handle shift key events
+    // Handle shift key events to toggle inspector mode
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Shift") {
-            document.body.classList.add("shift-pressed");
+            document.body.classList.add("inspector-mode");
+
+            // Make the interaction blocker visible but don't block pointer events
+            interactionBlocker.style.display = "block";
+            interactionBlocker.style.pointerEvents = "none";
+
+            // Clear any existing text selection
+            if (window.getSelection) {
+                window.getSelection()?.removeAllRanges();
+            }
         }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
         if (e.key === "Shift") {
-            document.body.classList.remove("shift-pressed");
-            if (currentHighlightedElement) {
-                currentHighlightedElement.style.cursor = "";
-                currentHighlightedElement = null;
+            document.body.classList.remove("inspector-mode");
+            interactionBlocker.style.display = "none";
+            if (currentInspectedElement) {
+                currentInspectedElement.style.cursor = "";
+                currentInspectedElement = null;
                 updateOverlay(null);
             }
         }
@@ -137,6 +185,7 @@ if (!document.getElementById("eye-note-root")) {
         // Clean up if initialization fails
         highlightStyles.remove();
         overlay.remove();
+        interactionBlocker.remove();
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("keydown", handleKeyDown);
         document.removeEventListener("keyup", handleKeyUp);

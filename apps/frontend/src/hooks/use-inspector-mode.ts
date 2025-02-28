@@ -2,31 +2,31 @@ import { useEffect, useRef } from "react";
 import { useHighlightStore } from "../stores/highlight-store";
 import { useNotesStore } from "../stores/notes-store";
 
-export function useShiftHover() {
+export function useInspectorMode() {
     const lastProcessedElement = useRef<Element | null>(null);
     const {
         hoveredElement,
         setHoveredElement,
         selectedElement,
         setSelectedElement,
-        isShiftMode,
-        setShiftMode,
+        isInspectorMode,
+        setInspectorMode,
         clearAllHighlights,
         highlightedElements,
     } = useHighlightStore();
     const { hasNoteForElement } = useNotesStore();
 
-    // Handle shift key events
+    // Handle shift key events to toggle inspector mode
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Shift" && !isShiftMode) {
-                setShiftMode(true);
+            if (e.key === "Shift" && !isInspectorMode) {
+                setInspectorMode(true);
             }
         };
 
         const handleKeyUp = (e: KeyboardEvent) => {
             if (e.key === "Shift") {
-                setShiftMode(false);
+                setInspectorMode(false);
                 clearAllHighlights();
             }
         };
@@ -38,12 +38,12 @@ export function useShiftHover() {
             document.removeEventListener("keydown", handleKeyDown);
             document.removeEventListener("keyup", handleKeyUp);
         };
-    }, [isShiftMode, setShiftMode, clearAllHighlights]);
+    }, [isInspectorMode, setInspectorMode, clearAllHighlights]);
 
-    // Handle mouse movement
+    // Handle mouse movement for element inspection
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
-            if (!isShiftMode) {
+            if (!isInspectorMode) {
                 if (lastProcessedElement.current) {
                     setHoveredElement(null);
                     lastProcessedElement.current = null;
@@ -77,14 +77,14 @@ export function useShiftHover() {
         return () => {
             document.removeEventListener("mousemove", handleMouseMove);
         };
-    }, [isShiftMode, setHoveredElement, hasNoteForElement, highlightedElements]);
+    }, [isInspectorMode, setHoveredElement, hasNoteForElement, highlightedElements]);
 
     // Cleanup on unmount
     useEffect(() => {
         return () => {
-            if (isShiftMode) {
+            if (isInspectorMode) {
                 clearAllHighlights();
-                setShiftMode(false);
+                setInspectorMode(false);
             }
         };
     }, []);
@@ -94,6 +94,6 @@ export function useShiftHover() {
         setHoveredElement,
         selectedElement,
         setSelectedElement,
-        isShiftMode,
+        isInspectorMode,
     };
 }

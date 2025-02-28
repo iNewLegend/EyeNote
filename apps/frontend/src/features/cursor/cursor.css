@@ -20,10 +20,14 @@
     pointer-events: none;
 }
 
-body.shift-pressed {
+body.inspector-mode {
     @apply cursor-none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
-body.shift-pressed .cursor-dot {
+body.inspector-mode .cursor-dot {
     @apply opacity-100;
 }

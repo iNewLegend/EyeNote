@@ -4,12 +4,12 @@ interface HighlightStore {
     highlightedElements: Set<Element>;
     hoveredElement: Element | null;
     selectedElement: Element | null;
-    isShiftMode: boolean;
+    isInspectorMode: boolean;
     addHighlight: (element: Element) => void;
     removeHighlight: (element: Element) => void;
     setHoveredElement: (element: Element | null) => void;
     setSelectedElement: (element: Element | null) => void;
-    setShiftMode: (isShiftMode: boolean) => void;
+    setInspectorMode: (isInspectorMode: boolean) => void;
     clearAllHighlights: () => void;
 }
 
@@ -17,7 +17,7 @@ export const useHighlightStore = create<HighlightStore>((set, get) => ({
     highlightedElements: new Set(),
     hoveredElement: null,
     selectedElement: null,
-    isShiftMode: false,
+    isInspectorMode: false,
 
     addHighlight: (element: Element) => {
         element.classList.add("eye-note-highlight");
@@ -45,12 +45,12 @@ export const useHighlightStore = create<HighlightStore>((set, get) => ({
         set({ selectedElement: element });
     },
 
-    setShiftMode: (isShiftMode: boolean) => {
-        set({ isShiftMode });
-        if (isShiftMode) {
-            document.body.classList.add("shift-pressed");
+    setInspectorMode: (isInspectorMode: boolean) => {
+        set({ isInspectorMode });
+        if (isInspectorMode) {
+            document.body.classList.add("inspector-mode");
         } else {
-            document.body.classList.remove("shift-pressed");
+            document.body.classList.remove("inspector-mode");
         }
     },
 

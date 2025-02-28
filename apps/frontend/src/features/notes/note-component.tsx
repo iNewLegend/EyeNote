@@ -14,7 +14,14 @@ export function NoteComponent({ note, setSelectedElement, onUpdateToast }: NoteC
     const { updateNote, deleteNote, setNoteEditing } = useNotesStore();
     const { addHighlight, removeHighlight } = useHighlightStore();
 
+    console.log("Rendering NoteComponent", {
+        note,
+        isEditing: note.isEditing,
+        position: { x: note.x, y: note.y },
+    });
+
     const handleNoteUpdate = (id: number, content: string) => {
+        console.log("Updating note", { id, content });
         updateNote(id, content);
         onUpdateToast("Note updated", "Your note has been saved successfully");
     };
@@ -26,8 +33,10 @@ export function NoteComponent({ note, setSelectedElement, onUpdateToast }: NoteC
                 style={{
                     left: `${note.x ?? 0}px`,
                     top: `${note.y ?? 0}px`,
+                    zIndex: 2147483647,
                 }}
                 onClick={() => {
+                    console.log("Note marker clicked", note);
                     const element = note.highlightedElement;
                     if (element) {
                         setSelectedElement(element);
@@ -39,6 +48,7 @@ export function NoteComponent({ note, setSelectedElement, onUpdateToast }: NoteC
             <Dialog
                 open={note.isEditing}
                 onOpenChange={(open) => {
+                    console.log("Dialog open change", { open, note });
                     if (!open) {
                         const element = note.highlightedElement;
                         if (element) {
@@ -61,6 +71,7 @@ export function NoteComponent({ note, setSelectedElement, onUpdateToast }: NoteC
                         left: `${note.x}px`,
                         top: `${note.y}px`,
                         transform: "none",
+                        zIndex: 2147483647,
                     }}
                 >
                     <DialogTitle className="sr-only">Add Note</DialogTitle>

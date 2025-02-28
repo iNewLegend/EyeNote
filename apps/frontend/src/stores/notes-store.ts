@@ -17,6 +17,15 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
         const elementPath = getElementPath(element);
         const rect = element.getBoundingClientRect();
 
+        console.log("Creating note", {
+            element,
+            elementPath,
+            rect: {
+                right: rect.right,
+                top: rect.top,
+            },
+        });
+
         const newNote: Note = {
             id: Date.now(),
             elementPath,
@@ -32,7 +41,13 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
             highlightedElement: element,
         };
 
-        set((state) => ({ notes: [...state.notes, newNote] }));
+        console.log("New note created", newNote);
+
+        set((state) => {
+            console.log("Current notes", state.notes);
+            console.log("Adding new note to store");
+            return { notes: [...state.notes, newNote] };
+        });
         return newNote;
     },
     updateNote: (id: number, content: string) => {

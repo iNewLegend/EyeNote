@@ -2,43 +2,61 @@ import { useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useNotesStore } from "./stores/notes-store";
 import { NoteComponent } from "./features/notes/note-component";
-import { useShiftHover } from "./hooks/use-shift-hover";
+import { useInspectorMode } from "./hooks/use-inspector-mode";
 
 function App() {
     const { notes, createNote } = useNotesStore();
-    const { hoveredElement, setHoveredElement, setSelectedElement, isShiftMode } = useShiftHover();
+    const { hoveredElement, setHoveredElement, setSelectedElement, isInspectorMode } =
+        useInspectorMode();
 
     const handleClick = useCallback(
         (e: MouseEvent) => {
-            console.log({
+            console.log("Click event in app.tsx", {
                 e,
+                target: e.target,
+                currentTarget: e.currentTarget,
                 hoveredElement,
-                isShiftMode,
+                isInspectorMode,
+                isInteractionBlocker: (e.target as Element).id === "eye-note-interaction-blocker",
             });
 
-            if (!isShiftMode || !hoveredElement) return;
-            // Prevent creating notes on plugin elements
-            if ((e.target as Element).closest(".notes-plugin")) return;
+            if (!isInspectorMode || !hoveredElement) {
+                console.log("Not in inspector mode or no hovered element");
+                return;
+            }
 
-            // Create the note
+            // Always prevent default behavior and stop propagation in inspector mode
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Check if we clicked on the interaction blocker or a plugin element
+            const target = e.target as Element;
+            const isInteractionBlocker = target.id === "eye-note-interaction-blocker";
+            const isPluginElement = target.closest(".notes-plugin");
+
+            // If we clicked on a plugin element (but not the interaction blocker), don't create a note
+            if (isPluginElement && !isInteractionBlocker) {
+                console.log("Clicked on plugin element, not creating note");
+                return;
+            }
+
+            console.log("Creating note for element", hoveredElement);
+
+            // Create the note if we're in inspector mode and have a hovered element
             createNote(hoveredElement);
             setHoveredElement(null);
             setSelectedElement(hoveredElement);
-
-            // Prevent any default behavior or event bubbling
-            e.preventDefault();
-            e.stopPropagation();
         },
-        [isShiftMode, hoveredElement, setHoveredElement, setSelectedElement, createNote]
+        [isInspectorMode, hoveredElement, setHoveredElement, setSelectedElement, createNote]
     );
 
     useEffect(() => {
-        console.log("isShiftMode", isShiftMode);
-        if (isShiftMode) {
+        console.log("isInspectorMode", isInspectorMode);
+        if (isInspectorMode) {
             document.addEventListener("click", handleClick, { capture: true });
             return () => document.removeEventListener("click", handleClick, { capture: true });
         }
-    }, [isShiftMode, handleClick]);
+    }, [isInspectorMode, handleClick]);
 
     return (
         <div className="notes-plugin">
