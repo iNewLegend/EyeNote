@@ -22,6 +22,40 @@ See what others see! EyeNote is a browser extension that lets you create and sha
 5. **Real-time Chat**: Open any note to chat with group members
 6. **Automatic Discovery**: As you browse, see notes from your group members automatically
 
+### IDE Integrations
+
+Our IDE integrations bring EyeNote's collaborative annotation power directly into your development workflow:
+
+#### Code Annotation & Collaboration
+
+**VSCode Extension:**
+
+- Select any code segment and add notes visible to your development team
+- Highlighted code sections show where teammates have left comments
+- Hover over highlighted code to preview notes without opening the full discussion
+- Click on highlighted sections to open a discussion panel with threaded conversations
+- Group-specific visibility ensures you only see notes from relevant teams (frontend, backend, design, etc.)
+- Real-time updates when team members add comments to code you're currently viewing
+- Notes persist between sessions and sync across team members
+
+**JetBrains Plugin:**
+
+- Native code selection annotation that preserves syntax highlighting
+- Split-view option shows code and discussions side-by-side
+- Filter notes by team member, date, or resolution status
+- Integrated with version control to maintain note relevance across branches
+- "Watch" specific code regions to receive notifications about new comments
+- Export discussions for inclusion in documentation or meeting notes
+- Track resolved vs. open discussions with visual indicators
+
+Both integrations help development teams:
+
+- Discuss implementation details without switching contexts
+- Onboard new team members with contextual code explanations
+- Document complex logic directly where it's implemented
+- Collaborate asynchronously without cluttering the codebase with comments
+- Make collective decisions with full discussion history preserved
+
 ## Getting Started
 
 1. Clone this repository
