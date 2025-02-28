@@ -1,26 +1,69 @@
-import * as React from "react";
-import { useThemeStore } from "../../stores/theme-store";
+import { createContext, useContext, useEffect, useState } from "react";
 
-interface ThemeProviderProps {
+type Theme = "dark" | "light" | "system";
+
+type ThemeProviderProps = {
     children: React.ReactNode;
-    defaultTheme?: "dark" | "light";
-}
+    defaultTheme?: Theme;
+    storageKey?: string;
+};
 
-export function ThemeProvider({ children, defaultTheme = "dark" }: ThemeProviderProps) {
-    const { setTheme } = useThemeStore();
+type ThemeProviderState = {
+    theme: Theme;
+    setTheme: (theme: Theme) => void;
+};
 
-    // Set initial theme if provided
-    React.useEffect(() => {
-        if (defaultTheme) {
-            setTheme(defaultTheme);
+const initialState: ThemeProviderState = {
+    theme: "dark",
+    setTheme: () => null,
+};
+
+const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
+
+export function ThemeProvider({
+    children,
+    defaultTheme = "dark",
+    storageKey = "ui-theme",
+    ...props
+}: ThemeProviderProps) {
+    const [theme, setTheme] = useState<Theme>(
+        () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
+    );
+
+    useEffect(() => {
+        const root = window.document.documentElement;
+        root.classList.remove("light", "dark");
+
+        if (theme === "system") {
+            const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+            root.classList.add(systemTheme);
+            return;
         }
-    }, [defaultTheme, setTheme]);
 
-    return <>{children}</>;
+        root.classList.add(theme);
+    }, [theme]);
+
+    const value = {
+        theme,
+        setTheme: (theme: Theme) => {
+            localStorage.setItem(storageKey, theme);
+            setTheme(theme);
+        },
+    };
+
+    return (
+        <ThemeProviderContext.Provider {...props} value={value}>
+            {children}
+        </ThemeProviderContext.Provider>
+    );
 }
 
-// Re-export the theme hook for convenience
 export const useTheme = () => {
-    const { theme, setTheme } = useThemeStore();
-    return { theme, setTheme };
+    const context = useContext(ThemeProviderContext);
+
+    if (context === undefined) throw new Error("useTheme must be used within a ThemeProvider");
+
+    return context;
 };
