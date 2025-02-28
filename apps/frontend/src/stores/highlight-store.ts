@@ -53,8 +53,16 @@ export const useHighlightStore = create<HighlightStore>((set, get) => ({
     },
 
     setInspectorMode: (isInspectorMode: boolean) => {
-        set({ isInspectorMode });
+        // When entering inspector mode, ensure we have a clean state
         if (isInspectorMode) {
+            // Only reset if we're not currently adding a note
+            if (!get().isAddingNote) {
+                // Clear any lingering state
+                set({
+                    hoveredElement: null,
+                    selectedElement: null,
+                });
+            }
             document.body.classList.add("inspector-mode");
         } else {
             if (!get().isAddingNote) {
@@ -63,6 +71,8 @@ export const useHighlightStore = create<HighlightStore>((set, get) => ({
 
             set({ hoveredElement: null });
         }
+
+        set({ isInspectorMode });
     },
 
     setAddingNote: (isAddingNote: boolean) => {

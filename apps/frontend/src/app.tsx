@@ -98,8 +98,14 @@ function App() {
         // Reset the flag after a short delay to allow the DOM to update
         setTimeout(() => {
             setIsProcessingNoteDismissal(false);
+
+            // If the shift key is still pressed, ensure inspector mode is properly re-enabled
+            if (isInspectorMode) {
+                // Dispatch a synthetic keydown event to re-initialize inspector mode
+                window.dispatchEvent(new CustomEvent("eye-note:reinitialize-inspector-mode"));
+            }
         }, 100);
-    }, [setAddingNote]);
+    }, [setAddingNote, isInspectorMode]);
 
     return (
         <div className="notes-plugin">

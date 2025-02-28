@@ -139,6 +139,13 @@ if (!document.getElementById("eye-note-root")) {
     // Handle shift key events to toggle inspector mode
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Shift") {
+            // If we're not adding a note, reset the state
+            if (!isAddingNote) {
+                // Reset any lingering state
+                currentInspectedElement = null;
+                selectedElement = null;
+            }
+
             document.body.classList.add("inspector-mode");
 
             // Make the interaction blocker visible but don't block pointer events
@@ -210,6 +217,22 @@ if (!document.getElementById("eye-note-root")) {
         }
     }) as EventListener);
 
+    // Create a custom event listener to reinitialize inspector mode
+    window.addEventListener("eye-note:reinitialize-inspector-mode", (() => {
+        // Only proceed if we're in inspector mode but not adding a note
+        if (document.body.classList.contains("inspector-mode") && !isAddingNote) {
+            // Reset state
+            currentInspectedElement = null;
+            selectedElement = null;
+
+            // Ensure the interaction blocker is properly set up
+            interactionBlocker.style.display = "block";
+            interactionBlocker.style.pointerEvents = "none";
+
+            console.log("Reinitialized inspector mode");
+        }
+    }) as EventListener);
+
     // Create root element for the app
     const root = document.createElement("div");
 
@@ -245,6 +268,10 @@ if (!document.getElementById("eye-note-root")) {
         document.removeEventListener("keyup", handleKeyUp);
         window.removeEventListener("eye-note:element-selected", (() => {}) as EventListener);
         window.removeEventListener("eye-note:note-dismissed", (() => {}) as EventListener);
+        window.removeEventListener(
+            "eye-note:reinitialize-inspector-mode",
+            (() => {}) as EventListener
+        );
         root.remove();
     }
 }

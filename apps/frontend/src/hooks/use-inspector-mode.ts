@@ -22,6 +22,10 @@ export function useInspectorMode() {
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Shift" && !isInspectorMode) {
+                // Reset the last processed element when entering inspector mode
+                if (!isAddingNote) {
+                    lastProcessedElement.current = null;
+                }
                 setInspectorMode(true);
             }
         };
@@ -33,6 +37,8 @@ export function useInspectorMode() {
                 // Only clear highlights if we're not adding a note
                 if (!isAddingNote) {
                     clearAllHighlights();
+                    // Also reset the last processed element
+                    lastProcessedElement.current = null;
                 }
             }
         };
