@@ -3,11 +3,13 @@ import { toast } from "sonner";
 import { useNotesStore } from "./stores/notes-store";
 import { NoteComponent } from "./features/notes/note-component";
 import { useInspectorMode } from "./hooks/use-inspector-mode";
+import { useHighlightStore } from "./stores/highlight-store";
 
 function App() {
     const { notes, createNote } = useNotesStore();
     const { hoveredElement, setHoveredElement, setSelectedElement, isInspectorMode } =
         useInspectorMode();
+    const { setAddingNote } = useHighlightStore();
 
     const handleClick = useCallback(
         (e: MouseEvent) => {
@@ -46,8 +48,23 @@ function App() {
             createNote(hoveredElement);
             setHoveredElement(null);
             setSelectedElement(hoveredElement);
+            setAddingNote(true);
+
+            // Dispatch a custom event to notify the content script that an element has been selected
+            window.dispatchEvent(
+                new CustomEvent("eye-note:element-selected", {
+                    detail: { element: hoveredElement },
+                })
+            );
         },
-        [isInspectorMode, hoveredElement, setHoveredElement, setSelectedElement, createNote]
+        [
+            isInspectorMode,
+            hoveredElement,
+            setHoveredElement,
+            setSelectedElement,
+            createNote,
+            setAddingNote,
+        ]
     );
 
     useEffect(() => {
@@ -58,6 +75,14 @@ function App() {
         }
     }, [isInspectorMode, handleClick]);
 
+    // Function to handle note dismissal
+    const handleNoteDismissed = useCallback(() => {
+        setAddingNote(false);
+
+        // Dispatch a custom event to notify the content script that the note has been dismissed
+        window.dispatchEvent(new CustomEvent("eye-note:note-dismissed"));
+    }, [setAddingNote]);
+
     return (
         <div className="notes-plugin">
             {notes.map((note) => (
@@ -66,6 +91,7 @@ function App() {
                     note={note}
                     setSelectedElement={setSelectedElement}
                     onUpdateToast={(title, description) => toast(title, { description })}
+                    onNoteDismissed={handleNoteDismissed}
                 />
             ))}
         </div>

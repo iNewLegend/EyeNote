@@ -52,6 +52,10 @@ if (!document.getElementById("eye-note-root")) {
 
     // Track the currently inspected element
     let currentInspectedElement: HTMLElement | null = null;
+    // Track the currently selected element (for note creation)
+    let selectedElement: HTMLElement | null = null;
+    // Track if we're in the process of adding a note
+    let isAddingNote = false;
 
     // Update overlay position
     const updateOverlay = (element: Element | null) => {
@@ -80,11 +84,16 @@ if (!document.getElementById("eye-note-root")) {
             }
         });
 
+        // If we're not in inspector mode and not adding a note, clear the overlay
         if (!document.body.classList.contains("inspector-mode")) {
-            if (currentInspectedElement) {
+            if (currentInspectedElement && !isAddingNote) {
                 currentInspectedElement.style.cursor = "";
                 currentInspectedElement = null;
-                updateOverlay(null);
+
+                // Only clear the overlay if we're not adding a note or if the selected element is different
+                if (!isAddingNote || !selectedElement) {
+                    updateOverlay(null);
+                }
             }
             return;
         }
@@ -110,7 +119,11 @@ if (!document.getElementById("eye-note-root")) {
             // Update cursor style and highlight new element
             element.style.cursor = "none";
             currentInspectedElement = element;
-            updateOverlay(element);
+
+            // Only update the overlay if we're not adding a note or if this is the selected element
+            if (!isAddingNote || element === selectedElement) {
+                updateOverlay(element);
+            }
 
             // Log the element for debugging
             console.log("Inspected element", {
@@ -141,12 +154,19 @@ if (!document.getElementById("eye-note-root")) {
 
     const handleKeyUp = (e: KeyboardEvent) => {
         if (e.key === "Shift") {
-            document.body.classList.remove("inspector-mode");
-            interactionBlocker.style.display = "none";
-            if (currentInspectedElement) {
-                currentInspectedElement.style.cursor = "";
-                currentInspectedElement = null;
-                updateOverlay(null);
+            // Only remove inspector mode class if we're not adding a note
+            if (!isAddingNote) {
+                document.body.classList.remove("inspector-mode");
+                interactionBlocker.style.display = "none";
+
+                if (currentInspectedElement) {
+                    currentInspectedElement.style.cursor = "";
+                    currentInspectedElement = null;
+                    updateOverlay(null);
+                }
+            } else {
+                // If we're adding a note, keep the inspector mode visual but disable the interaction blocker
+                interactionBlocker.style.pointerEvents = "none";
             }
         }
     };
@@ -155,6 +175,30 @@ if (!document.getElementById("eye-note-root")) {
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("keyup", handleKeyUp);
+
+    // Create a custom event listener for note creation events
+    window.addEventListener("eye-note:element-selected", ((e: CustomEvent) => {
+        const element = e.detail.element;
+        if (element instanceof HTMLElement) {
+            selectedElement = element;
+            isAddingNote = true;
+            updateOverlay(element);
+            document.body.classList.add("adding-note");
+        }
+    }) as EventListener);
+
+    // Create a custom event listener for note dismissal events
+    window.addEventListener("eye-note:note-dismissed", (() => {
+        isAddingNote = false;
+        selectedElement = null;
+        document.body.classList.remove("adding-note");
+
+        // If we're not in inspector mode, remove the inspector mode class and hide the overlay
+        if (!document.body.classList.contains("inspector-mode") || !currentInspectedElement) {
+            document.body.classList.remove("inspector-mode");
+            updateOverlay(null);
+        }
+    }) as EventListener);
 
     // Create root element for the app
     const root = document.createElement("div");
@@ -189,6 +233,8 @@ if (!document.getElementById("eye-note-root")) {
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("keydown", handleKeyDown);
         document.removeEventListener("keyup", handleKeyUp);
+        window.removeEventListener("eye-note:element-selected", (() => {}) as EventListener);
+        window.removeEventListener("eye-note:note-dismissed", (() => {}) as EventListener);
         root.remove();
     }
 }

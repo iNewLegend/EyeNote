@@ -13,6 +13,8 @@ export function useInspectorMode() {
         setInspectorMode,
         clearAllHighlights,
         highlightedElements,
+        isAddingNote,
+        setAddingNote,
     } = useHighlightStore();
     const { hasNoteForElement } = useNotesStore();
 
@@ -27,7 +29,11 @@ export function useInspectorMode() {
         const handleKeyUp = (e: KeyboardEvent) => {
             if (e.key === "Shift") {
                 setInspectorMode(false);
-                clearAllHighlights();
+
+                // Only clear highlights if we're not adding a note
+                if (!isAddingNote) {
+                    clearAllHighlights();
+                }
             }
         };
 
@@ -38,13 +44,13 @@ export function useInspectorMode() {
             document.removeEventListener("keydown", handleKeyDown);
             document.removeEventListener("keyup", handleKeyUp);
         };
-    }, [isInspectorMode, setInspectorMode, clearAllHighlights]);
+    }, [isInspectorMode, setInspectorMode, clearAllHighlights, isAddingNote]);
 
     // Handle mouse movement for element inspection
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (!isInspectorMode) {
-                if (lastProcessedElement.current) {
+                if (lastProcessedElement.current && !isAddingNote) {
                     setHoveredElement(null);
                     lastProcessedElement.current = null;
                 }
@@ -77,7 +83,7 @@ export function useInspectorMode() {
         return () => {
             document.removeEventListener("mousemove", handleMouseMove);
         };
-    }, [isInspectorMode, setHoveredElement, hasNoteForElement, highlightedElements]);
+    }, [isInspectorMode, setHoveredElement, hasNoteForElement, highlightedElements, isAddingNote]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -85,9 +91,10 @@ export function useInspectorMode() {
             if (isInspectorMode) {
                 clearAllHighlights();
                 setInspectorMode(false);
+                setAddingNote(false);
             }
         };
-    }, []);
+    }, [isInspectorMode, clearAllHighlights, setInspectorMode, setAddingNote]);
 
     return {
         hoveredElement,
@@ -95,5 +102,7 @@ export function useInspectorMode() {
         selectedElement,
         setSelectedElement,
         isInspectorMode,
+        isAddingNote,
+        setAddingNote,
     };
 }

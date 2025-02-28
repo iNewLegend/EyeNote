@@ -53,3 +53,18 @@ body.inspector-mode .note-content * {
     -ms-user-select: text !important;
 }
 
+/* Add a class for when we're adding a note to maintain the overlay */
+body.adding-note #eye-note-highlight-overlay {
+    display: block !important;
+}
+
+/* Ensure cursor dot is visible when adding a note */
+body.adding-note .cursor-dot {
+    opacity: 0 !important; /* Hide the cursor dot when adding a note */
+}
+
+/* Restore normal cursor when adding a note */
+body.adding-note {
+    cursor: auto !important;
+}
+

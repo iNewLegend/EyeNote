@@ -8,9 +8,15 @@ interface NoteComponentProps {
     note: Note;
     setSelectedElement: (element: Element | null) => void;
     onUpdateToast: (title: string, description: string) => void;
+    onNoteDismissed: () => void;
 }
 
-export function NoteComponent({ note, setSelectedElement, onUpdateToast }: NoteComponentProps) {
+export function NoteComponent({
+    note,
+    setSelectedElement,
+    onUpdateToast,
+    onNoteDismissed,
+}: NoteComponentProps) {
     const { updateNote, deleteNote, setNoteEditing } = useNotesStore();
     const { addHighlight, removeHighlight } = useHighlightStore();
 
@@ -56,6 +62,7 @@ export function NoteComponent({ note, setSelectedElement, onUpdateToast }: NoteC
                             setSelectedElement(null);
                         }
                         setNoteEditing(note.id, false);
+                        onNoteDismissed();
                     } else {
                         if (note.highlightedElement) {
                             addHighlight(note.highlightedElement);
@@ -96,11 +103,17 @@ export function NoteComponent({ note, setSelectedElement, onUpdateToast }: NoteC
                                     setSelectedElement(null);
                                 }
                                 deleteNote(note.id);
+                                onNoteDismissed();
                             }}
                         >
                             Delete
                         </Button>
-                        <Button onClick={() => handleNoteUpdate(note.id, note.content)}>
+                        <Button
+                            onClick={() => {
+                                setNoteEditing(note.id, false);
+                                onNoteDismissed();
+                            }}
+                        >
                             Save
                         </Button>
                     </div>
