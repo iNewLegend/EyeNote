@@ -32,7 +32,6 @@
         {
             "matches": ["<all_urls>"],
             "js": ["content.iife.js"],
-            "css": ["style.css"],
             "run_at": "document_end"
         }
     ],
@@ -43,15 +42,7 @@
     },
     "web_accessible_resources": [
         {
-            "resources": [
-                "assets/*",
-                "chunks/*",
-                "cursor.png",
-                "style.css",
-                "icons/*",
-                "*.css",
-                "*.css.map"
-            ],
+            "resources": ["assets/*", "chunks/*", "cursor.png", "icons/*"],
             "matches": ["<all_urls>"]
         }
     ],

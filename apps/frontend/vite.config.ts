@@ -26,21 +26,12 @@ export default defineConfig(({ mode }) => {
             ...commonConfig,
             build: {
                 ...commonConfig.build,
-                cssCodeSplit: false,
-                write: true,
                 rollupOptions: {
-                    input: {
-                        content: resolve(__dirname, "src/core/content-script/content-script.tsx"),
-                    },
+                    input: resolve(__dirname, "src/core/content-script/content-script.tsx"),
                     output: {
-                        entryFileNames: "[name].iife.js",
-                        assetFileNames: (assetInfo) => {
-                            if (assetInfo.name === "style.css") return "style.css";
-                            return "assets/[name][extname]";
-                        },
+                        entryFileNames: "content.iife.js",
                         format: "iife",
                         extend: true,
-                        inlineDynamicImports: true,
                     },
                 },
                 target: "chrome102",

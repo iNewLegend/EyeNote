@@ -2,8 +2,6 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import sharp from "sharp";
-import { exec } from 'child_process';
-import { promisify } from 'util';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -212,11 +210,6 @@ async function prepareExtension() {
             path.join(extensionDir, "content.iife.js")
         );
 
-        await copyFileWithRetry(
-            path.join(distDir, "style.css"), 
-            path.join(extensionDir, "style.css")
-        );
-
         // Copy background script
         const backgroundScriptPath = path.join(distDir, "background.js");
         let backgroundContent = await fs.readFile(backgroundScriptPath, 'utf-8');
@@ -251,7 +244,7 @@ async function prepareExtension() {
                 else if (
                     ![
                         "content.iife.js",
-                        "style.css",
+                        "content-script.css",
                         "background.js",
                         "background.js.map",
                     ].includes(entry.name)
@@ -260,6 +253,12 @@ async function prepareExtension() {
                 }
             }
         }
+
+        // Copy popup.html from src to extension
+        await copyFileWithRetry(
+            path.join(rootDir, "src", "popup.html"),
+            path.join(extensionDir, "popup.html")
+        );
 
         console.log("Extension files prepared successfully!");
 

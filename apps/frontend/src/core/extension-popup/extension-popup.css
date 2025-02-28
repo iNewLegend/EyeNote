@@ -1,18 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-    :root {
-        --background: 0 0% 100%;
-        --foreground: 222.2 84% 4.9%;
-    }
-}
+@import "../theme/popup-theme.css";
 
 @layer components {
     html,
     body {
         @apply m-0 p-0 w-[350px] h-[500px] bg-background text-foreground overflow-hidden;
+        color-scheme: dark;
     }
 
     #root {
@@ -61,5 +53,25 @@
 
     .instructions p {
         @apply m-0 text-foreground text-sm;
+    }
+
+    .notes-plugin {
+        @apply fixed pointer-events-none top-0 left-0 w-full h-full z-plugin-container font-sans;
+    }
+
+    .note-content {
+        @apply w-[300px] max-h-[80vh] overflow-y-auto bg-background text-foreground rounded-lg shadow-lg z-note-content border border-border;
+    }
+
+    .note-marker {
+        @apply absolute w-6 h-6 bg-primary hover:bg-primary-hover rounded-full cursor-pointer pointer-events-auto transition-transform duration-200 ease-in-out hover:scale-110;
+    }
+
+    [data-radix-dialog-overlay] {
+        @apply bg-background/80 backdrop-blur-sm fixed inset-0 z-dialog-overlay;
+    }
+
+    [role="status"][data-state] {
+        @apply z-toast;
     }
 }

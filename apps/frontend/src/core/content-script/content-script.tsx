@@ -3,48 +3,15 @@ import { createRoot } from "react-dom/client";
 import App from "../../app.tsx";
 import { Toaster } from "../../components/ui/sonner.tsx";
 import { ThemeProvider } from "../theme/theme-provider.tsx";
-import "../../styles/index.css";
-import "../../features/cursor/cursor.css";
+
+import contentStyles from "./content-script.css?inline";
 
 // Ensure we don't inject multiple instances
 if (!document.getElementById("eye-note-root")) {
     // Add highlight styles to main document
     const highlightStyles = document.createElement("style");
     highlightStyles.id = "eye-note-highlight-styles";
-    highlightStyles.textContent = `
-    #eye-note-highlight-overlay {
-      position: fixed;
-      pointer-events: none;
-      @apply z-highlight-element;
-      border: 2px solid var(--primary-color);
-      background: var(--primary-light);
-      transition: all 0.2s ease;
-      box-sizing: border-box;
-      display: none;
-    }
-
-    body.shift-pressed {
-      cursor: none !important;
-    }
-
-    .eye-note-highlight {
-      outline: 2px solid var(--primary-color) !important;
-      outline-offset: 2px !important;
-      background: var(--primary-light) !important;
-      cursor: none !important;
-    }
-
-    .cursor-dot {
-      width: 8px;
-      height: 8px;
-      background: var(--primary-color);
-      border-radius: 50%;
-      position: fixed;
-      pointer-events: none;
-      @apply z-highlight-element;
-      transform: translate(-50%, -50%);
-    }
-  `;
+    highlightStyles.textContent = contentStyles;
     document.head.appendChild(highlightStyles);
 
     // Create cursor dot element
@@ -143,16 +110,6 @@ if (!document.getElementById("eye-note-root")) {
 
     // Create root element for the app
     const root = document.createElement("div");
-    root.id = "eye-note-root";
-    root.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    @apply z-plugin-container;
-  `;
 
     // Create shadow root for style isolation
     const shadowRoot = root.attachShadow({ mode: "open" });
@@ -161,47 +118,6 @@ if (!document.getElementById("eye-note-root")) {
     const container = document.createElement("div");
     container.className = "notes-plugin";
     shadowRoot.appendChild(container);
-
-    // Add app styles to shadow root
-    const styles = document.createElement("style");
-    styles.textContent = `
-    :host {
-      all: initial;
-      display: block;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 2147483646;
-      contain: strict;
-    }
-
-    .notes-plugin {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      font-family: system-ui, -apple-system, sans-serif;
-    }
-
-    .notes-plugin * {
-      box-sizing: border-box;
-    }
-
-    /* Make sure interactive elements can receive pointer events */
-    .note-marker,
-    .note-content,
-    button,
-    input,
-    textarea {
-      pointer-events: auto;
-    }
-  `;
-    shadowRoot.appendChild(styles);
 
     // Add the root element to the page
     document.body.appendChild(root);
