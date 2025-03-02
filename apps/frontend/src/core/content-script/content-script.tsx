@@ -254,6 +254,7 @@ if (!document.getElementById("eye-note-root")) {
 
     // Create root element for the app
     const root = document.createElement("div");
+    root.id = "eye-note-root";
 
     // Create shadow root for style isolation
     const shadowRoot = root.attachShadow({ mode: "open" });
@@ -282,15 +283,7 @@ if (!document.getElementById("eye-note-root")) {
         highlightStyles.remove();
         overlay.remove();
         interactionBlocker.remove();
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("keydown", handleKeyDown);
-        document.removeEventListener("keyup", handleKeyUp);
-        window.removeEventListener("eye-note:element-selected", (() => {}) as EventListener);
-        window.removeEventListener("eye-note:note-dismissed", (() => {}) as EventListener);
-        window.removeEventListener(
-            "eye-note:reinitialize-inspector-mode",
-            (() => {}) as EventListener
-        );
+        cursorDot.remove();
         root.remove();
     }
 }
