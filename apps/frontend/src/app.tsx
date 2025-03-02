@@ -52,6 +52,10 @@ function App() {
 
             console.log("Creating note for element", hoveredElement);
 
+            // Store current scroll position
+            const scrollX = window.scrollX;
+            const scrollY = window.scrollY;
+
             // Create the note if we're in inspector mode and have a hovered element
             createNote(hoveredElement);
             setHoveredElement(null);
@@ -64,6 +68,11 @@ function App() {
                     detail: { element: hoveredElement },
                 })
             );
+
+            // Use requestAnimationFrame to restore scroll position after the note is created
+            requestAnimationFrame(() => {
+                window.scrollTo(scrollX, scrollY);
+            });
         },
         [
             isInspectorMode,

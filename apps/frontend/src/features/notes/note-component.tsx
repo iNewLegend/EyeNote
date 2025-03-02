@@ -67,6 +67,15 @@ export function NoteComponent({
                         if (note.highlightedElement) {
                             addHighlight(note.highlightedElement);
                             setSelectedElement(note.highlightedElement);
+
+                            // Store current scroll position
+                            const scrollX = window.scrollX;
+                            const scrollY = window.scrollY;
+
+                            // Use requestAnimationFrame to restore scroll position after the dialog renders
+                            requestAnimationFrame(() => {
+                                window.scrollTo(scrollX, scrollY);
+                            });
                         }
                     }
                 }}
@@ -79,6 +88,14 @@ export function NoteComponent({
                         top: `${note.y}px`,
                         transform: "none",
                         zIndex: 2147483647,
+                    }}
+                    onPointerDownOutside={(e) => {
+                        // Prevent scrolling when clicking outside the dialog
+                        e.preventDefault();
+                    }}
+                    onInteractOutside={(e) => {
+                        // Prevent any interaction outside the dialog from affecting scroll
+                        e.preventDefault();
                     }}
                 >
                     <DialogTitle className="sr-only">Add Note</DialogTitle>

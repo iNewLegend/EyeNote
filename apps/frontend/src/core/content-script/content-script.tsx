@@ -63,12 +63,22 @@ if (!document.getElementById("eye-note-root")) {
             overlay.style.display = "none";
             return;
         }
+
+        // Store current scroll position
+        const scrollX = window.scrollX;
+        const scrollY = window.scrollY;
+
         const rect = element.getBoundingClientRect();
         overlay.style.display = "block";
         overlay.style.top = rect.top + "px";
         overlay.style.left = rect.left + "px";
         overlay.style.width = rect.width + "px";
         overlay.style.height = rect.height + "px";
+
+        // Restore scroll position to prevent unwanted scrolling
+        requestAnimationFrame(() => {
+            window.scrollTo(scrollX, scrollY);
+        });
     };
 
     // Handle mouse movement
@@ -187,10 +197,19 @@ if (!document.getElementById("eye-note-root")) {
     window.addEventListener("eye-note:element-selected", ((e: CustomEvent) => {
         const element = e.detail.element;
         if (element instanceof HTMLElement) {
+            // Store current scroll position
+            const scrollX = window.scrollX;
+            const scrollY = window.scrollY;
+
             selectedElement = element;
             isAddingNote = true;
             updateOverlay(element);
             document.body.classList.add("adding-note");
+
+            // Restore scroll position to prevent unwanted scrolling
+            requestAnimationFrame(() => {
+                window.scrollTo(scrollX, scrollY);
+            });
         }
     }) as EventListener);
 

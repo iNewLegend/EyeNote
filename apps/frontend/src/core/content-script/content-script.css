@@ -66,5 +66,13 @@ body.adding-note .cursor-dot {
 /* Restore normal cursor when adding a note */
 body.adding-note {
     cursor: auto !important;
+    /* Prevent scroll jumps when adding a note */
+    scroll-behavior: auto !important;
+}
+
+/* Dialog styles to prevent scroll issues */
+.note-content {
+    max-height: none !important;
+    overflow: visible !important;
 }
 
