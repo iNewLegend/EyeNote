@@ -3,13 +3,17 @@ import { toast } from "sonner";
 import { useNotesStore } from "./stores/notes-store";
 import { NoteComponent } from "./features/notes/note-component";
 import { useInspectorMode } from "./hooks/use-inspector-mode";
-import { useHighlightStore } from "./stores/highlight-store";
 
 function App() {
     const { notes, createNote } = useNotesStore();
-    const { hoveredElement, setHoveredElement, setSelectedElement, isInspectorMode } =
-        useInspectorMode();
-    const { setAddingNote } = useHighlightStore();
+    const {
+        hoveredElement,
+        setHoveredElement,
+        setSelectedElement,
+        selectElementForNote,
+        dismissNote,
+        isInspectorMode,
+    } = useInspectorMode();
     const [isProcessingNoteDismissal, setIsProcessingNoteDismissal] = useState(false);
 
     const handleClick = useCallback(
@@ -52,35 +56,21 @@ function App() {
 
             console.log("Creating note for element", hoveredElement);
 
-            // Store current scroll position
-            const scrollX = window.scrollX;
-            const scrollY = window.scrollY;
-
             // Create the note if we're in inspector mode and have a hovered element
             createNote(hoveredElement);
             setHoveredElement(null);
-            setSelectedElement(hoveredElement);
-            setAddingNote(true);
 
-            // Dispatch a custom event to notify the content script that an element has been selected
-            window.dispatchEvent(
-                new CustomEvent("eye-note:element-selected", {
-                    detail: { element: hoveredElement },
-                })
-            );
-
-            // Use requestAnimationFrame to restore scroll position after the note is created
-            requestAnimationFrame(() => {
-                window.scrollTo(scrollX, scrollY);
-            });
+            // Use our selectElementForNote helper function
+            if (hoveredElement instanceof HTMLElement) {
+                selectElementForNote(hoveredElement);
+            }
         },
         [
             isInspectorMode,
             hoveredElement,
             setHoveredElement,
-            setSelectedElement,
             createNote,
-            setAddingNote,
+            selectElementForNote,
             isProcessingNoteDismissal,
         ]
     );
@@ -98,23 +88,14 @@ function App() {
         // Set a flag to prevent immediate click handling
         setIsProcessingNoteDismissal(true);
 
-        // Turn off adding note state
-        setAddingNote(false);
-
-        // Dispatch a custom event to notify the content script that the note has been dismissed
-        window.dispatchEvent(new CustomEvent("eye-note:note-dismissed"));
+        // Use our dismissNote helper function
+        dismissNote();
 
         // Reset the flag after a short delay to allow the DOM to update
         setTimeout(() => {
             setIsProcessingNoteDismissal(false);
-
-            // If the shift key is still pressed, ensure inspector mode is properly re-enabled
-            if (isInspectorMode) {
-                // Dispatch a synthetic keydown event to re-initialize inspector mode
-                window.dispatchEvent(new CustomEvent("eye-note:reinitialize-inspector-mode"));
-            }
         }, 100);
-    }, [setAddingNote, isInspectorMode]);
+    }, [dismissNote]);
 
     return (
         <div className="notes-plugin">
