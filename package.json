@@ -2,6 +2,10 @@
     "name": "eye-note",
     "version": "1.0.0",
     "private": true,
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
     "scripts": {
         "lint": "eslint ./apps --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "lint:fix": "eslint ./apps --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix"
