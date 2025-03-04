@@ -1,0 +1,7 @@
+---
+description: use-kebab-case-for-filenames
+globs: 
+alwaysApply: false
+---
+use-kebab-case-for-filenames
+
