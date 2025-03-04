@@ -1,11 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import { cn } from "../lib/utils";
+import { useCursorStore } from "../stores/use-cursor-store";
 
 interface CursorDotProps {
-    /**
-     * Whether the cursor dot is visible
-     */
-    visible?: boolean;
     /**
      * Primary color for the cursor dot
      */
@@ -16,14 +13,14 @@ interface CursorDotProps {
  * CursorDot component that follows the mouse cursor
  * Used in inspector mode to highlight the cursor position
  */
-export const CursorDot: React.FC<CursorDotProps> = ({ visible = false, color = "#7c3aed" }) => {
+export const CursorDot: React.FC<CursorDotProps> = ({ color = "#7c3aed" }) => {
     const cursorDotRef = useRef<HTMLDivElement | null>(null);
-    const [position, setPosition] = React.useState({ x: 0, y: 0 });
+    const { isInspectorMode, position } = useCursorStore();
 
     // Apply base styles to the cursor dot
     useEffect(() => {
         const cursorDot = cursorDotRef.current;
-        if (!cursorDot) return;
+        if (!cursorDot || !isInspectorMode) return;
 
         // Apply styles directly to match the tailwind classes
         cursorDot.style.backgroundColor = color;
@@ -32,30 +29,20 @@ export const CursorDot: React.FC<CursorDotProps> = ({ visible = false, color = "
         cursorDot.style.pointerEvents = "none";
         cursorDot.style.zIndex = "2147483645";
         cursorDot.style.transform = "translate(-50%, -50%)";
-        cursorDot.style.opacity = visible ? "1" : "0";
+        cursorDot.style.opacity = "1";
         cursorDot.style.filter = "drop-shadow(0 0 4px rgba(72, 4, 173, 0.3))";
-    }, [color, visible]);
+    }, [color, isInspectorMode]);
 
     // Update cursor position
     useEffect(() => {
         const cursorDot = cursorDotRef.current;
-        if (!cursorDot) return;
+        if (!cursorDot || !isInspectorMode) return;
 
         cursorDot.style.left = `${position.x}px`;
         cursorDot.style.top = `${position.y}px`;
-    }, [position]);
+    }, [position, isInspectorMode]);
 
-    // Track mouse movement
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            requestAnimationFrame(() => {
-                setPosition({ x: e.clientX, y: e.clientY });
-            });
-        };
-
-        document.addEventListener("mousemove", handleMouseMove);
-        return () => document.removeEventListener("mousemove", handleMouseMove);
-    }, []);
+    if (!isInspectorMode) return null;
 
     return (
         <>
@@ -72,9 +59,7 @@ export const CursorDot: React.FC<CursorDotProps> = ({ visible = false, color = "
                     // Z-index
                     "z-[2147483645]",
                     // Transitions
-                    "transition-opacity duration-300 ease-out transition-transform duration-200",
-                    // Visibility
-                    visible ? "opacity-100" : "opacity-0",
+                    "transition-transform duration-200",
                     // Effects
                     "drop-shadow-[0_0_4px_rgba(72,4,173,0.3)]"
                 )}

@@ -4,6 +4,7 @@ import App from "../../app.tsx";
 import { Toaster } from "../../components/ui/sonner.tsx";
 import { ThemeProvider } from "../theme/theme-provider.tsx";
 import CursorDot from "../../components/CursorDot.tsx";
+import { useCursorStore } from "../../stores/use-cursor-store";
 
 import contentStyles from "./content-script.css?inline";
 
@@ -79,8 +80,6 @@ if (!document.getElementById("eye-note-root")) {
     let selectedElement: HTMLElement | null = null;
     // Track if we're in the process of adding a note
     let isAddingNote = false;
-    // Track if the cursor dot is visible
-    let isCursorDotVisible = false;
 
     // Update overlay position
     const updateOverlay = (element: Element | null) => {
@@ -110,6 +109,9 @@ if (!document.getElementById("eye-note-root")) {
     const handleMouseMove = (e: MouseEvent) => {
         const x = e.clientX;
         const y = e.clientY;
+
+        // Update cursor position in store
+        useCursorStore.getState().setPosition(x, y);
 
         // If we're not in inspector mode and not adding a note, clear the overlay
         if (!document.body.classList.contains("inspector-mode")) {
@@ -183,8 +185,7 @@ if (!document.getElementById("eye-note-root")) {
             interactionBlocker.style.pointerEvents = "none";
 
             // Show cursor dot
-            isCursorDotVisible = true;
-            renderCursorDot();
+            useCursorStore.getState().setInspectorMode(true);
 
             // Clear any existing text selection
             if (window.getSelection) {
@@ -202,8 +203,7 @@ if (!document.getElementById("eye-note-root")) {
                 interactionBlocker.style.display = "none";
 
                 // Hide cursor dot
-                isCursorDotVisible = false;
-                renderCursorDot();
+                useCursorStore.getState().setInspectorMode(false);
 
                 if (currentInspectedElement) {
                     currentInspectedElement.style.cursor = "";
@@ -254,8 +254,7 @@ if (!document.getElementById("eye-note-root")) {
             document.body.style.cursor = ""; // Reset cursor style
 
             // Hide cursor dot
-            isCursorDotVisible = false;
-            renderCursorDot();
+            useCursorStore.getState().setInspectorMode(false);
 
             updateOverlay(null);
         } else {
@@ -265,19 +264,6 @@ if (!document.getElementById("eye-note-root")) {
         }
     }) as EventListener);
 
-    // Function to render the cursor dot component
-    const renderCursorDot = () => {
-        const cursorDotRoot = createRoot(cursorDotContainer);
-        cursorDotRoot.render(
-            <React.StrictMode>
-                <CursorDot visible={isCursorDotVisible} />
-            </React.StrictMode>
-        );
-    };
-
-    // Initial render of the cursor dot
-    renderCursorDot();
-
     // Render the React app into the shadow DOM
     const root = createRoot(appContainer);
     root.render(
@@ -286,6 +272,14 @@ if (!document.getElementById("eye-note-root")) {
                 <App />
                 <Toaster />
             </ThemeProvider>
+        </React.StrictMode>
+    );
+
+    // Render the cursor dot
+    const cursorDotRoot = createRoot(cursorDotContainer);
+    cursorDotRoot.render(
+        <React.StrictMode>
+            <CursorDot />
         </React.StrictMode>
     );
 }
