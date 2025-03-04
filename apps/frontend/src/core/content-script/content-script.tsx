@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "../../app.tsx";
 import { Toaster } from "../../components/ui/sonner.tsx";
 import { ThemeProvider } from "../theme/theme-provider.tsx";
-import CursorDot from "../../components/CursorDot.tsx";
+import CursorDot from "../../components/cursor-dot.tsx";
 import { useCursorStore } from "../../stores/use-cursor-store";
 import { useInspectorStore } from "../../stores/use-inspector-store";
 
