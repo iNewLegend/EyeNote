@@ -26,8 +26,6 @@ export const CursorDot: React.FC<CursorDotProps> = ({ visible = false, color = "
         if (!cursorDot) return;
 
         // Apply styles directly to match the tailwind classes
-        cursorDot.style.width = "0.5rem"; // w-2
-        cursorDot.style.height = "0.5rem"; // h-2
         cursorDot.style.backgroundColor = color; // bg-primary
         cursorDot.style.borderRadius = "9999px"; // rounded-full
         cursorDot.style.position = "fixed"; // fixed
