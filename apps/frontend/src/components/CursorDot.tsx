@@ -18,7 +18,9 @@ interface CursorDotProps {
  */
 export const CursorDot: React.FC<CursorDotProps> = ({ visible = false, color = "#7c3aed" }) => {
     const cursorDotRef = useRef<HTMLDivElement | null>(null);
+    const [position, setPosition] = React.useState({ x: 0, y: 0 });
 
+    // Setup effect for styles and pulse
     useEffect(() => {
         const cursorDot = cursorDotRef.current;
         if (!cursorDot) return;
@@ -74,27 +76,34 @@ export const CursorDot: React.FC<CursorDotProps> = ({ visible = false, color = "
         // Append the pulse effect to the cursor dot
         cursorDot.appendChild(pulseEffect);
 
-        // Handle mouse movement
-        const handleMouseMove = (e: MouseEvent) => {
-            requestAnimationFrame(() => {
-                if (cursorDot) {
-                    cursorDot.style.left = `${e.clientX}px`;
-                    cursorDot.style.top = `${e.clientY}px`;
-                }
-            });
-        };
-
-        // Add event listener
-        document.addEventListener("mousemove", handleMouseMove);
-
         // Clean up
         return () => {
-            document.removeEventListener("mousemove", handleMouseMove);
             if (document.getElementById("cursor-ping-keyframes")) {
                 document.getElementById("cursor-ping-keyframes")?.remove();
             }
         };
     }, [color, visible]);
+
+    // Separate effect for position updates
+    useEffect(() => {
+        const cursorDot = cursorDotRef.current;
+        if (!cursorDot) return;
+
+        cursorDot.style.left = `${position.x}px`;
+        cursorDot.style.top = `${position.y}px`;
+    }, [position]);
+
+    // Mouse movement effect
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            requestAnimationFrame(() => {
+                setPosition({ x: e.clientX, y: e.clientY });
+            });
+        };
+
+        document.addEventListener("mousemove", handleMouseMove);
+        return () => document.removeEventListener("mousemove", handleMouseMove);
+    }, []);
 
     return (
         <div
