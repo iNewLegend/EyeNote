@@ -22,19 +22,56 @@ export const CursorDot: React.FC<CursorDotProps> = ({ visible = false, color = "
         const cursorDot = cursorDotRef.current;
         if (!cursorDot) return;
 
-        // Set initial styles
-        cursorDot.style.width = "8px";
-        cursorDot.style.height = "8px";
-        cursorDot.style.backgroundColor = color;
-        cursorDot.style.borderRadius = "9999px";
-        cursorDot.style.position = "fixed";
-        cursorDot.style.pointerEvents = "none";
-        cursorDot.style.zIndex = "2147483645";
-        cursorDot.style.transform = "translate(-50%, -50%)";
-        cursorDot.style.opacity = visible ? "1" : "0";
+        // Apply styles directly to match the tailwind classes
+        cursorDot.style.width = "0.5rem"; // w-2
+        cursorDot.style.height = "0.5rem"; // h-2
+        cursorDot.style.backgroundColor = color; // bg-primary
+        cursorDot.style.borderRadius = "9999px"; // rounded-full
+        cursorDot.style.position = "fixed"; // fixed
+        cursorDot.style.pointerEvents = "none"; // pointer-events-none
+        cursorDot.style.zIndex = "2147483645"; // z-highlight-element
+        cursorDot.style.transform = "translate(-50%, -50%)"; // -translate-x-1/2 -translate-y-1/2
+        cursorDot.style.opacity = visible ? "1" : "0"; // opacity-0 (controlled by visible prop)
         cursorDot.style.transition =
             "opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)";
         cursorDot.style.filter = "drop-shadow(0 0 4px rgba(72, 4, 173, 0.3))";
+
+        // Create the pulse effect (::after element)
+        const pulseEffect = document.createElement("div");
+        pulseEffect.style.position = "absolute";
+        pulseEffect.style.top = "50%";
+        pulseEffect.style.left = "50%";
+        pulseEffect.style.transform = "translate(-50%, -50%)";
+        pulseEffect.style.width = "120%";
+        pulseEffect.style.height = "120%";
+        pulseEffect.style.borderRadius = "9999px";
+        pulseEffect.style.backgroundColor = color;
+        pulseEffect.style.pointerEvents = "none";
+
+        // Add animation
+        pulseEffect.style.animation = "cursor-ping 1.3s cubic-bezier(0, 0, 0.2, 1) infinite";
+
+        // Add keyframes for the animation if they don't exist
+        if (!document.getElementById("cursor-ping-keyframes")) {
+            const keyframes = document.createElement("style");
+            keyframes.id = "cursor-ping-keyframes";
+            keyframes.textContent = `
+                @keyframes cursor-ping {
+                    0% {
+                        transform: translate(-50%, -50%) scale(1);
+                        opacity: 0.8;
+                    }
+                    70%, 100% {
+                        transform: translate(-50%, -50%) scale(2);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(keyframes);
+        }
+
+        // Append the pulse effect to the cursor dot
+        cursorDot.appendChild(pulseEffect);
 
         // Handle mouse movement
         const handleMouseMove = (e: MouseEvent) => {
@@ -52,6 +89,9 @@ export const CursorDot: React.FC<CursorDotProps> = ({ visible = false, color = "
         // Clean up
         return () => {
             document.removeEventListener("mousemove", handleMouseMove);
+            if (document.getElementById("cursor-ping-keyframes")) {
+                document.getElementById("cursor-ping-keyframes")?.remove();
+            }
         };
     }, [color, visible]);
 
