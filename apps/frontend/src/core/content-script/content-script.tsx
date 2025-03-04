@@ -9,6 +9,12 @@ import { useInspectorStore } from "../../stores/use-inspector-store";
 
 import contentStyles from "./content-script.css?inline";
 
+// Wrapper component to handle store subscription
+const CursorDotWrapper = () => {
+    const isActive = useInspectorStore((state) => state.isActive);
+    return <CursorDot visible={isActive} />;
+};
+
 // Ensure we don't inject multiple instances
 if (!document.getElementById("eye-note-root")) {
     // Create a container for our extension UI
@@ -280,7 +286,7 @@ if (!document.getElementById("eye-note-root")) {
     const cursorDotRoot = createRoot(cursorDotContainer);
     cursorDotRoot.render(
         <React.StrictMode>
-            <CursorDot />
+            <CursorDotWrapper />
         </React.StrictMode>
     );
 }
