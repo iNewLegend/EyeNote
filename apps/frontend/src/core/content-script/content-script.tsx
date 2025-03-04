@@ -3,17 +3,11 @@ import { createRoot } from "react-dom/client";
 import App from "../../app.tsx";
 import { Toaster } from "../../components/ui/sonner.tsx";
 import { ThemeProvider } from "../theme/theme-provider.tsx";
-import CursorDot from "../../components/cursor-dot.tsx";
+import { CursorDotWrapper } from "../../components/cursor-dot-wrapper.tsx";
 import { useCursorStore } from "../../stores/use-cursor-store";
 import { useInspectorStore } from "../../stores/use-inspector-store";
 
 import contentStyles from "./content-script.css?inline";
-
-// Wrapper component to handle store subscription
-const CursorDotWrapper = () => {
-    const isActive = useInspectorStore((state) => state.isActive);
-    return <CursorDot visible={isActive} />;
-};
 
 // Ensure we don't inject multiple instances
 if (!document.getElementById("eye-note-root")) {
@@ -67,11 +61,11 @@ if (!document.getElementById("eye-note-root")) {
     interactionBlocker.style.zIndex = "2147483644"; // Just below the highlight overlay
     interactionBlocker.style.display = "none";
     interactionBlocker.style.cursor = "none";
-    interactionBlocker.style.pointerEvents = "none"; // Allow clicks to pass through
-    interactionBlocker.style.userSelect = "none"; // Prevent text selection
-    (interactionBlocker.style as any).webkitUserSelect = "none"; // For Safari
-    (interactionBlocker.style as any).msUserSelect = "none"; // For IE/Edge
-    (interactionBlocker.style as any).mozUserSelect = "none"; // For Firefox
+    interactionBlocker.style.pointerEvents = "none";
+    interactionBlocker.style.userSelect = "none";
+    (interactionBlocker.style as any).webkitUserSelect = "none";
+    (interactionBlocker.style as any).msUserSelect = "none";
+    (interactionBlocker.style as any).mozUserSelect = "none";
     document.body.appendChild(interactionBlocker);
 
     // Add click event listener to the interaction blocker
@@ -116,9 +110,6 @@ if (!document.getElementById("eye-note-root")) {
     const handleMouseMove = (e: MouseEvent) => {
         const x = e.clientX;
         const y = e.clientY;
-
-        // Update cursor position in store
-        useCursorStore.getState().setPosition(x, y);
 
         // If we're not in inspector mode and not adding a note, clear the overlay
         if (!document.body.classList.contains("inspector-mode")) {
