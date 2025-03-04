@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { cn } from "../lib/utils";
 
 interface CursorDotProps {
     /**
@@ -98,18 +99,22 @@ export const CursorDot: React.FC<CursorDotProps> = ({ visible = false, color = "
     return (
         <div
             ref={cursorDotRef}
-            className={`
-                fixed
-                w-2 h-2
-                rounded-full
-                pointer-events-none
-                transition-opacity duration-300 ease-in-out
-                transition-transform duration-200 ease-in-out
-                -translate-x-1/2 -translate-y-1/2
-                z-[2147483645]
-                ${visible ? "opacity-100" : "opacity-0"}
-                drop-shadow-[0_0_4px_rgba(72,4,173,0.3)]
-            `}
+            className={cn(
+                // Layout
+                "fixed w-2 h-2",
+                // Appearance
+                "rounded-full",
+                // Positioning and interactions
+                "pointer-events-none -translate-x-1/2 -translate-y-1/2",
+                // Z-index
+                "z-[2147483645]",
+                // Transitions
+                "transition-all duration-300 ease-in-out",
+                // Visibility
+                visible ? "opacity-100" : "opacity-0",
+                // Effects
+                "drop-shadow-[0_0_4px_rgba(72,4,173,0.3)]"
+            )}
             style={{ backgroundColor: color }}
         />
     );
