@@ -1,7 +1,7 @@
 ---
 description: use-kebab-case-for-filenames
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 use-kebab-case-for-filenames
 

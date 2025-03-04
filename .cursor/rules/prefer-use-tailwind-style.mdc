@@ -1,6 +1,7 @@
 ---
 description: # Perfer use tailwind
 globs: 
+alwaysApply: true
 ---
 
 # Perfer use tailwind
