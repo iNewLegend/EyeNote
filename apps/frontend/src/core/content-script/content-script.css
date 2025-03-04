@@ -1,78 +1,53 @@
 @import '../theme/content-theme.css';
-@import '../../features/cursor/cursor.css';
 
-#eye-note-highlight-overlay {
-    position: fixed;
-    pointer-events: none;
-    z-index: 2147483645; /* Same as z-highlight-element */
-    border: 2px solid var(--primary-color);
-    background: var(--primary-light);
-    transition: all 0.2s ease;
-    box-sizing: border-box;
-    display: none;
-}
+/* All styles are now scoped to the shadow DOM */
 
-#eye-note-interaction-blocker {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 2147483644; /* Just below the highlight overlay */
-    background: transparent;
-    pointer-events: all; /* Captures all interactions but allows them to pass through */
-    cursor: none;
-    display: none;
-}
+/* Note: Elements in the main DOM are styled with inline styles in the JavaScript */
 
 /* Ensure the notes plugin is above the interaction blocker */
-.notes-plugin {
+:host .notes-plugin {
     z-index: 2147483646; /* Above the highlight overlay */
     pointer-events: auto !important;
     position: relative;
 }
 
-/* Performance optimizations */
-:host-context(body.inspector-mode) #eye-note-highlight-overlay > * {
+/* Performance optimizations for elements in shadow DOM */
+:host-context(body.inspector-mode) .highlight-element > * {
     @apply gpu-accelerated;
 }
 
-/* Add a global style for inspector mode to disable text selection */
-body.inspector-mode * {
-    user-select: none !important;
-    -webkit-user-select: none !important;
-    -moz-user-select: none !important;
-    -ms-user-select: none !important;
-}
-
-/* Exception for the note content where text selection should be allowed */
-body.inspector-mode .note-content * {
-    user-select: text !important;
-    -webkit-user-select: text !important;
-    -moz-user-select: text !important;
-    -ms-user-select: text !important;
-}
-
-/* Add a class for when we're adding a note to maintain the overlay */
-body.adding-note #eye-note-highlight-overlay {
-    display: block !important;
-}
-
-/* Ensure cursor dot is visible when adding a note */
-body.adding-note .cursor-dot {
-    opacity: 0 !important; /* Hide the cursor dot when adding a note */
-}
-
-/* Restore normal cursor when adding a note */
-body.adding-note {
-    cursor: auto !important;
-    /* Prevent scroll jumps when adding a note */
-    scroll-behavior: auto !important;
+/* Add a class for when we're adding a note */
+:host-context(body.adding-note) {
+    /* Styles for the shadow DOM when adding a note */
 }
 
 /* Dialog styles to prevent scroll issues */
-.note-content {
+:host .note-content {
     max-height: none !important;
     overflow: visible !important;
+}
+
+/* Ensure all styles are properly scoped to the shadow DOM */
+:host {
+    all: initial; /* Reset all styles */
+    display: block;
+    contain: content; /* Contain styles to prevent leaking */
+}
+
+/* Reset styles for all elements inside the shadow DOM */
+:host * {
+    all: revert;
+    box-sizing: border-box;
+}
+
+/* Ensure our app container takes up no space on the page */
+:host #eye-note-app-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    overflow: visible;
+    z-index: 2147483647; /* Highest z-index */
 }
 

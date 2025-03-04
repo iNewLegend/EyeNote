@@ -8,20 +8,55 @@ import contentStyles from "./content-script.css?inline";
 
 // Ensure we don't inject multiple instances
 if (!document.getElementById("eye-note-root")) {
-    // Add highlight styles to main document
+    // Create a container for our extension UI
+    const container = document.createElement("div");
+    container.id = "eye-note-root";
+
+    // Create a shadow DOM to isolate our styles
+    const shadowRoot = container.attachShadow({ mode: "open" });
+
+    // Add highlight styles to shadow DOM instead of main document
     const highlightStyles = document.createElement("style");
     highlightStyles.id = "eye-note-highlight-styles";
     highlightStyles.textContent = contentStyles;
-    document.head.appendChild(highlightStyles);
+    shadowRoot.appendChild(highlightStyles);
 
-    // Create cursor dot element
+    // Create app container in shadow DOM
+    const appContainer = document.createElement("div");
+    appContainer.id = "eye-note-app-container";
+    shadowRoot.appendChild(appContainer);
+
+    // Append the container to the body
+    document.body.appendChild(container);
+
+    // Create cursor dot element - this needs to be in the main DOM
     const cursorDot = document.createElement("div");
     cursorDot.className = "cursor-dot";
+    cursorDot.style.width = "8px";
+    cursorDot.style.height = "8px";
+    cursorDot.style.backgroundColor = "var(--primary-color, #7c3aed)";
+    cursorDot.style.borderRadius = "9999px";
+    cursorDot.style.position = "fixed";
+    cursorDot.style.pointerEvents = "none";
+    cursorDot.style.zIndex = "2147483645";
+    cursorDot.style.transform = "translate(-50%, -50%)";
+    cursorDot.style.opacity = "0";
+    cursorDot.style.transition =
+        "opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)";
+    cursorDot.style.filter = "drop-shadow(0 0 4px rgba(72, 4, 173, 0.3))";
     document.body.appendChild(cursorDot);
 
-    // Create highlight overlay element
+    // Create highlight overlay element - this needs to be in the main DOM
     const overlay = document.createElement("div");
     overlay.id = "eye-note-highlight-overlay";
+    overlay.style.position = "fixed";
+    overlay.style.pointerEvents = "none";
+    overlay.style.zIndex = "2147483645";
+    overlay.style.border = "2px solid var(--primary-color, #7c3aed)";
+    overlay.style.backgroundColor = "rgba(124, 58, 237, 0.1)";
+    overlay.style.transition = "all 0.2s ease";
+    overlay.style.boxSizing = "border-box";
+    overlay.style.display = "none";
     document.body.appendChild(overlay);
 
     // Create an interaction blocker overlay
@@ -40,6 +75,7 @@ if (!document.getElementById("eye-note-root")) {
     (interactionBlocker.style as any).webkitUserSelect = "none"; // For Safari
     (interactionBlocker.style as any).msUserSelect = "none"; // For IE/Edge
     (interactionBlocker.style as any).mozUserSelect = "none"; // For Firefox
+    document.body.appendChild(interactionBlocker);
 
     // Add click event listener to the interaction blocker
     interactionBlocker.addEventListener("click", (e) => {
@@ -47,8 +83,6 @@ if (!document.getElementById("eye-note-root")) {
         // by not calling preventDefault or stopPropagation
         console.log("Interaction blocker clicked", e);
     });
-
-    document.body.appendChild(interactionBlocker);
 
     // Track the currently inspected element
     let currentInspectedElement: HTMLElement | null = null;
@@ -158,9 +192,15 @@ if (!document.getElementById("eye-note-root")) {
 
             document.body.classList.add("inspector-mode");
 
+            // Apply cursor style directly to body when in inspector mode
+            document.body.style.cursor = "none";
+
             // Make the interaction blocker visible but don't block pointer events
             interactionBlocker.style.display = "block";
             interactionBlocker.style.pointerEvents = "none";
+
+            // Show cursor dot
+            cursorDot.style.opacity = "1";
 
             // Clear any existing text selection
             if (window.getSelection) {
@@ -174,7 +214,9 @@ if (!document.getElementById("eye-note-root")) {
             // Only remove inspector mode class if we're not adding a note
             if (!isAddingNote) {
                 document.body.classList.remove("inspector-mode");
+                document.body.style.cursor = ""; // Reset cursor style
                 interactionBlocker.style.display = "none";
+                cursorDot.style.opacity = "0"; // Hide cursor dot
 
                 if (currentInspectedElement) {
                     currentInspectedElement.style.cursor = "";
@@ -222,17 +264,13 @@ if (!document.getElementById("eye-note-root")) {
         // If we're not in inspector mode, remove the inspector mode class and hide the overlay
         if (!document.body.classList.contains("inspector-mode") || !currentInspectedElement) {
             document.body.classList.remove("inspector-mode");
+            document.body.style.cursor = ""; // Reset cursor style
+            cursorDot.style.opacity = "0"; // Hide cursor dot
             updateOverlay(null);
         } else {
             // If we're still in inspector mode (shift key is still pressed),
             // make sure the interaction blocker is properly set up
             interactionBlocker.style.display = "block";
-            interactionBlocker.style.pointerEvents = "none";
-
-            // If there's a currently inspected element, update the overlay to show it
-            if (currentInspectedElement) {
-                updateOverlay(currentInspectedElement);
-            }
         }
     }) as EventListener);
 
@@ -252,38 +290,14 @@ if (!document.getElementById("eye-note-root")) {
         }
     }) as EventListener);
 
-    // Create root element for the app
-    const root = document.createElement("div");
-    root.id = "eye-note-root";
-
-    // Create shadow root for style isolation
-    const shadowRoot = root.attachShadow({ mode: "open" });
-
-    // Create container for our app inside shadow root
-    const container = document.createElement("div");
-    container.className = "notes-plugin";
-    shadowRoot.appendChild(container);
-
-    // Add the root element to the page
-    document.body.appendChild(root);
-
-    // Initialize React app
-    try {
-        createRoot(container).render(
-            <React.StrictMode>
-                <ThemeProvider defaultTheme="dark">
-                    <Toaster />
-                    <App />
-                </ThemeProvider>
-            </React.StrictMode>
-        );
-    } catch (error) {
-        console.error("Failed to initialize EyeNote:", error);
-        // Clean up if initialization fails
-        highlightStyles.remove();
-        overlay.remove();
-        interactionBlocker.remove();
-        cursorDot.remove();
-        root.remove();
-    }
+    // Render the React app into the shadow DOM
+    const root = createRoot(appContainer);
+    root.render(
+        <React.StrictMode>
+            <ThemeProvider>
+                <App />
+                <Toaster />
+            </ThemeProvider>
+        </React.StrictMode>
+    );
 }
