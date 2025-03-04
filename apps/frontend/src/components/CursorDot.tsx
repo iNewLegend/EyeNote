@@ -124,6 +124,7 @@ export const CursorDot: React.FC<CursorDotProps> = ({ visible = false, color = "
                 backgroundColor: color,
                 width: "0.5rem",
                 height: "0.5rem",
+                borderRadius: "9999px",
             }}
         />
     );
