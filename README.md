@@ -87,3 +87,12 @@ Both integrations help development teams:
 - `pnpm watch` - Start development with auto-reload
 - `pnpm build` - Build for production
 - `pnpm clean` - Clean build artifacts
+
+### Modes
+
+Inspector Mode - Enabled via holding $SHIFT_BUTTON - See cursor, highlight over elements
+
+Inspector Mode & Add Note mode - Enabled via selection of element in the inspector mode - Adds overlay
+
+To enable related entities like cursor dot or add note dialog
+we can use state of combined modes
