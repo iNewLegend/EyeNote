@@ -108,7 +108,7 @@ export const CursorDot: React.FC<CursorDotProps> = ({ visible = false, color = "
             ref={cursorDotRef}
             className={cn(
                 // Layout
-                "fixed w-2 h-2",
+                "fixed w-[0.5rem] h-[0.5rem]",
                 // Appearance
                 "rounded-full",
                 // Positioning and interactions
