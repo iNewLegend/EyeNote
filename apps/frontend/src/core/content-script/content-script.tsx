@@ -5,6 +5,7 @@ import { Toaster } from "../../components/ui/sonner.tsx";
 import { ThemeProvider } from "../theme/theme-provider.tsx";
 import CursorDot from "../../components/CursorDot.tsx";
 import { useCursorStore } from "../../stores/use-cursor-store";
+import { useInspectorStore } from "../../stores/use-inspector-store";
 
 import contentStyles from "./content-script.css?inline";
 
@@ -185,7 +186,7 @@ if (!document.getElementById("eye-note-root")) {
             interactionBlocker.style.pointerEvents = "none";
 
             // Show cursor dot
-            useCursorStore.getState().setInspectorMode(true);
+            useInspectorStore.getState().setIsActive(true);
 
             // Clear any existing text selection
             if (window.getSelection) {
@@ -203,7 +204,7 @@ if (!document.getElementById("eye-note-root")) {
                 interactionBlocker.style.display = "none";
 
                 // Hide cursor dot
-                useCursorStore.getState().setInspectorMode(false);
+                useInspectorStore.getState().setIsActive(false);
 
                 if (currentInspectedElement) {
                     currentInspectedElement.style.cursor = "";
@@ -254,7 +255,7 @@ if (!document.getElementById("eye-note-root")) {
             document.body.style.cursor = ""; // Reset cursor style
 
             // Hide cursor dot
-            useCursorStore.getState().setInspectorMode(false);
+            useInspectorStore.getState().setIsActive(false);
 
             updateOverlay(null);
         } else {

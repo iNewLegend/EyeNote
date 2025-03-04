@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { cn } from "../lib/utils";
 import { useCursorStore } from "../stores/use-cursor-store";
+import { useInspectorStore } from "../stores/use-inspector-store";
 
 interface CursorDotProps {
     /**
@@ -15,12 +16,13 @@ interface CursorDotProps {
  */
 export const CursorDot: React.FC<CursorDotProps> = ({ color = "#7c3aed" }) => {
     const cursorDotRef = useRef<HTMLDivElement | null>(null);
-    const { isInspectorMode, position } = useCursorStore();
+    const { position } = useCursorStore();
+    const { isActive } = useInspectorStore();
 
     // Apply base styles to the cursor dot
     useEffect(() => {
         const cursorDot = cursorDotRef.current;
-        if (!cursorDot || !isInspectorMode) return;
+        if (!cursorDot || !isActive) return;
 
         // Apply styles directly to match the tailwind classes
         cursorDot.style.backgroundColor = color;
@@ -31,18 +33,18 @@ export const CursorDot: React.FC<CursorDotProps> = ({ color = "#7c3aed" }) => {
         cursorDot.style.transform = "translate(-50%, -50%)";
         cursorDot.style.opacity = "1";
         cursorDot.style.filter = "drop-shadow(0 0 4px rgba(72, 4, 173, 0.3))";
-    }, [color, isInspectorMode]);
+    }, [color, isActive]);
 
     // Update cursor position
     useEffect(() => {
         const cursorDot = cursorDotRef.current;
-        if (!cursorDot || !isInspectorMode) return;
+        if (!cursorDot || !isActive) return;
 
         cursorDot.style.left = `${position.x}px`;
         cursorDot.style.top = `${position.y}px`;
-    }, [position, isInspectorMode]);
+    }, [position, isActive]);
 
-    if (!isInspectorMode) return null;
+    if (!isActive) return null;
 
     return (
         <>
