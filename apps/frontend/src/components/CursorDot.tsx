@@ -95,7 +95,24 @@ export const CursorDot: React.FC<CursorDotProps> = ({ visible = false, color = "
         };
     }, [color, visible]);
 
-    return <div ref={cursorDotRef} className="cursor-dot" />;
+    return (
+        <div
+            ref={cursorDotRef}
+            className={`
+                fixed
+                w-2 h-2
+                rounded-full
+                pointer-events-none
+                transition-opacity duration-300 ease-in-out
+                transition-transform duration-200 ease-in-out
+                -translate-x-1/2 -translate-y-1/2
+                z-[2147483645]
+                ${visible ? "opacity-100" : "opacity-0"}
+                drop-shadow-[0_0_4px_rgba(72,4,173,0.3)]
+            `}
+            style={{ backgroundColor: color }}
+        />
+    );
 };
 
 export default CursorDot;
