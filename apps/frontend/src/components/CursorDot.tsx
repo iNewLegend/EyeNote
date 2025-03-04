@@ -122,7 +122,11 @@ export const CursorDot: React.FC<CursorDotProps> = ({ visible = false, color = "
                 // Effects
                 "drop-shadow-[0_0_4px_rgba(72,4,173,0.3)]"
             )}
-            style={{ backgroundColor: color }}
+            style={{
+                backgroundColor: color,
+                width: "0.5rem",
+                height: "0.5rem",
+            }}
         />
     );
 };
