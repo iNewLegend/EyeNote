@@ -35,8 +35,6 @@ export const CursorDot: React.FC<CursorDotProps> = ({ visible = false, color = "
         cursorDot.style.zIndex = "2147483645"; // z-highlight-element
         cursorDot.style.transform = "translate(-50%, -50%)"; // -translate-x-1/2 -translate-y-1/2
         cursorDot.style.opacity = visible ? "1" : "0"; // opacity-0 (controlled by visible prop)
-        cursorDot.style.transition =
-            "opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)";
         cursorDot.style.filter = "drop-shadow(0 0 4px rgba(72, 4, 173, 0.3))";
 
         // Create the pulse effect (::after element)
@@ -118,7 +116,7 @@ export const CursorDot: React.FC<CursorDotProps> = ({ visible = false, color = "
                 // Z-index
                 "z-[2147483645]",
                 // Transitions
-                "transition-all duration-300 ease-in-out",
+                "transition-opacity duration-300 ease-out transition-transform duration-200",
                 // Visibility
                 visible ? "opacity-100" : "opacity-0",
                 // Effects
