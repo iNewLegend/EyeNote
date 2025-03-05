@@ -1,67 +1,38 @@
-import React, { useState } from "react";
+import React from "react";
 import { createRoot } from "react-dom/client";
-import App from "../../app.tsx";
-import { Toaster } from "../../components/ui/sonner.tsx";
-import { ThemeProvider } from "../theme/theme-provider.tsx";
-import { CursorDotWrapper } from "../../components/cursor-dot-wrapper.tsx";
-import { useCursorStore } from "../../stores/use-cursor-store";
+import { ShadowDOM } from "../shadow-dom/shadow-dom";
+import { UserlandDOM } from "../userland-dom/userland-dom";
 import { useInspectorStore } from "../../stores/use-inspector-store";
-import { HighlightOverlay } from "../../components/highlight-overlay";
 
-import contentStyles from "./content-script.css?inline";
+import shadowDOMStyles from "../shadow-dom/shadow-dom.css?inline";
 
 // Ensure we don't inject multiple instances
-if (!document.getElementById("eye-note-root")) {
-    // Create a container for our extension UI
-    const container = document.createElement("div");
-    container.id = "eye-note-root";
+if (!document.getElementById("eye-not-shadow-dom")) {
+    // Create containers
+    const shadowDomContainer = document.createElement("div");
+    shadowDomContainer.id = "eye-not-shadow-dom";
+
+    const userlandContainer = document.createElement("div");
+    userlandContainer.id = "eye-not-userland-container";
 
     // Create a shadow DOM to isolate our styles
-    const shadowRoot = container.attachShadow({ mode: "open" });
+    const shadowRoot = shadowDomContainer.attachShadow({ mode: "open" });
 
-    // Add highlight styles to shadow DOM instead of main document
+    // Add styles to shadow DOM
     const highlightStyles = document.createElement("style");
-    highlightStyles.id = "eye-note-highlight-styles";
-    highlightStyles.textContent = contentStyles;
+    highlightStyles.id = "eye-not-shadow-dom-styles";
+    highlightStyles.textContent = shadowDOMStyles;
     shadowRoot.appendChild(highlightStyles);
 
     // Create app container in shadow DOM
     const appContainer = document.createElement("div");
     appContainer.id = "eye-note-app-container";
+    appContainer.setAttribute("id", "eye-not-shadow-dom");
     shadowRoot.appendChild(appContainer);
 
-    // Append the container to the body
-    document.body.appendChild(container);
-
-    // Create a container for the cursor dot
-    const cursorDotContainer = document.createElement("div");
-    cursorDotContainer.id = "eye-note-cursor-dot-container";
-    document.body.appendChild(cursorDotContainer);
-
-    // Create an interaction blocker overlay
-    const interactionBlocker = document.createElement("div");
-    interactionBlocker.id = "eye-note-interaction-blocker";
-    interactionBlocker.style.position = "fixed";
-    interactionBlocker.style.top = "0";
-    interactionBlocker.style.left = "0";
-    interactionBlocker.style.width = "100%";
-    interactionBlocker.style.height = "100%";
-    interactionBlocker.style.zIndex = "2147483644"; // Just below the highlight overlay
-    interactionBlocker.style.display = "none";
-    interactionBlocker.style.cursor = "none";
-    interactionBlocker.style.pointerEvents = "none";
-    interactionBlocker.style.userSelect = "none";
-    (interactionBlocker.style as any).webkitUserSelect = "none";
-    (interactionBlocker.style as any).msUserSelect = "none";
-    (interactionBlocker.style as any).mozUserSelect = "none";
-    document.body.appendChild(interactionBlocker);
-
-    // Add click event listener to the interaction blocker
-    interactionBlocker.addEventListener("click", (e) => {
-        // Let the click event pass through to the app's click handler
-        // by not calling preventDefault or stopPropagation
-        console.log("Interaction blocker clicked", e);
-    });
+    // Append containers to the body
+    document.body.appendChild(shadowDomContainer);
+    document.body.appendChild(userlandContainer);
 
     // Track the currently inspected element
     let currentInspectedElement: HTMLElement | null = null;
@@ -69,53 +40,6 @@ if (!document.getElementById("eye-note-root")) {
     let selectedElement: HTMLElement | null = null;
     // Track if we're in the process of adding a note
     let isAddingNote = false;
-
-    // Create a container for the overlay outside of shadow DOM
-    const overlayContainer = document.createElement("div");
-    overlayContainer.id = "eye-note-overlay-container";
-    document.body.appendChild(overlayContainer);
-
-    // Create React context and state management for the overlay
-    const OverlayApp = () => {
-        const [overlayStyle, setOverlayStyle] = useState<React.CSSProperties>({
-            top: "0px",
-            left: "0px",
-            width: "0px",
-            height: "0px",
-        });
-        const [isVisible, setIsVisible] = useState(false);
-
-        // Update overlay position
-        const updateOverlay = (element: Element | null) => {
-            if (!element) {
-                setIsVisible(false);
-                return;
-            }
-
-            // Store current scroll position
-            const scrollX = window.scrollX;
-            const scrollY = window.scrollY;
-
-            const rect = element.getBoundingClientRect();
-            setOverlayStyle({
-                top: `${rect.top}px`,
-                left: `${rect.left}px`,
-                width: `${rect.width}px`,
-                height: `${rect.height}px`,
-            });
-            setIsVisible(true);
-
-            // Restore scroll position to prevent unwanted scrolling
-            requestAnimationFrame(() => {
-                window.scrollTo(scrollX, scrollY);
-            });
-        };
-
-        // Expose updateOverlay to window
-        (window as any).updateOverlay = updateOverlay;
-
-        return <HighlightOverlay style={overlayStyle} visible={isVisible} />;
-    };
 
     // Handle mouse movement
     const handleMouseMove = (e: MouseEvent) => {
@@ -142,7 +66,7 @@ if (!document.getElementById("eye-note-root")) {
         if (
             !element ||
             element === currentInspectedElement ||
-            element.closest("#eye-note-root") ||
+            element.closest("#eye-not-shadow-dom") ||
             element.closest(".notes-plugin")
         ) {
             return;
@@ -162,41 +86,20 @@ if (!document.getElementById("eye-note-root")) {
             if (!isAddingNote || element === selectedElement) {
                 (window as any).updateOverlay(element);
             }
-
-            // Log the element for debugging
-            console.log("Inspected element", {
-                element,
-                tagName: element.tagName,
-                id: element.id,
-                className: element.className,
-                rect: element.getBoundingClientRect(),
-            });
         }
     };
 
-    // Handle shift key events to toggle inspector mode
+    // Handle shift key events
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Shift") {
-            // If we're not adding a note, reset the state
             if (!isAddingNote) {
-                // Reset any lingering state
                 currentInspectedElement = null;
                 selectedElement = null;
             }
 
             document.body.classList.add("inspector-mode");
-
-            // Apply cursor style directly to body when in inspector mode
-            document.body.style.cursor = "none";
-
-            // Make the interaction blocker visible but don't block pointer events
-            interactionBlocker.style.display = "block";
-            interactionBlocker.style.pointerEvents = "none";
-
-            // Show cursor dot
             useInspectorStore.getState().setIsActive(true);
 
-            // Clear any existing text selection
             if (window.getSelection) {
                 window.getSelection()?.removeAllRanges();
             }
@@ -205,13 +108,8 @@ if (!document.getElementById("eye-note-root")) {
 
     const handleKeyUp = (e: KeyboardEvent) => {
         if (e.key === "Shift") {
-            // Only remove inspector mode class if we're not adding a note
             if (!isAddingNote) {
                 document.body.classList.remove("inspector-mode");
-                document.body.style.cursor = ""; // Reset cursor style
-                interactionBlocker.style.display = "none";
-
-                // Hide cursor dot
                 useInspectorStore.getState().setIsActive(false);
 
                 if (currentInspectedElement) {
@@ -219,9 +117,6 @@ if (!document.getElementById("eye-note-root")) {
                     currentInspectedElement = null;
                     (window as any).updateOverlay(null);
                 }
-            } else {
-                // If we're adding a note, keep the inspector mode visual but disable the interaction blocker
-                interactionBlocker.style.pointerEvents = "none";
             }
         }
     };
@@ -261,44 +156,23 @@ if (!document.getElementById("eye-note-root")) {
         if (!document.body.classList.contains("inspector-mode") || !currentInspectedElement) {
             document.body.classList.remove("inspector-mode");
             document.body.style.cursor = ""; // Reset cursor style
-
-            // Hide cursor dot
             useInspectorStore.getState().setIsActive(false);
-
             (window as any).updateOverlay(null);
-        } else {
-            // If we're still in inspector mode (shift key is still pressed),
-            // make sure the interaction blocker is properly set up
-            interactionBlocker.style.display = "block";
         }
     }) as EventListener);
 
-    // Render the React app into the shadow DOM
+    // Render the React apps
     const root = createRoot(appContainer);
     root.render(
         <React.StrictMode>
-            <ThemeProvider>
-                <App />
-                <Toaster />
-            </ThemeProvider>
+            <ShadowDOM />
         </React.StrictMode>
     );
 
-    // Render the cursor dot
-    const cursorDotRoot = createRoot(cursorDotContainer);
-    cursorDotRoot.render(
+    const userlandRoot = createRoot(userlandContainer);
+    userlandRoot.render(
         <React.StrictMode>
-            <CursorDotWrapper />
-        </React.StrictMode>
-    );
-
-    // Render the overlay
-    const overlayRoot = createRoot(overlayContainer);
-    overlayRoot.render(
-        <React.StrictMode>
-            <ThemeProvider>
-                <OverlayApp />
-            </ThemeProvider>
+            <UserlandDOM />
         </React.StrictMode>
     );
 }

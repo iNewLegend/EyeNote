@@ -1,10 +1,13 @@
+import React from "react";
 import { useEffect, useCallback, useState } from "react";
 import { toast } from "sonner";
-import { useNotesStore } from "./stores/notes-store";
-import { NoteComponent } from "./features/notes/note-component";
-import { useInspectorMode } from "./hooks/use-inspector-mode";
+import { useNotesStore } from "../../stores/notes-store";
+import { NoteComponent } from "../../features/notes/note-component";
+import { useInspectorMode } from "../../hooks/use-inspector-mode";
+import { ThemeProvider } from "../theme/theme-provider";
+import { Toaster } from "../../components/ui/sonner";
 
-function App() {
+export const ShadowDOM: React.FC = () => {
     const { notes, createNote } = useNotesStore();
     const {
         hoveredElement,
@@ -114,18 +117,21 @@ function App() {
     }, [dismissNote]);
 
     return (
-        <div className="notes-plugin">
-            {notes.map((note) => (
-                <NoteComponent
-                    key={note.id}
-                    note={note}
-                    setSelectedElement={setSelectedElement}
-                    onUpdateToast={(title, description) => toast(title, { description })}
-                    onNoteDismissed={handleNoteDismissed}
-                />
-            ))}
-        </div>
+        <ThemeProvider>
+            <div id="eye-not-shadow-dom">
+                <Toaster />
+                <div className="notes-plugin">
+                    {notes.map((note) => (
+                        <NoteComponent
+                            key={note.id}
+                            note={note}
+                            setSelectedElement={setSelectedElement}
+                            onUpdateToast={(title, description) => toast(title, { description })}
+                            onNoteDismissed={handleNoteDismissed}
+                        />
+                    ))}
+                </div>
+            </div>
+        </ThemeProvider>
     );
-}
-
-export default App;
+};
