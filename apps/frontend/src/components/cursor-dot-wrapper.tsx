@@ -4,9 +4,15 @@ import { useCursorPosition } from "../hooks/use-cursor-position";
 
 export const CursorDotWrapper = () => {
     const isInspectorMode = useModeStore((state) => state.isMode(AppMode.INSPECTOR_MODE));
+    const hasBothModes = useModeStore((state) =>
+        state.isModes([AppMode.INSPECTOR_MODE, AppMode.NOTES_MODE])
+    );
 
     // Track cursor position
     useCursorPosition();
 
-    return <CursorDot visible={isInspectorMode} />;
+    // Hide cursor dot if both modes are active
+    const shouldShowCursor = isInspectorMode && !hasBothModes;
+
+    return <CursorDot visible={shouldShowCursor} />;
 };
