@@ -45,58 +45,6 @@ function setupEventListeners() {
     let selectedElement: HTMLElement | null = null;
     let isShiftPressed = false; // Add shift key tracking
 
-    // Handle mouse movement
-    const handleMouseMove = (e: MouseEvent) => {
-        const x = e.clientX;
-        const y = e.clientY;
-
-        const modeStore = useModeStore.getState();
-        if (!modeStore.isMode(AppMode.INSPECTOR_MODE) || modeStore.isMode(AppMode.NOTES_MODE)) {
-            if (currentInspectedElement) {
-                currentInspectedElement.style.cursor = "";
-                currentInspectedElement = null;
-
-                // Clean up highlight store state when not in inspector mode
-                const highlightStore = useHighlightStore.getState();
-                highlightStore.setHoveredElement(null);
-                highlightStore.clearAllHighlights();
-
-                if (!selectedElement) {
-                    (window as any).updateOverlay(null);
-                }
-            }
-            return;
-        }
-
-        const element = document.elementFromPoint(x, y);
-
-        if (
-            !element ||
-            element === currentInspectedElement ||
-            element.closest(`#${DOM_IDS.SHADOW_CONTAINER}`) ||
-            element.closest(".notes-plugin")
-        ) {
-            return;
-        }
-
-        if (element instanceof HTMLElement) {
-            if (currentInspectedElement && currentInspectedElement !== element) {
-                currentInspectedElement.style.cursor = "";
-                // Clean up previous element highlight
-                const highlightStore = useHighlightStore.getState();
-                highlightStore.removeHighlight(currentInspectedElement);
-            }
-
-            element.style.cursor = "none";
-            currentInspectedElement = element;
-
-            // Add highlight to current element
-            const highlightStore = useHighlightStore.getState();
-            highlightStore.addHighlight(element);
-            (window as any).updateOverlay(element);
-        }
-    };
-
     // Handle shift key events
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Shift") {
@@ -137,7 +85,6 @@ function setupEventListeners() {
     };
 
     // Add event listeners
-    document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("keyup", handleKeyUp);
 
