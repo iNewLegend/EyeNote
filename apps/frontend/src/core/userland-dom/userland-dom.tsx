@@ -19,6 +19,7 @@ export const UserlandDOM: React.FC = () => {
     const [currentInspectedElement, setCurrentInspectedElement] = useState<HTMLElement | null>(
         null
     );
+    const [isShiftPressed, setIsShiftPressed] = useState(false);
 
     // Track mode changes using the new system
     const hasActiveMode = useModeStore((state) =>
@@ -91,23 +92,65 @@ export const UserlandDOM: React.FC = () => {
         }
     };
 
-    // Expose updateOverlay to window
+    // Handle keyboard events
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Shift" && !isShiftPressed) {
+            setIsShiftPressed(true);
+            // Update mode store state
+            useModeStore.getState().addMode(AppMode.INSPECTOR_MODE);
+
+            // Reset state if not in notes mode
+            if (!useModeStore.getState().isMode(AppMode.NOTES_MODE)) {
+                setCurrentInspectedElement(null);
+            }
+
+            if (window.getSelection) {
+                window.getSelection()?.removeAllRanges();
+            }
+        }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+        if (e.key === "Shift") {
+            setIsShiftPressed(false);
+            // Only remove inspector mode if we're not in notes mode
+            const modeStore = useModeStore.getState();
+            if (!modeStore.isMode(AppMode.NOTES_MODE)) {
+                modeStore.removeMode(AppMode.INSPECTOR_MODE);
+
+                // Clean up any inspected element
+                if (currentInspectedElement) {
+                    currentInspectedElement.style.cursor = "";
+                    setCurrentInspectedElement(null);
+                }
+
+                // Clear the overlay
+                updateOverlay(null);
+            }
+        }
+    };
+
+    // Setup event listeners
     useEffect(() => {
         (window as any).updateOverlay = updateOverlay;
 
-        // Add mouse move listener
+        // Add event listeners
         document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("keydown", handleKeyDown);
+        document.addEventListener("keyup", handleKeyUp);
 
         return () => {
             delete (window as any).updateOverlay;
             document.removeEventListener("mousemove", handleMouseMove);
+            document.removeEventListener("keydown", handleKeyDown);
+            document.removeEventListener("keyup", handleKeyUp);
 
             // Clean up any remaining cursor styles
             if (currentInspectedElement) {
                 currentInspectedElement.style.cursor = "";
             }
         };
-    }, [currentInspectedElement]);
+    }, [currentInspectedElement, isShiftPressed]);
 
     // Handle visibility
     useEffect(() => {

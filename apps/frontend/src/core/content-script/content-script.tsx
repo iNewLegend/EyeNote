@@ -41,52 +41,7 @@ function initializeShadowDOM(container: HTMLElement) {
 
 function setupEventListeners() {
     // Track state
-    let currentInspectedElement: HTMLElement | null = null;
     let selectedElement: HTMLElement | null = null;
-    let isShiftPressed = false; // Add shift key tracking
-
-    // Handle shift key events
-    const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Shift") {
-            isShiftPressed = true; // Track shift key state
-            // Update mode store state
-            useModeStore.getState().addMode(AppMode.INSPECTOR_MODE);
-
-            // Reset state if not in notes mode
-            if (!useModeStore.getState().isMode(AppMode.NOTES_MODE)) {
-                currentInspectedElement = null;
-                selectedElement = null;
-            }
-
-            if (window.getSelection) {
-                window.getSelection()?.removeAllRanges();
-            }
-        }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-        if (e.key === "Shift") {
-            isShiftPressed = false; // Track shift key state
-            // Only remove inspector mode if we're not in notes mode
-            const modeStore = useModeStore.getState();
-            if (!modeStore.isMode(AppMode.NOTES_MODE)) {
-                modeStore.removeMode(AppMode.INSPECTOR_MODE);
-
-                // Clean up any inspected element
-                if (currentInspectedElement) {
-                    currentInspectedElement.style.cursor = "";
-                    currentInspectedElement = null;
-                }
-
-                // Clear the overlay
-                (window as any).updateOverlay(null);
-            }
-        }
-    };
-
-    // Add event listeners
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("keyup", handleKeyUp);
 
     // Custom events for note creation
     window.addEventListener("eye-note:element-selected", ((e: CustomEvent) => {
