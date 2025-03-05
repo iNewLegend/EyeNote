@@ -1,4 +1,3 @@
-import React from "react";
 import { useInspectorStore } from "../stores/use-inspector-store";
 import { CursorDot } from "./cursor-dot";
 import { useCursorPosition } from "../hooks/use-cursor-position";
