@@ -2,6 +2,7 @@ const { fontFamily } = require("tailwindcss/defaultTheme");
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  important: ['#eye-not-shadow-dom', '#eye-not-userland-dom'],
   safelist: ["animate-cursor"],
   darkMode: ["class"],
   content: [

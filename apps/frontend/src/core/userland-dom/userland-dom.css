@@ -1,0 +1,7 @@
+/* Styles for userland DOM elements */
+#eye-not-userland-dom {
+    all: initial; /* Reset all styles */
+    display: block;
+    position: relative;
+    z-index: 2147483645; /* Between interaction blocker and highlight overlay */
+} 

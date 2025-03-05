@@ -19,10 +19,10 @@ if (!document.getElementById("eye-not-shadow-dom")) {
     const shadowRoot = shadowDomContainer.attachShadow({ mode: "open" });
 
     // Add styles to shadow DOM
-    const highlightStyles = document.createElement("style");
-    highlightStyles.id = "eye-not-shadow-dom-styles";
-    highlightStyles.textContent = shadowDOMStyles;
-    shadowRoot.appendChild(highlightStyles);
+    const shadowDOMElementStyles = document.createElement("style");
+    shadowDOMElementStyles.id = "eye-not-shadow-dom-styles";
+    shadowDOMElementStyles.textContent = shadowDOMStyles;
+    shadowRoot.appendChild(shadowDOMElementStyles);
 
     // Create app container in shadow DOM
     const appContainer = document.createElement("div");

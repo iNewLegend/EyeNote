@@ -154,7 +154,7 @@ export function useInspectorMode() {
             }
 
             // Don't highlight plugin elements
-            if (element.closest(".notes-plugin") || element.closest("#eye-note-root")) {
+            if (element.closest(".notes-plugin") || element.closest("#eye-not-shadow-dom")) {
                 setHoveredElement(null);
                 lastProcessedElement.current = element;
                 return;

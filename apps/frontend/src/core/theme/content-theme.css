@@ -1,120 +1,120 @@
-@import "./base-theme.css";
+/*@import "./base-theme.css";*/
 
-/* Content script specific theme - scoped to shadow DOM */
-:host {
-    /* Base shadcn variables */
-    --background: 224 71.4% 4.1%;
-    --foreground: 210 20% 98%;
-    --card: 224 71.4% 4.1%;
-    --card-foreground: 210 20% 98%;
-    --popover: 224 71.4% 4.1%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 263.4 70% 50.4%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
-    --accent: 215 27.9% 16.9%;
-    --accent-foreground: 210 20% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 263.4 70% 50.4%;
-    --radius: 0.5rem;
+/*!* Content script specific theme - scoped to shadow DOM *!*/
+/*:host {*/
+/*    !* Base shadcn variables *!*/
+/*    --background: 224 71.4% 4.1%;*/
+/*    --foreground: 210 20% 98%;*/
+/*    --card: 224 71.4% 4.1%;*/
+/*    --card-foreground: 210 20% 98%;*/
+/*    --popover: 224 71.4% 4.1%;*/
+/*    --popover-foreground: 210 20% 98%;*/
+/*    --primary: 263.4 70% 50.4%;*/
+/*    --primary-foreground: 210 20% 98%;*/
+/*    --secondary: 215 27.9% 16.9%;*/
+/*    --secondary-foreground: 210 20% 98%;*/
+/*    --muted: 215 27.9% 16.9%;*/
+/*    --muted-foreground: 217.9 10.6% 64.9%;*/
+/*    --accent: 215 27.9% 16.9%;*/
+/*    --accent-foreground: 210 20% 98%;*/
+/*    --destructive: 0 62.8% 30.6%;*/
+/*    --destructive-foreground: 210 20% 98%;*/
+/*    --border: 215 27.9% 16.9%;*/
+/*    --input: 215 27.9% 16.9%;*/
+/*    --ring: 263.4 70% 50.4%;*/
+/*    --radius: 0.5rem;*/
 
-    /* Violet shades */
-    --violet-50: 264 100% 98%;
-    --violet-100: 264 100% 92%;
-    --violet-200: 264 96% 85%;
-    --violet-300: 264 90% 75%;
-    --violet-400: 264 85% 65%;
-    --violet-500: 264 80% 55%;
-    --violet-600: 264 75% 45%;
-    --violet-700: 264 70% 35%;
-    --violet-800: 264 65% 25%;
-    --violet-900: 264 60% 15%;
-    --violet-950: 264 55% 10%;
+/*    !* Violet shades *!*/
+/*    --violet-50: 264 100% 98%;*/
+/*    --violet-100: 264 100% 92%;*/
+/*    --violet-200: 264 96% 85%;*/
+/*    --violet-300: 264 90% 75%;*/
+/*    --violet-400: 264 85% 65%;*/
+/*    --violet-500: 264 80% 55%;*/
+/*    --violet-600: 264 75% 45%;*/
+/*    --violet-700: 264 70% 35%;*/
+/*    --violet-800: 264 65% 25%;*/
+/*    --violet-900: 264 60% 15%;*/
+/*    --violet-950: 264 55% 10%;*/
 
-    /* Custom theme colors */
-    --primary-color: hsl(var(--violet-500));
-    --primary-light: hsl(var(--violet-500) / 0.1);
-    --primary-hover: hsl(var(--violet-600));
-    
-    /* Background colors */
-    --background-color: hsl(var(--violet-900));
-    --background-lighter: hsl(var(--violet-800));
-    --background-darker: hsl(var(--violet-950));
-    
-    /* Border colors */
-    --border-color: hsl(var(--violet-700));
-    --border-light: hsl(var(--violet-600) / 0.3);
-    
-    /* Text colors */
-    --text-color: hsl(0 0% 100%);
-    --text-muted: hsl(264 15% 65%);
-    
-    /* Shadow colors */
-    --shadow-color: hsl(var(--violet-950) / 0.5);
-    --shadow-light: hsl(var(--violet-900) / 0.2);
+/*    !* Custom theme colors *!*/
+/*    --primary-color: hsl(var(--violet-500));*/
+/*    --primary-light: hsl(var(--violet-500) / 0.1);*/
+/*    --primary-hover: hsl(var(--violet-600));*/
 
-    /* Input and interactive elements */
-    --input-background: hsl(var(--violet-800));
-    --input-border: hsl(var(--violet-700));
-    --input-focus-border: hsl(var(--violet-500));
-    
-    /* Button colors */
-    --button-background: hsl(var(--violet-500));
-    --button-hover: hsl(var(--violet-600));
-    --button-active: hsl(var(--violet-700));
-}
+/*    !* Background colors *!*/
+/*    --background-color: hsl(var(--violet-900));*/
+/*    --background-lighter: hsl(var(--violet-800));*/
+/*    --background-darker: hsl(var(--violet-950));*/
 
-/* Light theme for content script */
-:host([data-theme="light"]) {
-    --background: 0 0% 100%;
-    --foreground: 224 71.4% 4.1%;
-    --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
-    --primary: 263.4 70% 50.4%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 220 14.3% 95.9%;
-    --secondary-foreground: 220.9 39.3% 11%;
-    --muted: 220 14.3% 95.9%;
-    --muted-foreground: 220 8.9% 46.1%;
-    --accent: 220 14.3% 95.9%;
-    --accent-foreground: 220.9 39.3% 11%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 263.4 70% 50.4%;
+/*    !* Border colors *!*/
+/*    --border-color: hsl(var(--violet-700));*/
+/*    --border-light: hsl(var(--violet-600) / 0.3);*/
 
-    /* Custom theme colors */
-    --primary-color: hsl(var(--violet-600));
-    --primary-light: hsl(var(--violet-100));
-    --primary-hover: hsl(var(--violet-700));
-    
-    --background-color: hsl(0 0% 100%);
-    --background-lighter: hsl(var(--violet-50));
-    --background-darker: hsl(var(--violet-100));
-    
-    --border-color: hsl(var(--violet-200));
-    --border-light: hsl(var(--violet-100));
-    
-    --text-color: hsl(var(--violet-900));
-    --text-muted: hsl(var(--violet-600));
-    
-    --shadow-color: hsl(var(--violet-950) / 0.1);
-    --shadow-light: hsl(var(--violet-900) / 0.05);
+/*    !* Text colors *!*/
+/*    --text-color: hsl(0 0% 100%);*/
+/*    --text-muted: hsl(264 15% 65%);*/
 
-    --input-background: hsl(0 0% 100%);
-    --input-border: hsl(var(--violet-200));
-    --input-focus-border: hsl(var(--violet-500));
-    
-    --button-background: hsl(var(--violet-600));
-    --button-hover: hsl(var(--violet-700));
-    --button-active: hsl(var(--violet-800));
-} 
+/*    !* Shadow colors *!*/
+/*    --shadow-color: hsl(var(--violet-950) / 0.5);*/
+/*    --shadow-light: hsl(var(--violet-900) / 0.2);*/
+
+/*    !* Input and interactive elements *!*/
+/*    --input-background: hsl(var(--violet-800));*/
+/*    --input-border: hsl(var(--violet-700));*/
+/*    --input-focus-border: hsl(var(--violet-500));*/
+
+/*    !* Button colors *!*/
+/*    --button-background: hsl(var(--violet-500));*/
+/*    --button-hover: hsl(var(--violet-600));*/
+/*    --button-active: hsl(var(--violet-700));*/
+/*}*/
+
+/*!* Light theme for content script *!*/
+/*:host([data-theme="light"]) {*/
+/*    --background: 0 0% 100%;*/
+/*    --foreground: 224 71.4% 4.1%;*/
+/*    --card: 0 0% 100%;*/
+/*    --card-foreground: 224 71.4% 4.1%;*/
+/*    --popover: 0 0% 100%;*/
+/*    --popover-foreground: 224 71.4% 4.1%;*/
+/*    --primary: 263.4 70% 50.4%;*/
+/*    --primary-foreground: 210 20% 98%;*/
+/*    --secondary: 220 14.3% 95.9%;*/
+/*    --secondary-foreground: 220.9 39.3% 11%;*/
+/*    --muted: 220 14.3% 95.9%;*/
+/*    --muted-foreground: 220 8.9% 46.1%;*/
+/*    --accent: 220 14.3% 95.9%;*/
+/*    --accent-foreground: 220.9 39.3% 11%;*/
+/*    --destructive: 0 84.2% 60.2%;*/
+/*    --destructive-foreground: 210 20% 98%;*/
+/*    --border: 220 13% 91%;*/
+/*    --input: 220 13% 91%;*/
+/*    --ring: 263.4 70% 50.4%;*/
+
+/*    !* Custom theme colors *!*/
+/*    --primary-color: hsl(var(--violet-600));*/
+/*    --primary-light: hsl(var(--violet-100));*/
+/*    --primary-hover: hsl(var(--violet-700));*/
+
+/*    --background-color: hsl(0 0% 100%);*/
+/*    --background-lighter: hsl(var(--violet-50));*/
+/*    --background-darker: hsl(var(--violet-100));*/
+
+/*    --border-color: hsl(var(--violet-200));*/
+/*    --border-light: hsl(var(--violet-100));*/
+
+/*    --text-color: hsl(var(--violet-900));*/
+/*    --text-muted: hsl(var(--violet-600));*/
+
+/*    --shadow-color: hsl(var(--violet-950) / 0.1);*/
+/*    --shadow-light: hsl(var(--violet-900) / 0.05);*/
+
+/*    --input-background: hsl(0 0% 100%);*/
+/*    --input-border: hsl(var(--violet-200));*/
+/*    --input-focus-border: hsl(var(--violet-500));*/
+
+/*    --button-background: hsl(var(--violet-600));*/
+/*    --button-hover: hsl(var(--violet-700));*/
+/*    --button-active: hsl(var(--violet-800));*/
+/*}*/
