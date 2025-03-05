@@ -33,6 +33,8 @@ export const ShadowDOM: React.FC = () => {
 
             // If we're processing a note dismissal, ignore the click
             if (isProcessingNoteDismissal) {
+                e.preventDefault();
+                e.stopPropagation();
                 console.log("Ignoring click during note dismissal processing");
                 return;
             }

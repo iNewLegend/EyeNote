@@ -119,9 +119,10 @@ function setupEventListeners() {
     const handleKeyUp = (e: KeyboardEvent) => {
         if (e.key === "Shift") {
             isShiftPressed = false; // Track shift key state
-            if (!useModeStore.getState().isMode(AppMode.NOTES_MODE)) {
-                // Update mode store state
-                useModeStore.getState().removeMode(AppMode.INSPECTOR_MODE);
+            // Only remove inspector mode if we're not in notes mode
+            const modeStore = useModeStore.getState();
+            if (!modeStore.isMode(AppMode.NOTES_MODE)) {
+                modeStore.removeMode(AppMode.INSPECTOR_MODE);
 
                 // Clean up any inspected element
                 if (currentInspectedElement) {
@@ -161,33 +162,6 @@ function setupEventListeners() {
                 window.scrollTo(scrollX, scrollY);
             });
         }
-    }) as EventListener);
-
-    window.addEventListener("eye-note:note-dismissed", (() => {
-        const modeStore = useModeStore.getState();
-        modeStore.removeMode(AppMode.NOTES_MODE);
-
-        // Update inspector mode based on shift key state
-        if (!isShiftPressed) {
-            modeStore.removeMode(AppMode.INSPECTOR_MODE);
-        }
-
-        const highlightStore = useHighlightStore.getState();
-        highlightStore.setSelectedElement(null);
-        highlightStore.setHoveredElement(null);
-        highlightStore.clearAllHighlights();
-
-        // Then update local state
-        selectedElement = null;
-
-        // Clean up any inspected element
-        if (currentInspectedElement) {
-            currentInspectedElement.style.cursor = "";
-            currentInspectedElement = null;
-        }
-
-        // Clear the overlay
-        (window as any).updateOverlay(null);
     }) as EventListener);
 }
 

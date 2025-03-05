@@ -75,10 +75,11 @@ export function useInspectorMode() {
 
         const handleKeyUp = (e: KeyboardEvent) => {
             if (e.key === "Shift") {
-                removeMode(AppMode.INSPECTOR_MODE);
-
-                // Only clear highlights if we're not in notes mode
+                // Only remove inspector mode if we're not in notes mode
                 if (!isMode(AppMode.NOTES_MODE)) {
+                    removeMode(AppMode.INSPECTOR_MODE);
+
+                    // Only clear highlights if we're not in notes mode
                     clearAllHighlights();
 
                     // Reset the last processed element
@@ -204,31 +205,15 @@ export function useInspectorMode() {
 
     // Handle note dismissal
     const dismissNote = useCallback(() => {
-        removeMode(AppMode.NOTES_MODE);
-
-        // If inspector mode is off after dismissal, hide the overlay
-        if (!isMode(AppMode.INSPECTOR_MODE)) {
-            updateOverlayPosition(null);
-
-            const interactionBlocker = document.getElementById("eye-note-interaction-blocker");
-            if (interactionBlocker) {
-                interactionBlocker.style.display = "none";
-            }
-        } else {
-            // If we're still in inspector mode (shift key still pressed),
-            // make sure the interaction blocker is properly configured
-            const interactionBlocker = document.getElementById("eye-note-interaction-blocker");
-            if (interactionBlocker) {
-                interactionBlocker.style.display = "block";
-                interactionBlocker.style.pointerEvents = "none";
-            }
-
-            // If there's a hovered element, update the overlay to show it
-            if (hoveredElement) {
-                updateOverlayPosition(hoveredElement);
-            }
+        // Clear all modes except DEBUG_MODE
+        const currentModes = modes;
+        if (currentModes & AppMode.NOTES_MODE) {
+            removeMode(AppMode.NOTES_MODE);
         }
-    }, [isMode, removeMode, hoveredElement, updateOverlayPosition]);
+        if (currentModes & AppMode.INSPECTOR_MODE) {
+            removeMode(AppMode.INSPECTOR_MODE);
+        }
+    }, [modes, removeMode]);
 
     // Cleanup on unmount
     useEffect(() => {

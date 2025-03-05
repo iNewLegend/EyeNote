@@ -20,9 +20,67 @@ export function NoteComponent({
     const { updateNote, deleteNote, setNoteEditing } = useNotesStore();
     const { addHighlight, removeHighlight } = useHighlightStore();
 
+    console.log("[Debug] NoteComponent rendered with note:", { note, isEditing: note.isEditing });
+
     const handleNoteUpdate = (id: number, content: string) => {
+        console.log("[Debug] handleNoteUpdate called", { id, content });
         updateNote(id, content);
         onUpdateToast("Note updated", "Your note has been saved successfully");
+    };
+
+    const handleOpenChange = (open: boolean) => {
+        console.log("[Debug] Dialog onOpenChange", {
+            open,
+            noteId: note.id,
+            currentIsEditing: note.isEditing,
+        });
+
+        if (!open) {
+            console.log("[Debug] Dialog closing");
+            const element = note.highlightedElement;
+            if (element) {
+                removeHighlight(element);
+                setSelectedElement(null);
+            }
+            setNoteEditing(note.id, false);
+            // Call onNoteDismissed after a short delay to ensure state updates have completed
+            requestAnimationFrame(() => {
+                console.log("[Debug] Calling onNoteDismissed");
+                onNoteDismissed();
+            });
+        } else {
+            console.log("[Debug] Dialog opening");
+            if (note.highlightedElement) {
+                addHighlight(note.highlightedElement);
+                setSelectedElement(note.highlightedElement);
+
+                // Store current scroll position
+                const scrollX = window.scrollX;
+                const scrollY = window.scrollY;
+
+                // Use requestAnimationFrame to restore scroll position after the dialog renders
+                requestAnimationFrame(() => {
+                    window.scrollTo(scrollX, scrollY);
+                });
+            }
+        }
+    };
+
+    const handleTextareaBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+        console.log("[Debug] Textarea blur", { relatedTarget: e.relatedTarget });
+
+        // Update the note content
+        handleNoteUpdate(note.id, e.target.value);
+
+        // If the related target is not within the dialog (clicked outside completely)
+        // we should close the dialog
+        const dialogContent = e.target.closest(".note-content");
+        const isClickedOutsideDialog = !dialogContent?.contains(e.relatedTarget as Node);
+
+        if (isClickedOutsideDialog) {
+            console.log("[Debug] Clicked outside dialog, closing");
+            handleOpenChange(false);
+        }
     };
 
     return (
@@ -35,44 +93,25 @@ export function NoteComponent({
                     zIndex: 2147483647,
                 }}
                 onClick={() => {
-                    console.log("Note marker clicked", note);
+                    console.log("[Debug] Note marker clicked", {
+                        note,
+                        element: note.highlightedElement,
+                    });
                     const element = note.highlightedElement;
                     if (element) {
                         setSelectedElement(element);
                         addHighlight(element);
                     }
+                    console.log("[Debug] Before setNoteEditing", {
+                        noteId: note.id,
+                        currentIsEditing: note.isEditing,
+                    });
+                    handleOpenChange(true); // Use the handler directly instead of just setting the state
                     setNoteEditing(note.id, true);
+                    console.log("[Debug] After setNoteEditing");
                 }}
             />
-            <Dialog
-                open={note.isEditing}
-                onOpenChange={(open) => {
-                    console.log("Dialog open change", { open, note });
-                    if (!open) {
-                        const element = note.highlightedElement;
-                        if (element) {
-                            removeHighlight(element);
-                            setSelectedElement(null);
-                        }
-                        setNoteEditing(note.id, false);
-                        onNoteDismissed();
-                    } else {
-                        if (note.highlightedElement) {
-                            addHighlight(note.highlightedElement);
-                            setSelectedElement(note.highlightedElement);
-
-                            // Store current scroll position
-                            const scrollX = window.scrollX;
-                            const scrollY = window.scrollY;
-
-                            // Use requestAnimationFrame to restore scroll position after the dialog renders
-                            requestAnimationFrame(() => {
-                                window.scrollTo(scrollX, scrollY);
-                            });
-                        }
-                    }
-                }}
-            >
+            <Dialog open={note.isEditing} onOpenChange={handleOpenChange}>
                 <DialogContent
                     className="note-content"
                     style={{
@@ -83,10 +122,13 @@ export function NoteComponent({
                         zIndex: 2147483647,
                     }}
                     onPointerDownOutside={(e) => {
+                        console.log("[Debug] Dialog pointer down outside");
                         // Prevent scrolling when clicking outside the dialog
                         e.preventDefault();
+                        handleOpenChange(false); // Explicitly trigger close
                     }}
                     onInteractOutside={(e) => {
+                        console.log("[Debug] Dialog interact outside");
                         // Prevent any interaction outside the dialog from affecting scroll
                         e.preventDefault();
                     }}
@@ -101,18 +143,20 @@ export function NoteComponent({
                         defaultValue={note.content}
                         placeholder="Enter your note..."
                         autoFocus
-                        onBlur={(e) => handleNoteUpdate(note.id, e.target.value)}
+                        onBlur={handleTextareaBlur}
                     />
                     <div className="flex justify-end gap-2 mt-4">
                         <Button
                             variant="outline"
                             onClick={() => {
+                                console.log("[Debug] Delete button clicked");
                                 const element = note.highlightedElement;
                                 if (element) {
                                     removeHighlight(element);
                                     setSelectedElement(null);
                                 }
                                 deleteNote(note.id);
+                                handleOpenChange(false); // Explicitly trigger close
                                 onNoteDismissed();
                             }}
                         >
@@ -120,6 +164,8 @@ export function NoteComponent({
                         </Button>
                         <Button
                             onClick={() => {
+                                console.log("[Debug] Save button clicked");
+                                handleOpenChange(false); // Explicitly trigger close
                                 setNoteEditing(note.id, false);
                                 onNoteDismissed();
                             }}
