@@ -1,21 +1,21 @@
 import { create } from "zustand";
 
-interface InspectorStore {
-    isActive: boolean;
+interface ModeStore {
+    isInspectorMode: boolean;
     isAddingNote: boolean;
-    setIsActive: (isActive: boolean) => void;
+    setInspectorMode: (isInspectorMode: boolean) => void;
     setAddingNote: (isAddingNote: boolean) => void;
 }
 
-export const useInspectorStore = create<InspectorStore>((set, get) => ({
-    isActive: false,
+export const useModeStore = create<ModeStore>((set, get) => ({
+    isInspectorMode: false,
     isAddingNote: false,
 
-    setIsActive: (isActive: boolean) => {
-        set({ isActive });
+    setInspectorMode: (isInspectorMode: boolean) => {
+        set({ isInspectorMode });
 
         // Manage DOM classes and cursor for inspector mode
-        if (isActive) {
+        if (isInspectorMode) {
             document.body.classList.add("inspector-mode");
             // Only set cursor to none if we're not adding a note
             if (!get().isAddingNote) {
@@ -39,7 +39,7 @@ export const useInspectorStore = create<InspectorStore>((set, get) => ({
         } else {
             document.body.classList.remove("adding-note");
             // Let inspector mode handle the cursor if it's active
-            if (get().isActive) {
+            if (get().isInspectorMode) {
                 document.body.style.cursor = "none";
             } else {
                 document.body.style.cursor = "";

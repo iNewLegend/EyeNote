@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { useInspectorStore } from "./use-inspector-store";
+import { useModeStore } from "./use-mode-store";
 
 interface HighlightStore {
     highlightedElements: Set<Element>;

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useHighlightStore } from "../stores/highlight-store";
 import { useNotesStore } from "../stores/notes-store";
-import { useInspectorStore } from "../stores/use-inspector-store";
+import { useModeStore } from "../stores/use-mode-store";
 
 export function useInspectorMode() {
     const lastProcessedElement = useRef<Element | null>(null);
@@ -13,12 +13,7 @@ export function useInspectorMode() {
         clearAllHighlights,
         highlightedElements,
     } = useHighlightStore();
-    const {
-        isActive: isInspectorMode,
-        isAddingNote,
-        setIsActive: setInspectorMode,
-        setAddingNote,
-    } = useInspectorStore();
+    const { isInspectorMode, isAddingNote, setInspectorMode, setAddingNote } = useModeStore();
     const { hasNoteForElement } = useNotesStore();
 
     // Function to update overlay position

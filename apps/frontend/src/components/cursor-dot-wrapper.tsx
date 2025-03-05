@@ -1,12 +1,12 @@
-import { useInspectorStore } from "../stores/use-inspector-store";
+import { useModeStore } from "../stores/use-mode-store";
 import { CursorDot } from "./cursor-dot";
 import { useCursorPosition } from "../hooks/use-cursor-position";
 
 export const CursorDotWrapper = () => {
-    const isActive = useInspectorStore((state) => state.isActive);
+    const isInspectorMode = useModeStore((state) => state.isInspectorMode);
 
     // Track cursor position
     useCursorPosition();
 
-    return <CursorDot visible={isActive} />;
+    return <CursorDot visible={isInspectorMode} />;
 };
