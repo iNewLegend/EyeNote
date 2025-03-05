@@ -1,0 +1,6 @@
+---
+description: Use zustand when needed
+globs: 
+alwaysApply: true
+---
+Use zustand when needed
