@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import App from "../../app.tsx";
 import { Toaster } from "../../components/ui/sonner.tsx";
@@ -6,6 +6,7 @@ import { ThemeProvider } from "../theme/theme-provider.tsx";
 import { CursorDotWrapper } from "../../components/cursor-dot-wrapper.tsx";
 import { useCursorStore } from "../../stores/use-cursor-store";
 import { useInspectorStore } from "../../stores/use-inspector-store";
+import { HighlightOverlay } from "../../components/highlight-overlay";
 
 import contentStyles from "./content-script.css?inline";
 
@@ -36,19 +37,6 @@ if (!document.getElementById("eye-note-root")) {
     const cursorDotContainer = document.createElement("div");
     cursorDotContainer.id = "eye-note-cursor-dot-container";
     document.body.appendChild(cursorDotContainer);
-
-    // Create highlight overlay element - this needs to be in the main DOM
-    const overlay = document.createElement("div");
-    overlay.id = "eye-note-highlight-overlay";
-    overlay.style.position = "fixed";
-    overlay.style.pointerEvents = "none";
-    overlay.style.zIndex = "2147483645";
-    overlay.style.border = "2px solid var(--primary-color, #7c3aed)";
-    overlay.style.backgroundColor = "rgba(124, 58, 237, 0.1)";
-    overlay.style.transition = "all 0.2s ease";
-    overlay.style.boxSizing = "border-box";
-    overlay.style.display = "none";
-    document.body.appendChild(overlay);
 
     // Create an interaction blocker overlay
     const interactionBlocker = document.createElement("div");
@@ -82,28 +70,51 @@ if (!document.getElementById("eye-note-root")) {
     // Track if we're in the process of adding a note
     let isAddingNote = false;
 
-    // Update overlay position
-    const updateOverlay = (element: Element | null) => {
-        if (!element) {
-            overlay.style.display = "none";
-            return;
-        }
+    // Create a container for the overlay outside of shadow DOM
+    const overlayContainer = document.createElement("div");
+    overlayContainer.id = "eye-note-overlay-container";
+    document.body.appendChild(overlayContainer);
 
-        // Store current scroll position
-        const scrollX = window.scrollX;
-        const scrollY = window.scrollY;
-
-        const rect = element.getBoundingClientRect();
-        overlay.style.display = "block";
-        overlay.style.top = rect.top + "px";
-        overlay.style.left = rect.left + "px";
-        overlay.style.width = rect.width + "px";
-        overlay.style.height = rect.height + "px";
-
-        // Restore scroll position to prevent unwanted scrolling
-        requestAnimationFrame(() => {
-            window.scrollTo(scrollX, scrollY);
+    // Create React context and state management for the overlay
+    const OverlayApp = () => {
+        const [overlayStyle, setOverlayStyle] = useState<React.CSSProperties>({
+            top: "0px",
+            left: "0px",
+            width: "0px",
+            height: "0px",
         });
+        const [isVisible, setIsVisible] = useState(false);
+
+        // Update overlay position
+        const updateOverlay = (element: Element | null) => {
+            if (!element) {
+                setIsVisible(false);
+                return;
+            }
+
+            // Store current scroll position
+            const scrollX = window.scrollX;
+            const scrollY = window.scrollY;
+
+            const rect = element.getBoundingClientRect();
+            setOverlayStyle({
+                top: `${rect.top}px`,
+                left: `${rect.left}px`,
+                width: `${rect.width}px`,
+                height: `${rect.height}px`,
+            });
+            setIsVisible(true);
+
+            // Restore scroll position to prevent unwanted scrolling
+            requestAnimationFrame(() => {
+                window.scrollTo(scrollX, scrollY);
+            });
+        };
+
+        // Expose updateOverlay to window
+        (window as any).updateOverlay = updateOverlay;
+
+        return <HighlightOverlay style={overlayStyle} visible={isVisible} />;
     };
 
     // Handle mouse movement
@@ -119,7 +130,7 @@ if (!document.getElementById("eye-note-root")) {
 
                 // Only clear the overlay if we're not adding a note or if the selected element is different
                 if (!isAddingNote || !selectedElement) {
-                    updateOverlay(null);
+                    (window as any).updateOverlay(null);
                 }
             }
             return;
@@ -149,7 +160,7 @@ if (!document.getElementById("eye-note-root")) {
 
             // Only update the overlay if we're not adding a note or if this is the selected element
             if (!isAddingNote || element === selectedElement) {
-                updateOverlay(element);
+                (window as any).updateOverlay(element);
             }
 
             // Log the element for debugging
@@ -206,7 +217,7 @@ if (!document.getElementById("eye-note-root")) {
                 if (currentInspectedElement) {
                     currentInspectedElement.style.cursor = "";
                     currentInspectedElement = null;
-                    updateOverlay(null);
+                    (window as any).updateOverlay(null);
                 }
             } else {
                 // If we're adding a note, keep the inspector mode visual but disable the interaction blocker
@@ -230,7 +241,7 @@ if (!document.getElementById("eye-note-root")) {
 
             selectedElement = element;
             isAddingNote = true;
-            updateOverlay(element);
+            (window as any).updateOverlay(element);
             document.body.classList.add("adding-note");
 
             // Restore scroll position to prevent unwanted scrolling
@@ -254,7 +265,7 @@ if (!document.getElementById("eye-note-root")) {
             // Hide cursor dot
             useInspectorStore.getState().setIsActive(false);
 
-            updateOverlay(null);
+            (window as any).updateOverlay(null);
         } else {
             // If we're still in inspector mode (shift key is still pressed),
             // make sure the interaction blocker is properly set up
@@ -278,6 +289,16 @@ if (!document.getElementById("eye-note-root")) {
     cursorDotRoot.render(
         <React.StrictMode>
             <CursorDotWrapper />
+        </React.StrictMode>
+    );
+
+    // Render the overlay
+    const overlayRoot = createRoot(overlayContainer);
+    overlayRoot.render(
+        <React.StrictMode>
+            <ThemeProvider>
+                <OverlayApp />
+            </ThemeProvider>
         </React.StrictMode>
     );
 }
