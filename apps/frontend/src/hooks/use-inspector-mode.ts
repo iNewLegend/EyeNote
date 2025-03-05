@@ -137,26 +137,21 @@ export function useInspectorMode() {
             }
 
             const element = document.elementFromPoint(e.clientX, e.clientY);
-            if (!element || element === lastProcessedElement.current) return;
-
-            // Don't highlight elements that already have notes, unless they're already highlighted
-            if (hasNoteForElement(element) && !highlightedElements.has(element)) {
-                setHoveredElement(null);
-                lastProcessedElement.current = element;
-                return;
-            }
+            if (!element) return;
 
             // Don't highlight plugin elements
             if (element.closest(".notes-plugin") || element.closest("#eye-not-shadow-dom")) {
                 setHoveredElement(null);
+                if (lastProcessedElement.current instanceof HTMLElement) {
+                    lastProcessedElement.current.style.cursor = "";
+                }
                 lastProcessedElement.current = element;
                 return;
             }
 
-            // Update cursor style for the element
-            const currentElement = lastProcessedElement.current;
-            if (currentElement instanceof HTMLElement) {
-                currentElement.style.cursor = "";
+            // Always update cursor style and highlight for the current element
+            if (lastProcessedElement.current instanceof HTMLElement) {
+                lastProcessedElement.current.style.cursor = "";
             }
 
             if (element instanceof HTMLElement) {
@@ -213,7 +208,26 @@ export function useInspectorMode() {
         if (currentModes & AppMode.INSPECTOR_MODE) {
             removeMode(AppMode.INSPECTOR_MODE);
         }
-    }, [modes, removeMode]);
+
+        // Clean up all states
+        clearAllHighlights();
+        setHoveredElement(null);
+        setSelectedElement(null);
+        updateOverlayPosition(null);
+
+        // Reset cursor styles
+        if (lastProcessedElement.current instanceof HTMLElement) {
+            lastProcessedElement.current.style.cursor = "";
+            lastProcessedElement.current = null;
+        }
+    }, [
+        modes,
+        removeMode,
+        clearAllHighlights,
+        setHoveredElement,
+        setSelectedElement,
+        updateOverlayPosition,
+    ]);
 
     // Cleanup on unmount
     useEffect(() => {
