@@ -20,14 +20,7 @@ export function NoteComponent({
     const { updateNote, deleteNote, setNoteEditing } = useNotesStore();
     const { addHighlight, removeHighlight } = useHighlightStore();
 
-    console.log("Rendering NoteComponent", {
-        note,
-        isEditing: note.isEditing,
-        position: { x: note.x, y: note.y },
-    });
-
     const handleNoteUpdate = (id: number, content: string) => {
-        console.log("Updating note", { id, content });
         updateNote(id, content);
         onUpdateToast("Note updated", "Your note has been saved successfully");
     };

@@ -2,11 +2,12 @@ import { create } from "zustand";
 
 export const enum AppMode {
     NEUTRAL = 0, // 0000
-    INSPECTOR_MODE = 1 << 0, // 0001
-    NOTES_MODE = 1 << 1, // 0010
+    DEBUG_MODE = 1 << 0, // 0001
+    INSPECTOR_MODE = 1 << 1, // 0010
+    NOTES_MODE = 1 << 2, // 0100
     // We can easily add more modes in the future
-    // SOME_OTHER_MODE = 1 << 2,   // 0100
-    // ANOTHER_MODE = 1 << 3,      // 1000
+    // SOME_OTHER_MODE = 1 << 3,   // 1000
+    // ANOTHER_MODE = 1 << 4,      // 10000
 }
 
 interface ModeStore {
@@ -40,35 +41,62 @@ const updateDOMClasses = (modes: number) => {
     }
 };
 
+// Helper function to log mode changes when in debug mode
+const logModeChange = (oldModes: number, newModes: number) => {
+    if (newModes & AppMode.DEBUG_MODE) {
+        const getActiveModesNames = (modes: number) => {
+            const activeNames: string[] = [];
+            if (modes & AppMode.DEBUG_MODE) activeNames.push("DEBUG_MODE");
+            if (modes & AppMode.INSPECTOR_MODE) activeNames.push("INSPECTOR_MODE");
+            if (modes & AppMode.NOTES_MODE) activeNames.push("NOTES_MODE");
+            return activeNames.length ? activeNames.join(" | ") : "NEUTRAL";
+        };
+
+        console.log(
+            `Mode Change: ${getActiveModesNames(oldModes)} -> ${getActiveModesNames(newModes)}`
+        );
+    }
+};
+
 export const useModeStore = create<ModeStore>((set, get) => ({
-    modes: AppMode.NEUTRAL,
+    modes: AppMode.DEBUG_MODE,
 
     setMode: (mode: AppMode) => {
+        const oldModes = get().modes;
         set({ modes: mode });
         updateDOMClasses(mode);
+        logModeChange(oldModes, mode);
     },
 
     addMode: (mode: AppMode) => {
-        const newModes = get().modes | mode;
+        const oldModes = get().modes;
+        const newModes = oldModes | mode;
         set({ modes: newModes });
         updateDOMClasses(newModes);
+        logModeChange(oldModes, newModes);
     },
 
     removeMode: (mode: AppMode) => {
-        const newModes = get().modes & ~mode;
+        const oldModes = get().modes;
+        const newModes = oldModes & ~mode;
         set({ modes: newModes });
         updateDOMClasses(newModes);
+        logModeChange(oldModes, newModes);
     },
 
     toggleMode: (mode: AppMode) => {
-        const newModes = get().modes ^ mode;
+        const oldModes = get().modes;
+        const newModes = oldModes ^ mode;
         set({ modes: newModes });
         updateDOMClasses(newModes);
+        logModeChange(oldModes, newModes);
     },
 
     clearModes: () => {
+        const oldModes = get().modes;
         set({ modes: AppMode.NEUTRAL });
         updateDOMClasses(AppMode.NEUTRAL);
+        logModeChange(oldModes, AppMode.NEUTRAL);
     },
 
     // Check if a specific mode is active (can be along with others)

@@ -95,7 +95,6 @@ export const ShadowDOM: React.FC = () => {
     );
 
     useEffect(() => {
-        console.log("isInspectorMode", isInspectorMode);
         if (isInspectorMode) {
             document.addEventListener("click", handleClick, { capture: true });
             return () => document.removeEventListener("click", handleClick, { capture: true });

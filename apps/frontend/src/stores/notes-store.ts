@@ -41,11 +41,7 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
             highlightedElement: element,
         };
 
-        console.log("New note created", newNote);
-
         set((state) => {
-            console.log("Current notes", state.notes);
-            console.log("Adding new note to store");
             return { notes: [...state.notes, newNote] };
         });
         return newNote;
