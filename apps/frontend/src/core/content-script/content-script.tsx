@@ -2,8 +2,6 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { ShadowDOM } from "../shadow-dom/shadow-dom";
 import { UserlandDOM } from "../userland-dom/userland-dom";
-import { useModeStore, AppMode } from "../../stores/use-mode-store";
-import { useHighlightStore } from "../../stores/highlight-store";
 import shadowDOMStyles from "../shadow-dom/shadow-dom.css?inline";
 
 // Constants for DOM IDs
@@ -37,10 +35,6 @@ function initializeShadowDOM(container: HTMLElement) {
     shadowRoot.appendChild(contentContainer);
 
     return { shadowRoot, contentContainer };
-}
-
-function setupEventListeners() {
-    // No event listeners needed anymore - all functionality moved to respective components
 }
 
 function initializeApp() {
