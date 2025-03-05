@@ -26,7 +26,6 @@ if (!document.getElementById("eye-not-shadow-dom")) {
 
     // Create app container in shadow DOM
     const appContainer = document.createElement("div");
-    appContainer.id = "eye-note-app-container";
     appContainer.setAttribute("id", "eye-not-shadow-dom");
     shadowRoot.appendChild(appContainer);
 
