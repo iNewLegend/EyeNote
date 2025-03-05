@@ -3,41 +3,45 @@ import { createRoot } from "react-dom/client";
 import { ShadowDOM } from "../shadow-dom/shadow-dom";
 import { UserlandDOM } from "../userland-dom/userland-dom";
 import { useInspectorStore } from "../../stores/use-inspector-store";
-
 import shadowDOMStyles from "../shadow-dom/shadow-dom.css?inline";
 
-// Ensure we don't inject multiple instances
-if (!document.getElementById("eye-not-shadow-dom")) {
-    // Create containers
-    const shadowDomContainer = document.createElement("div");
-    shadowDomContainer.id = "eye-not-shadow-dom";
+// Constants for DOM IDs
+const DOM_IDS = {
+    SHADOW_CONTAINER: "eye-not-shadow-dom",
+    SHADOW_CONTENT: "eye-not-shadow-content",
+    SHADOW_STYLES: "eye-not-shadow-dom-styles",
+    USERLAND_CONTAINER: "eye-not-userland-dom",
+} as const;
+
+function initializeDOMContainers() {
+    const shadowContainer = document.createElement("div");
+    shadowContainer.id = DOM_IDS.SHADOW_CONTAINER;
 
     const userlandContainer = document.createElement("div");
-    userlandContainer.id = "eye-not-userland-container";
+    userlandContainer.id = DOM_IDS.USERLAND_CONTAINER;
 
-    // Create a shadow DOM to isolate our styles
-    const shadowRoot = shadowDomContainer.attachShadow({ mode: "open" });
+    return { shadowContainer, userlandContainer };
+}
 
-    // Add styles to shadow DOM
-    const shadowDOMElementStyles = document.createElement("style");
-    shadowDOMElementStyles.id = "eye-not-shadow-dom-styles";
-    shadowDOMElementStyles.textContent = shadowDOMStyles;
-    shadowRoot.appendChild(shadowDOMElementStyles);
+function initializeShadowDOM(container: HTMLElement) {
+    const shadowRoot = container.attachShadow({ mode: "open" });
 
-    // Create app container in shadow DOM
-    const appContainer = document.createElement("div");
-    appContainer.setAttribute("id", "eye-not-shadow-dom");
-    shadowRoot.appendChild(appContainer);
+    const shadowStyles = document.createElement("style");
+    shadowStyles.id = DOM_IDS.SHADOW_STYLES;
+    shadowStyles.textContent = shadowDOMStyles;
+    shadowRoot.appendChild(shadowStyles);
 
-    // Append containers to the body
-    document.body.appendChild(shadowDomContainer);
-    document.body.appendChild(userlandContainer);
+    const contentContainer = document.createElement("div");
+    contentContainer.id = DOM_IDS.SHADOW_CONTENT;
+    shadowRoot.appendChild(contentContainer);
 
-    // Track the currently inspected element
+    return { shadowRoot, contentContainer };
+}
+
+function setupEventListeners() {
+    // Track state
     let currentInspectedElement: HTMLElement | null = null;
-    // Track the currently selected element (for note creation)
     let selectedElement: HTMLElement | null = null;
-    // Track if we're in the process of adding a note
     let isAddingNote = false;
 
     // Handle mouse movement
@@ -45,13 +49,11 @@ if (!document.getElementById("eye-not-shadow-dom")) {
         const x = e.clientX;
         const y = e.clientY;
 
-        // If we're not in inspector mode and not adding a note, clear the overlay
         if (!document.body.classList.contains("inspector-mode")) {
             if (currentInspectedElement && !isAddingNote) {
                 currentInspectedElement.style.cursor = "";
                 currentInspectedElement = null;
 
-                // Only clear the overlay if we're not adding a note or if the selected element is different
                 if (!isAddingNote || !selectedElement) {
                     (window as any).updateOverlay(null);
                 }
@@ -59,29 +61,25 @@ if (!document.getElementById("eye-not-shadow-dom")) {
             return;
         }
 
-        // No need to hide the interaction blocker since it has pointer-events: none
         const element = document.elementFromPoint(x, y);
 
         if (
             !element ||
             element === currentInspectedElement ||
-            element.closest("#eye-not-shadow-dom") ||
+            element.closest(`#${DOM_IDS.SHADOW_CONTAINER}`) ||
             element.closest(".notes-plugin")
         ) {
             return;
         }
 
         if (element instanceof HTMLElement) {
-            // Remove highlight from previous element if different
             if (currentInspectedElement && currentInspectedElement !== element) {
                 currentInspectedElement.style.cursor = "";
             }
 
-            // Update cursor style and highlight new element
             element.style.cursor = "none";
             currentInspectedElement = element;
 
-            // Only update the overlay if we're not adding a note or if this is the selected element
             if (!isAddingNote || element === selectedElement) {
                 (window as any).updateOverlay(element);
             }
@@ -125,11 +123,10 @@ if (!document.getElementById("eye-not-shadow-dom")) {
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("keyup", handleKeyUp);
 
-    // Create a custom event listener for note creation events
+    // Custom events for note creation
     window.addEventListener("eye-note:element-selected", ((e: CustomEvent) => {
         const element = e.detail.element;
         if (element instanceof HTMLElement) {
-            // Store current scroll position
             const scrollX = window.scrollX;
             const scrollY = window.scrollY;
 
@@ -138,40 +135,63 @@ if (!document.getElementById("eye-not-shadow-dom")) {
             (window as any).updateOverlay(element);
             document.body.classList.add("adding-note");
 
-            // Restore scroll position to prevent unwanted scrolling
             requestAnimationFrame(() => {
                 window.scrollTo(scrollX, scrollY);
             });
         }
     }) as EventListener);
 
-    // Create a custom event listener for note dismissal events
     window.addEventListener("eye-note:note-dismissed", (() => {
         isAddingNote = false;
         selectedElement = null;
         document.body.classList.remove("adding-note");
 
-        // If we're not in inspector mode, remove the inspector mode class and hide the overlay
         if (!document.body.classList.contains("inspector-mode") || !currentInspectedElement) {
             document.body.classList.remove("inspector-mode");
-            document.body.style.cursor = ""; // Reset cursor style
+            document.body.style.cursor = "";
             useInspectorStore.getState().setIsActive(false);
             (window as any).updateOverlay(null);
         }
     }) as EventListener);
+}
 
-    // Render the React apps
-    const root = createRoot(appContainer);
+function initializeApp() {
+    // Check if already initialized
+    if (document.getElementById(DOM_IDS.SHADOW_CONTAINER)) {
+        return;
+    }
+
+    // Initialize containers
+    const { shadowContainer, userlandContainer } = initializeDOMContainers();
+
+    // Setup shadow DOM
+    const { contentContainer } = initializeShadowDOM(shadowContainer);
+
+    // Append containers to body
+    document.body.appendChild(shadowContainer);
+    document.body.appendChild(userlandContainer);
+
+    // Setup event listeners
+    setupEventListeners();
+
+    // Render React components
+    const root = createRoot(contentContainer);
+    const userlandRoot = createRoot(userlandContainer);
+
     root.render(
         <React.StrictMode>
             <ShadowDOM />
         </React.StrictMode>
     );
 
-    const userlandRoot = createRoot(userlandContainer);
     userlandRoot.render(
         <React.StrictMode>
             <UserlandDOM />
         </React.StrictMode>
     );
+
+    return { root, userlandRoot };
 }
+
+// Initialize the application
+initializeApp();
