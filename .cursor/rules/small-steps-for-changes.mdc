@@ -1,6 +1,6 @@
 ---
 description: For every change use small steps
-globs: 
+globs: *.tsx,*ts
 alwaysApply: true
 ---
 

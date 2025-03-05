@@ -1,6 +1,6 @@
 ---
 description: Never commit without my permision
-globs: 
+globs: *.tsx,*ts
 alwaysApply: true
 ---
 

@@ -1,6 +1,6 @@
 ---
 description: use-kebab-case-for-filenames
-globs: 
+globs: *.tsx,*ts
 alwaysApply: true
 ---
 use-kebab-case-for-filenames

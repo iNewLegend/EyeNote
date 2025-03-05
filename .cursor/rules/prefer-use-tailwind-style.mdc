@@ -1,6 +1,6 @@
 ---
 description: # Perfer use tailwind
-globs: 
+globs: *.tsx,*ts
 alwaysApply: true
 ---
 
