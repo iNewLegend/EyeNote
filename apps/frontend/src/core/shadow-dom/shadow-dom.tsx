@@ -6,6 +6,8 @@ import { NoteComponent } from "../../features/notes/note-component";
 import { useInspectorMode } from "../../hooks/use-inspector-mode";
 import { ThemeProvider } from "../theme/theme-provider";
 import { Toaster } from "../../components/ui/sonner";
+import { useModeStore, AppMode } from "../../stores/use-mode-store";
+import { useHighlightStore } from "../../stores/highlight-store";
 
 export const ShadowDOM: React.FC = () => {
     const { notes, createNote } = useNotesStore();
@@ -18,10 +20,40 @@ export const ShadowDOM: React.FC = () => {
         isInspectorMode,
     } = useInspectorMode();
     const [isProcessingNoteDismissal, setIsProcessingNoteDismissal] = useState(false);
+    const [selectedElement, setLocalSelectedElement] = useState<HTMLElement | null>(null);
+
+    // Handle note element selection
+    useEffect(() => {
+        const handleElementSelected = ((e: CustomEvent) => {
+            const element = e.detail.element;
+            if (element instanceof HTMLElement) {
+                const scrollX = window.scrollX;
+                const scrollY = window.scrollY;
+
+                setLocalSelectedElement(element);
+
+                // Update store states for note mode
+                useModeStore.getState().addMode(AppMode.NOTES_MODE);
+                useHighlightStore.getState().setSelectedElement(element);
+
+                (window as any).updateOverlay(element);
+
+                requestAnimationFrame(() => {
+                    window.scrollTo(scrollX, scrollY);
+                });
+            }
+        }) as EventListener;
+
+        window.addEventListener("eye-note:element-selected", handleElementSelected);
+
+        return () => {
+            window.removeEventListener("eye-note:element-selected", handleElementSelected);
+        };
+    }, []);
 
     const handleClick = useCallback(
         (e: MouseEvent) => {
-            console.log("Click event in app.tsx", {
+            console.log("Click event in shadow-dom.tsx", {
                 e,
                 target: e.target,
                 currentTarget: e.currentTarget,
@@ -73,13 +105,6 @@ export const ShadowDOM: React.FC = () => {
             if (hoveredElement instanceof HTMLElement) {
                 selectElementForNote(hoveredElement);
             }
-
-            // Dispatch a custom event to notify the content script that an element has been selected
-            window.dispatchEvent(
-                new CustomEvent("eye-note:element-selected", {
-                    detail: { element: hoveredElement },
-                })
-            );
 
             // Use requestAnimationFrame to restore scroll position after the note is created
             requestAnimationFrame(() => {

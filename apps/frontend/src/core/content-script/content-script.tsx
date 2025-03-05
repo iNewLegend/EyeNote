@@ -40,31 +40,7 @@ function initializeShadowDOM(container: HTMLElement) {
 }
 
 function setupEventListeners() {
-    // Track state
-    let selectedElement: HTMLElement | null = null;
-
-    // Custom events for note creation
-    window.addEventListener("eye-note:element-selected", ((e: CustomEvent) => {
-        const element = e.detail.element;
-        if (element instanceof HTMLElement) {
-            const scrollX = window.scrollX;
-            const scrollY = window.scrollY;
-
-            selectedElement = element;
-
-            // Update store states for note mode
-            const modeStore = useModeStore.getState();
-            modeStore.addMode(AppMode.NOTES_MODE);
-            const highlightStore = useHighlightStore.getState();
-            highlightStore.setSelectedElement(element);
-
-            (window as any).updateOverlay(element);
-
-            requestAnimationFrame(() => {
-                window.scrollTo(scrollX, scrollY);
-            });
-        }
-    }) as EventListener);
+    // No event listeners needed anymore - all functionality moved to respective components
 }
 
 function initializeApp() {
@@ -82,9 +58,6 @@ function initializeApp() {
     // Append containers to body
     document.body.appendChild(shadowContainer);
     document.body.appendChild(userlandContainer);
-
-    // Setup event listeners
-    setupEventListeners();
 
     // Render React components
     const root = createRoot(contentContainer);
