@@ -53,7 +53,10 @@ export default defineConfig(({ mode }) => {
             rollupOptions: {
                 input: {
                     popup: resolve(__dirname, "src/core/extension-popup/extension-popup.tsx"),
-                    background: resolve(__dirname, "src/core/background-script/background.ts"),
+                    "background-script": resolve(
+                        __dirname,
+                        "src/core/background-script/background-script.ts"
+                    ),
                 },
                 output: {
                     entryFileNames: "[name].js",

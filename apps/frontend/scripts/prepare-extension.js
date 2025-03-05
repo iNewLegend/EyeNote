@@ -98,7 +98,7 @@ async function getBuildHash() {
         // Get hash from key files that represent the build state
         const files = [
             path.join(distDir, "content.iife.js"),
-            path.join(distDir, "background.js"),
+            path.join(distDir, "background-script.js"),
             path.join(distDir, "popup.js")
         ];
 
@@ -211,17 +211,17 @@ async function prepareExtension() {
         );
 
         // Copy background script
-        const backgroundScriptPath = path.join(distDir, "background.js");
+        const backgroundScriptPath = path.join(distDir, "background-script.js");
         let backgroundContent = await fs.readFile(backgroundScriptPath, 'utf-8');
         
-        await fs.writeFile(path.join(extensionDir, "background.js"), backgroundContent);
-        console.log("Modified and copied background.js");
+        await fs.writeFile(path.join(extensionDir, "background-script.js"), backgroundContent);
+        console.log("Modified and copied background-script.js");
 
         // Copy background script map if it exists
         try {
             await copyFileWithRetry(
-                path.join(distDir, "background.js.map"),
-                path.join(extensionDir, "background.js.map")
+                path.join(distDir, "background-script.js.map"),
+                path.join(extensionDir, "background-script.js.map")
             );
         } catch (error) {
             console.log("No source map for background script");
@@ -245,8 +245,8 @@ async function prepareExtension() {
                     ![
                         "content.iife.js",
                         "content-script.css",
-                        "background.js",
-                        "background.js.map",
+                        "background-script.js",
+                        "background-script.js.map",
                     ].includes(entry.name)
                 ) {
                     await copyFileWithRetry(srcPath, destPath);
