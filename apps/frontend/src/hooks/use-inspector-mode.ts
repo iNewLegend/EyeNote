@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useHighlightStore } from "../stores/highlight-store";
 import { useNotesStore } from "../stores/notes-store";
-import { useModeStore } from "../stores/use-mode-store";
+import { useModeStore, AppMode } from "../stores/use-mode-store";
 
 export function useInspectorMode() {
     const lastProcessedElement = useRef<Element | null>(null);
@@ -13,7 +13,7 @@ export function useInspectorMode() {
         clearAllHighlights,
         highlightedElements,
     } = useHighlightStore();
-    const { isInspectorMode, isAddingNote, setInspectorMode, setAddingNote } = useModeStore();
+    const { modes, setMode, addMode, removeMode, isMode } = useModeStore();
     const { hasNoteForElement } = useNotesStore();
 
     // Function to update overlay position
@@ -57,12 +57,12 @@ export function useInspectorMode() {
     // Handle shift key events to toggle inspector mode
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Shift" && !isInspectorMode) {
+            if (e.key === "Shift" && !isMode(AppMode.INSPECTOR_MODE)) {
                 // Reset the last processed element when entering inspector mode
-                if (!isAddingNote) {
+                if (!isMode(AppMode.NOTES_MODE)) {
                     lastProcessedElement.current = null;
                 }
-                setInspectorMode(true);
+                addMode(AppMode.INSPECTOR_MODE);
 
                 // Configure the interaction blocker
                 const interactionBlocker = document.getElementById("eye-note-interaction-blocker");
@@ -75,10 +75,10 @@ export function useInspectorMode() {
 
         const handleKeyUp = (e: KeyboardEvent) => {
             if (e.key === "Shift") {
-                setInspectorMode(false);
+                removeMode(AppMode.INSPECTOR_MODE);
 
-                // Only clear highlights if we're not adding a note
-                if (!isAddingNote) {
+                // Only clear highlights if we're not in notes mode
+                if (!isMode(AppMode.NOTES_MODE)) {
                     clearAllHighlights();
 
                     // Reset the last processed element
@@ -107,28 +107,22 @@ export function useInspectorMode() {
             document.removeEventListener("keydown", handleKeyDown);
             document.removeEventListener("keyup", handleKeyUp);
         };
-    }, [
-        isInspectorMode,
-        setInspectorMode,
-        clearAllHighlights,
-        isAddingNote,
-        updateOverlayPosition,
-    ]);
+    }, [isMode, addMode, removeMode, clearAllHighlights, updateOverlayPosition]);
 
     // Handle mouse movement for element inspection
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             // Always update cursor dot position in inspector mode
-            if (isInspectorMode) {
+            if (isMode(AppMode.INSPECTOR_MODE)) {
                 updateCursorPosition(e.clientX, e.clientY);
             }
 
-            // If we're adding a note, don't process mouse movements for highlighting
-            if (isAddingNote) {
+            // If we're in notes mode, don't process mouse movements for highlighting
+            if (isMode(AppMode.NOTES_MODE)) {
                 return;
             }
 
-            if (!isInspectorMode) {
+            if (!isMode(AppMode.INSPECTOR_MODE)) {
                 if (lastProcessedElement.current) {
                     setHoveredElement(null);
                     // Remove any cursor style changes
@@ -181,11 +175,10 @@ export function useInspectorMode() {
             document.removeEventListener("mousemove", handleMouseMove);
         };
     }, [
-        isInspectorMode,
+        isMode,
         setHoveredElement,
         hasNoteForElement,
         highlightedElements,
-        isAddingNote,
         updateOverlayPosition,
         updateCursorPosition,
     ]);
@@ -198,7 +191,7 @@ export function useInspectorMode() {
             const scrollY = window.scrollY;
 
             setSelectedElement(element);
-            setAddingNote(true);
+            addMode(AppMode.NOTES_MODE);
             updateOverlayPosition(element);
 
             // Restore scroll position
@@ -206,15 +199,15 @@ export function useInspectorMode() {
                 window.scrollTo(scrollX, scrollY);
             });
         },
-        [setSelectedElement, setAddingNote, updateOverlayPosition]
+        [setSelectedElement, addMode, updateOverlayPosition]
     );
 
     // Handle note dismissal
     const dismissNote = useCallback(() => {
-        setAddingNote(false);
+        removeMode(AppMode.NOTES_MODE);
 
         // If inspector mode is off after dismissal, hide the overlay
-        if (!isInspectorMode) {
+        if (!isMode(AppMode.INSPECTOR_MODE)) {
             updateOverlayPosition(null);
 
             const interactionBlocker = document.getElementById("eye-note-interaction-blocker");
@@ -235,26 +228,25 @@ export function useInspectorMode() {
                 updateOverlayPosition(hoveredElement);
             }
         }
-    }, [isInspectorMode, setAddingNote, hoveredElement, updateOverlayPosition]);
+    }, [isMode, removeMode, hoveredElement, updateOverlayPosition]);
 
     // Cleanup on unmount
     useEffect(() => {
         return () => {
-            if (isInspectorMode) {
+            if (isMode(AppMode.INSPECTOR_MODE)) {
                 clearAllHighlights();
-                setInspectorMode(false);
-                setAddingNote(false);
+                setMode(AppMode.NEUTRAL);
             }
         };
-    }, [isInspectorMode, clearAllHighlights, setInspectorMode, setAddingNote]);
+    }, [isMode, clearAllHighlights, setMode]);
 
     return {
         hoveredElement,
         setHoveredElement,
         selectedElement,
         setSelectedElement,
-        isInspectorMode,
-        isAddingNote,
+        isInspectorMode: isMode(AppMode.INSPECTOR_MODE),
+        isAddingNote: isMode(AppMode.NOTES_MODE),
         selectElementForNote,
         dismissNote,
     };

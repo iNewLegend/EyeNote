@@ -1,49 +1,95 @@
 import { create } from "zustand";
 
-interface ModeStore {
-    isInspectorMode: boolean;
-    isAddingNote: boolean;
-    setInspectorMode: (isInspectorMode: boolean) => void;
-    setAddingNote: (isAddingNote: boolean) => void;
+export const enum AppMode {
+    NEUTRAL = 0, // 0000
+    INSPECTOR_MODE = 1 << 0, // 0001
+    NOTES_MODE = 1 << 1, // 0010
+    // We can easily add more modes in the future
+    // SOME_OTHER_MODE = 1 << 2,   // 0100
+    // ANOTHER_MODE = 1 << 3,      // 1000
 }
 
-export const useModeStore = create<ModeStore>((set, get) => ({
-    isInspectorMode: false,
-    isAddingNote: false,
+interface ModeStore {
+    modes: number;
+    setMode: (mode: AppMode) => void;
+    addMode: (mode: AppMode) => void;
+    removeMode: (mode: AppMode) => void;
+    toggleMode: (mode: AppMode) => void;
+    clearModes: () => void;
+    isMode: (mode: AppMode) => boolean;
+    isOnlyMode: (mode: AppMode) => boolean;
+    isModes: (modes: AppMode[]) => boolean;
+    hasAnyMode: (modes: AppMode[]) => boolean;
+}
 
-    setInspectorMode: (isInspectorMode: boolean) => {
-        set({ isInspectorMode });
+// Helper function to update DOM classes based on modes
+const updateDOMClasses = (modes: number) => {
+    document.body.classList.remove("inspector-mode", "adding-note");
+    document.body.style.cursor = "";
 
-        // Manage DOM classes and cursor for inspector mode
-        if (isInspectorMode) {
-            document.body.classList.add("inspector-mode");
-            // Only set cursor to none if we're not adding a note
-            if (!get().isAddingNote) {
-                document.body.style.cursor = "none";
-            }
-        } else {
-            document.body.classList.remove("inspector-mode");
-            // Only reset cursor if we're not adding a note
-            if (!get().isAddingNote) {
-                document.body.style.cursor = "";
-            }
+    if (modes & AppMode.INSPECTOR_MODE) {
+        document.body.classList.add("inspector-mode");
+        // Only set cursor to none if we're not in notes mode
+        if (!(modes & AppMode.NOTES_MODE)) {
+            document.body.style.cursor = "none";
         }
+    }
+
+    if (modes & AppMode.NOTES_MODE) {
+        document.body.classList.add("adding-note");
+    }
+};
+
+export const useModeStore = create<ModeStore>((set, get) => ({
+    modes: AppMode.NEUTRAL,
+
+    setMode: (mode: AppMode) => {
+        set({ modes: mode });
+        updateDOMClasses(mode);
     },
 
-    setAddingNote: (isAddingNote: boolean) => {
-        set({ isAddingNote });
-        // Manage DOM classes for adding note state
-        if (isAddingNote) {
-            document.body.classList.add("adding-note");
-            document.body.style.cursor = ""; // Show normal cursor in add note mode
-        } else {
-            document.body.classList.remove("adding-note");
-            // Let inspector mode handle the cursor if it's active
-            if (get().isInspectorMode) {
-                document.body.style.cursor = "none";
-            } else {
-                document.body.style.cursor = "";
-            }
-        }
+    addMode: (mode: AppMode) => {
+        const newModes = get().modes | mode;
+        set({ modes: newModes });
+        updateDOMClasses(newModes);
+    },
+
+    removeMode: (mode: AppMode) => {
+        const newModes = get().modes & ~mode;
+        set({ modes: newModes });
+        updateDOMClasses(newModes);
+    },
+
+    toggleMode: (mode: AppMode) => {
+        const newModes = get().modes ^ mode;
+        set({ modes: newModes });
+        updateDOMClasses(newModes);
+    },
+
+    clearModes: () => {
+        set({ modes: AppMode.NEUTRAL });
+        updateDOMClasses(AppMode.NEUTRAL);
+    },
+
+    // Check if a specific mode is active (can be along with others)
+    isMode: (mode: AppMode) => {
+        return (get().modes & mode) === mode;
+    },
+
+    // Check if ONLY this mode is active (no other modes)
+    isOnlyMode: (mode: AppMode) => {
+        return get().modes === mode;
+    },
+
+    // Check if ALL specified modes are active (can have additional modes)
+    isModes: (modes: AppMode[]) => {
+        const combinedModes = modes.reduce((acc, mode) => acc | mode, 0);
+        return (get().modes & combinedModes) === combinedModes;
+    },
+
+    // Check if ANY of the specified modes are active
+    hasAnyMode: (modes: AppMode[]) => {
+        const combinedModes = modes.reduce((acc, mode) => acc | mode, 0);
+        return (get().modes & combinedModes) !== 0;
     },
 }));

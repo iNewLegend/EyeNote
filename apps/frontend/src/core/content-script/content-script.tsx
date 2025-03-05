@@ -2,7 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { ShadowDOM } from "../shadow-dom/shadow-dom";
 import { UserlandDOM } from "../userland-dom/userland-dom";
-import { useModeStore } from "../../stores/use-mode-store";
+import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { useHighlightStore } from "../../stores/highlight-store";
 import shadowDOMStyles from "../shadow-dom/shadow-dom.css?inline";
 
@@ -43,7 +43,6 @@ function setupEventListeners() {
     // Track state
     let currentInspectedElement: HTMLElement | null = null;
     let selectedElement: HTMLElement | null = null;
-    let isAddingNote = false;
     let isShiftPressed = false; // Add shift key tracking
 
     // Handle mouse movement
@@ -52,7 +51,7 @@ function setupEventListeners() {
         const y = e.clientY;
 
         const modeStore = useModeStore.getState();
-        if (!modeStore.isInspectorMode || modeStore.isAddingNote) {
+        if (!modeStore.isMode(AppMode.INSPECTOR_MODE) || modeStore.isMode(AppMode.NOTES_MODE)) {
             if (currentInspectedElement) {
                 currentInspectedElement.style.cursor = "";
                 currentInspectedElement = null;
@@ -103,10 +102,10 @@ function setupEventListeners() {
         if (e.key === "Shift") {
             isShiftPressed = true; // Track shift key state
             // Update mode store state
-            useModeStore.getState().setInspectorMode(true);
+            useModeStore.getState().addMode(AppMode.INSPECTOR_MODE);
 
-            // Reset state if not adding a note
-            if (!isAddingNote) {
+            // Reset state if not in notes mode
+            if (!useModeStore.getState().isMode(AppMode.NOTES_MODE)) {
                 currentInspectedElement = null;
                 selectedElement = null;
             }
@@ -120,9 +119,9 @@ function setupEventListeners() {
     const handleKeyUp = (e: KeyboardEvent) => {
         if (e.key === "Shift") {
             isShiftPressed = false; // Track shift key state
-            if (!isAddingNote) {
+            if (!useModeStore.getState().isMode(AppMode.NOTES_MODE)) {
                 // Update mode store state
-                useModeStore.getState().setInspectorMode(false);
+                useModeStore.getState().removeMode(AppMode.INSPECTOR_MODE);
 
                 // Clean up any inspected element
                 if (currentInspectedElement) {
@@ -149,11 +148,10 @@ function setupEventListeners() {
             const scrollY = window.scrollY;
 
             selectedElement = element;
-            isAddingNote = true;
 
             // Update store states for note mode
             const modeStore = useModeStore.getState();
-            modeStore.setAddingNote(true);
+            modeStore.addMode(AppMode.NOTES_MODE);
             const highlightStore = useHighlightStore.getState();
             highlightStore.setSelectedElement(element);
 
@@ -166,10 +164,13 @@ function setupEventListeners() {
     }) as EventListener);
 
     window.addEventListener("eye-note:note-dismissed", (() => {
-        // Update store states
         const modeStore = useModeStore.getState();
-        modeStore.setAddingNote(false);
-        modeStore.setInspectorMode(isShiftPressed);
+        modeStore.removeMode(AppMode.NOTES_MODE);
+
+        // Update inspector mode based on shift key state
+        if (!isShiftPressed) {
+            modeStore.removeMode(AppMode.INSPECTOR_MODE);
+        }
 
         const highlightStore = useHighlightStore.getState();
         highlightStore.setSelectedElement(null);
@@ -177,7 +178,6 @@ function setupEventListeners() {
         highlightStore.clearAllHighlights();
 
         // Then update local state
-        isAddingNote = false;
         selectedElement = null;
 
         // Clean up any inspected element

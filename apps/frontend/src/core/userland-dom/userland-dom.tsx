@@ -4,7 +4,7 @@ import { CursorDotWrapper } from "../../components/cursor-dot-wrapper";
 import { HighlightOverlay } from "../../components/highlight-overlay";
 import { ThemeProvider } from "../../core/theme/theme-provider";
 import { useThemeStore } from "../../stores/theme-store";
-import { useModeStore } from "../../stores/use-mode-store";
+import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { useHighlightStore } from "../../stores/highlight-store";
 
 export const UserlandDOM: React.FC = () => {
@@ -17,9 +17,10 @@ export const UserlandDOM: React.FC = () => {
     });
     const [isVisible, setIsVisible] = useState(false);
 
-    // Track mode changes
-    const isInspectorMode = useModeStore((state) => state.isInspectorMode);
-    const isAddingNote = useModeStore((state) => state.isAddingNote);
+    // Track mode changes using the new system
+    const hasActiveMode = useModeStore((state) =>
+        state.hasAnyMode([AppMode.INSPECTOR_MODE, AppMode.NOTES_MODE])
+    );
 
     // Update overlay position
     const updateOverlay = (element: Element | null) => {
@@ -48,8 +49,8 @@ export const UserlandDOM: React.FC = () => {
 
     // Handle visibility
     React.useEffect(() => {
-        setIsVisible(isInspectorMode || isAddingNote);
-    }, [isInspectorMode, isAddingNote]);
+        setIsVisible(hasActiveMode);
+    }, [hasActiveMode]);
 
     if (!isVisible) return null;
 
