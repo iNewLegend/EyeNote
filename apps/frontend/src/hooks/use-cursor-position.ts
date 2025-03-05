@@ -8,6 +8,11 @@ export const useCursorPosition = () => {
         };
 
         document.addEventListener("mousemove", handleMouseMove);
-        return () => document.removeEventListener("mousemove", handleMouseMove);
+
+        return () => {
+            document.removeEventListener("mousemove", handleMouseMove);
+            // Reset cursor position on cleanup
+            useCursorStore.getState().setPosition(0, 0);
+        };
     }, []);
 };

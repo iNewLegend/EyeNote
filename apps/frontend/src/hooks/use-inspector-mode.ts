@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useHighlightStore } from "../stores/highlight-store";
 import { useNotesStore } from "../stores/notes-store";
+import { useInspectorStore } from "../stores/use-inspector-store";
 
 export function useInspectorMode() {
     const lastProcessedElement = useRef<Element | null>(null);
@@ -9,13 +10,15 @@ export function useInspectorMode() {
         setHoveredElement,
         selectedElement,
         setSelectedElement,
-        isInspectorMode,
-        setInspectorMode,
         clearAllHighlights,
         highlightedElements,
-        isAddingNote,
-        setAddingNote,
     } = useHighlightStore();
+    const {
+        isActive: isInspectorMode,
+        isAddingNote,
+        setIsActive: setInspectorMode,
+        setAddingNote,
+    } = useInspectorStore();
     const { hasNoteForElement } = useNotesStore();
 
     // Function to update overlay position
@@ -257,9 +260,6 @@ export function useInspectorMode() {
         setSelectedElement,
         isInspectorMode,
         isAddingNote,
-        setAddingNote,
-        updateOverlayPosition,
-        updateCursorPosition,
         selectElementForNote,
         dismissNote,
     };

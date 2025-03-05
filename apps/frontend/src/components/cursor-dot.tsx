@@ -20,12 +20,18 @@ export const CursorDot: React.FC<CursorDotProps> = ({ color = "#7c3aed", visible
     const cursorDotRef = useRef<HTMLDivElement | null>(null);
     const { position } = useCursorStore();
 
-    // Apply base styles to the cursor dot
+    // Handle visibility changes and cleanup
     useEffect(() => {
         const cursorDot = cursorDotRef.current;
-        if (!cursorDot || !visible) return;
+        if (!cursorDot) return;
 
-        // Apply styles directly to match the tailwind classes
+        if (!visible) {
+            cursorDot.style.opacity = "0";
+            cursorDot.style.visibility = "hidden";
+            return;
+        }
+
+        // Apply styles when visible
         cursorDot.style.backgroundColor = color;
         cursorDot.style.borderRadius = "9999px";
         cursorDot.style.position = "fixed";
@@ -33,19 +39,14 @@ export const CursorDot: React.FC<CursorDotProps> = ({ color = "#7c3aed", visible
         cursorDot.style.zIndex = "2147483645";
         cursorDot.style.transform = "translate(-50%, -50%)";
         cursorDot.style.opacity = "1";
+        cursorDot.style.visibility = "visible";
         cursorDot.style.filter = "drop-shadow(0 0 4px rgba(72, 4, 173, 0.3))";
-    }, [color, visible]);
+        cursorDot.style.transition = "opacity 0.2s ease-out, visibility 0.2s ease-out";
 
-    // Update cursor position
-    useEffect(() => {
-        const cursorDot = cursorDotRef.current;
-        if (!cursorDot || !visible) return;
-
+        // Update position
         cursorDot.style.left = `${position.x}px`;
         cursorDot.style.top = `${position.y}px`;
-    }, [position, visible]);
-
-    if (!visible) return null;
+    }, [color, visible, position]);
 
     return (
         <>
@@ -62,7 +63,7 @@ export const CursorDot: React.FC<CursorDotProps> = ({ color = "#7c3aed", visible
                     // Z-index
                     "z-[2147483645]",
                     // Transitions
-                    "transition-transform duration-200",
+                    "transition-[opacity,visibility] duration-200",
                     // Effects
                     "drop-shadow-[0_0_4px_rgba(72,4,173,0.3)]"
                 )}
@@ -74,27 +75,31 @@ export const CursorDot: React.FC<CursorDotProps> = ({ color = "#7c3aed", visible
                         borderRadius: "9999px",
                         left: `${position.x}px`,
                         top: `${position.y}px`,
-                        "--pulse-color": color, // Pass color to pulse effect via CSS variable
+                        opacity: visible ? "1" : "0",
+                        visibility: visible ? "visible" : "hidden",
+                        "--pulse-color": color,
                     } as React.CSSProperties
                 }
             >
                 {/* Pulse effect - larger circle that scales and fades out */}
-                <div
-                    className="pulse-effect"
-                    style={{
-                        position: "absolute",
-                        width: "120%",
-                        height: "120%",
-                        left: "-10%",
-                        top: "-10%",
-                        borderRadius: "9999px",
-                        backgroundColor: "var(--pulse-color)",
-                        opacity: "0.8",
-                        pointerEvents: "none",
-                        animation: "cursor-ping 1.3s cubic-bezier(0, 0, 0.2, 1) infinite",
-                        transformOrigin: "center",
-                    }}
-                />
+                {visible && (
+                    <div
+                        className="pulse-effect"
+                        style={{
+                            position: "absolute",
+                            width: "120%",
+                            height: "120%",
+                            left: "-10%",
+                            top: "-10%",
+                            borderRadius: "9999px",
+                            backgroundColor: "var(--pulse-color)",
+                            opacity: "0.8",
+                            pointerEvents: "none",
+                            animation: "cursor-ping 1.3s cubic-bezier(0, 0, 0.2, 1) infinite",
+                            transformOrigin: "center",
+                        }}
+                    />
+                )}
             </div>
             {/* Animation keyframes for the pulse effect */}
             <style>

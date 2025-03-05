@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { ShadowDOM } from "../shadow-dom/shadow-dom";
 import { UserlandDOM } from "../userland-dom/userland-dom";
 import { useInspectorStore } from "../../stores/use-inspector-store";
+import { useHighlightStore } from "../../stores/highlight-store";
 import shadowDOMStyles from "../shadow-dom/shadow-dom.css?inline";
 
 // Constants for DOM IDs
@@ -43,18 +44,25 @@ function setupEventListeners() {
     let currentInspectedElement: HTMLElement | null = null;
     let selectedElement: HTMLElement | null = null;
     let isAddingNote = false;
+    let isShiftPressed = false; // Add shift key tracking
 
     // Handle mouse movement
     const handleMouseMove = (e: MouseEvent) => {
         const x = e.clientX;
         const y = e.clientY;
 
-        if (!document.body.classList.contains("inspector-mode")) {
-            if (currentInspectedElement && !isAddingNote) {
+        const inspectorStore = useInspectorStore.getState();
+        if (!inspectorStore.isActive || inspectorStore.isAddingNote) {
+            if (currentInspectedElement) {
                 currentInspectedElement.style.cursor = "";
                 currentInspectedElement = null;
 
-                if (!isAddingNote || !selectedElement) {
+                // Clean up highlight store state when not in inspector mode
+                const highlightStore = useHighlightStore.getState();
+                highlightStore.setHoveredElement(null);
+                highlightStore.clearAllHighlights();
+
+                if (!selectedElement) {
                     (window as any).updateOverlay(null);
                 }
             }
@@ -75,27 +83,33 @@ function setupEventListeners() {
         if (element instanceof HTMLElement) {
             if (currentInspectedElement && currentInspectedElement !== element) {
                 currentInspectedElement.style.cursor = "";
+                // Clean up previous element highlight
+                const highlightStore = useHighlightStore.getState();
+                highlightStore.removeHighlight(currentInspectedElement);
             }
 
             element.style.cursor = "none";
             currentInspectedElement = element;
 
-            if (!isAddingNote || element === selectedElement) {
-                (window as any).updateOverlay(element);
-            }
+            // Add highlight to current element
+            const highlightStore = useHighlightStore.getState();
+            highlightStore.addHighlight(element);
+            (window as any).updateOverlay(element);
         }
     };
 
     // Handle shift key events
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Shift") {
+            isShiftPressed = true; // Track shift key state
+            // Update inspector store state
+            useInspectorStore.getState().setIsActive(true);
+
+            // Reset state if not adding a note
             if (!isAddingNote) {
                 currentInspectedElement = null;
                 selectedElement = null;
             }
-
-            document.body.classList.add("inspector-mode");
-            useInspectorStore.getState().setIsActive(true);
 
             if (window.getSelection) {
                 window.getSelection()?.removeAllRanges();
@@ -105,15 +119,19 @@ function setupEventListeners() {
 
     const handleKeyUp = (e: KeyboardEvent) => {
         if (e.key === "Shift") {
+            isShiftPressed = false; // Track shift key state
             if (!isAddingNote) {
-                document.body.classList.remove("inspector-mode");
+                // Update inspector store state
                 useInspectorStore.getState().setIsActive(false);
 
+                // Clean up any inspected element
                 if (currentInspectedElement) {
                     currentInspectedElement.style.cursor = "";
                     currentInspectedElement = null;
-                    (window as any).updateOverlay(null);
                 }
+
+                // Clear the overlay
+                (window as any).updateOverlay(null);
             }
         }
     };
@@ -132,8 +150,14 @@ function setupEventListeners() {
 
             selectedElement = element;
             isAddingNote = true;
+
+            // Update store states for note mode
+            const inspectorStore = useInspectorStore.getState();
+            inspectorStore.setAddingNote(true);
+            const highlightStore = useHighlightStore.getState();
+            highlightStore.setSelectedElement(element);
+
             (window as any).updateOverlay(element);
-            document.body.classList.add("adding-note");
 
             requestAnimationFrame(() => {
                 window.scrollTo(scrollX, scrollY);
@@ -142,16 +166,28 @@ function setupEventListeners() {
     }) as EventListener);
 
     window.addEventListener("eye-note:note-dismissed", (() => {
+        // Update store states
+        const inspectorStore = useInspectorStore.getState();
+        inspectorStore.setAddingNote(false);
+        inspectorStore.setIsActive(isShiftPressed);
+
+        const highlightStore = useHighlightStore.getState();
+        highlightStore.setSelectedElement(null);
+        highlightStore.setHoveredElement(null);
+        highlightStore.clearAllHighlights();
+
+        // Then update local state
         isAddingNote = false;
         selectedElement = null;
-        document.body.classList.remove("adding-note");
 
-        if (!document.body.classList.contains("inspector-mode") || !currentInspectedElement) {
-            document.body.classList.remove("inspector-mode");
-            document.body.style.cursor = "";
-            useInspectorStore.getState().setIsActive(false);
-            (window as any).updateOverlay(null);
+        // Clean up any inspected element
+        if (currentInspectedElement) {
+            currentInspectedElement.style.cursor = "";
+            currentInspectedElement = null;
         }
+
+        // Clear the overlay
+        (window as any).updateOverlay(null);
     }) as EventListener);
 }
 

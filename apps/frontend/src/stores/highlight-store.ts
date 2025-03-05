@@ -1,17 +1,14 @@
 import { create } from "zustand";
+import { useInspectorStore } from "./use-inspector-store";
 
 interface HighlightStore {
     highlightedElements: Set<Element>;
     hoveredElement: Element | null;
     selectedElement: Element | null;
-    isInspectorMode: boolean;
-    isAddingNote: boolean;
     addHighlight: (element: Element) => void;
     removeHighlight: (element: Element) => void;
     setHoveredElement: (element: Element | null) => void;
     setSelectedElement: (element: Element | null) => void;
-    setInspectorMode: (isInspectorMode: boolean) => void;
-    setAddingNote: (isAddingNote: boolean) => void;
     clearAllHighlights: () => void;
 }
 
@@ -19,8 +16,6 @@ export const useHighlightStore = create<HighlightStore>((set, get) => ({
     highlightedElements: new Set(),
     hoveredElement: null,
     selectedElement: null,
-    isInspectorMode: false,
-    isAddingNote: false,
 
     addHighlight: (element: Element) => {
         element.classList.add("eye-note-highlight");
@@ -46,73 +41,13 @@ export const useHighlightStore = create<HighlightStore>((set, get) => ({
 
     setSelectedElement: (element: Element | null) => {
         set({ selectedElement: element });
-
-        if (element) {
-            set({ isAddingNote: true });
-        }
-    },
-
-    setInspectorMode: (isInspectorMode: boolean) => {
-        // When entering inspector mode, ensure we have a clean state
-        if (isInspectorMode) {
-            // Only reset if we're not currently adding a note
-            if (!get().isAddingNote) {
-                // Clear any lingering state
-                set({
-                    hoveredElement: null,
-                    selectedElement: null,
-                });
-            }
-            document.body.classList.add("inspector-mode");
-        } else {
-            if (!get().isAddingNote) {
-                document.body.classList.remove("inspector-mode");
-            }
-
-            set({ hoveredElement: null });
-        }
-
-        set({ isInspectorMode });
-    },
-
-    setAddingNote: (isAddingNote: boolean) => {
-        set({ isAddingNote });
-
-        // Update the body class for adding note state
-        if (isAddingNote) {
-            document.body.classList.add("adding-note");
-        } else {
-            document.body.classList.remove("adding-note");
-
-            // When we finish adding a note
-            if (!get().isInspectorMode) {
-                // If inspector mode is off, remove the inspector mode class
-                document.body.classList.remove("inspector-mode");
-            } else {
-                // If inspector mode is still on (shift key still pressed),
-                // make sure the inspector mode class is still applied
-                document.body.classList.add("inspector-mode");
-            }
-        }
     },
 
     clearAllHighlights: () => {
-        const { highlightedElements, isAddingNote, selectedElement } = get();
-
-        highlightedElements.forEach((element) => {
-            if (!isAddingNote || element !== selectedElement) {
-                element.classList.remove("eye-note-highlight");
-            }
+        const state = get();
+        state.highlightedElements.forEach((element) => {
+            element.classList.remove("eye-note-highlight");
         });
-
-        const newHighlightedElements = new Set<Element>();
-        if (isAddingNote && selectedElement) {
-            newHighlightedElements.add(selectedElement);
-        }
-
-        set({
-            highlightedElements: newHighlightedElements,
-            hoveredElement: null,
-        });
+        set({ highlightedElements: new Set() });
     },
 }));
