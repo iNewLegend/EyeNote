@@ -41,8 +41,9 @@ export function useInspectorMode () {
 
     // Handle mouse movement for element inspection
     const handleMouseMove = useCallback( ( e : MouseEvent ) => {
-        handleElementHighlight( e.clientX, e.clientY );
-    }, [ handleElementHighlight ] );
+        const shouldHighlight = !isMode( AppMode.NOTES_MODE ) && isMode( AppMode.INSPECTOR_MODE );
+        handleElementHighlight( e.clientX, e.clientY, shouldHighlight );
+    }, [ handleElementHighlight, isMode ] );
 
     useEventListener( 'mousemove', handleMouseMove );
 

@@ -1,29 +1,24 @@
 import { useCallback } from 'react';
 import { useHighlightStore } from "../stores/highlight-store";
-import { AppMode, useModeStore } from "../stores/use-mode-store";
 
 /**
- * Hook to handle element highlighting logic
- * Separates highlighting concerns from the inspector mode
+ * Generic hook to handle element highlighting logic
+ * Provides pure element highlighting functionality without mode awareness
  */
 export function useElementHighlight () {
     const { setHoveredElement } = useHighlightStore();
-    const { isMode } = useModeStore();
 
-    const handleElementHighlight = useCallback( ( x : number, y : number ) => {
-        // If we're in notes mode, don't process highlighting
-        if ( isMode( AppMode.NOTES_MODE ) ) {
-            setHoveredElement( null );
-            return;
-        }
-
-        if ( !isMode( AppMode.INSPECTOR_MODE ) ) {
+    const handleElementHighlight = useCallback( ( x : number, y : number, shouldHighlight : boolean ) => {
+        if ( !shouldHighlight ) {
             setHoveredElement( null );
             return;
         }
 
         const element = document.elementFromPoint( x, y );
-        if ( !element ) return;
+        if ( !element ) {
+            setHoveredElement( null );
+            return;
+        }
 
         // Don't highlight plugin elements
         if ( element.closest( ".notes-plugin" ) || element.closest( "#eye-note-shadow-dom" ) ) {
@@ -32,7 +27,7 @@ export function useElementHighlight () {
         }
 
         setHoveredElement( element );
-    }, [ isMode, setHoveredElement ] );
+    }, [ setHoveredElement ] );
 
     return {
         handleElementHighlight
