@@ -6,7 +6,7 @@ import { ThemeProvider } from "../theme/theme-provider";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { useHighlightStore } from "../../stores/highlight-store";
 
-export const ShadowDOM: React.FC = () => {
+export const ShadowDOM : React.FC = () => {
     const { notes, createNote } = useNotesStore();
     const {
         hoveredElement,
@@ -16,61 +16,61 @@ export const ShadowDOM: React.FC = () => {
         dismissNote,
         isInspectorMode,
     } = useInspectorMode();
-    const [isProcessingNoteDismissal, setIsProcessingNoteDismissal] = useState(false);
-    const [, setLocalSelectedElement] = useState<HTMLElement | null>(null);
-    const notesContainerRef = useRef<HTMLDivElement>(null);
+    const [ isProcessingNoteDismissal, setIsProcessingNoteDismissal ] = useState( false );
+    const [ , setLocalSelectedElement ] = useState<HTMLElement | null>( null );
+    const notesContainerRef = useRef<HTMLDivElement>( null );
 
     // Handle note element selection
-    useEffect(() => {
-        const handleElementSelected = ((e: CustomEvent) => {
+    useEffect( () => {
+        const handleElementSelected = ( ( e : CustomEvent ) => {
             const element = e.detail.element;
-            if (element instanceof HTMLElement) {
+            if ( element instanceof HTMLElement ) {
                 const scrollX = window.scrollX;
                 const scrollY = window.scrollY;
 
-                setLocalSelectedElement(element);
+                setLocalSelectedElement( element );
 
                 // Update store states for note mode
-                useModeStore.getState().addMode(AppMode.NOTES_MODE);
-                useHighlightStore.getState().setSelectedElement(element);
+                useModeStore.getState().addMode( AppMode.NOTES_MODE );
+                useHighlightStore.getState().setSelectedElement( element );
 
-                (window as any).updateOverlay(element);
+                ( window as any ).updateOverlay( element );
 
-                requestAnimationFrame(() => {
-                    window.scrollTo(scrollX, scrollY);
-                });
+                requestAnimationFrame( () => {
+                    window.scrollTo( scrollX, scrollY );
+                } );
             }
-        }) as EventListener;
+        } ) as EventListener;
 
-        window.addEventListener("eye-note:element-selected", handleElementSelected);
+        window.addEventListener( "eye-note:element-selected", handleElementSelected );
 
         return () => {
-            window.removeEventListener("eye-note:element-selected", handleElementSelected);
+            window.removeEventListener( "eye-note:element-selected", handleElementSelected );
         };
-    }, []);
+    }, [] );
 
     const handleClick = useCallback(
-        (e: MouseEvent) => {
-            console.log("Click event in shadow-dom.tsx", {
+        ( e : MouseEvent ) => {
+            console.log( "Click event in shadow-dom.tsx", {
                 e,
                 target: e.target,
                 currentTarget: e.currentTarget,
                 hoveredElement,
                 isInspectorMode,
-                isInteractionBlocker: (e.target as Element).id === "eye-note-interaction-blocker",
+                isInteractionBlocker: ( e.target as Element ).id === "eye-note-interaction-blocker",
                 isProcessingNoteDismissal,
-            });
+            } );
 
             // If we're processing a note dismissal, ignore the click
-            if (isProcessingNoteDismissal) {
+            if ( isProcessingNoteDismissal ) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log("Ignoring click during note dismissal processing");
+                console.log( "Ignoring click during note dismissal processing" );
                 return;
             }
 
-            if (!isInspectorMode || !hoveredElement) {
-                console.log("Not in inspector mode or no hovered element");
+            if ( !isInspectorMode || !hoveredElement ) {
+                console.log( "Not in inspector mode or no hovered element" );
                 return;
             }
 
@@ -81,33 +81,33 @@ export const ShadowDOM: React.FC = () => {
             // Check if we clicked on the interaction blocker or a plugin element
             const target = e.target as Element;
             const isInteractionBlocker = target.id === "eye-note-interaction-blocker";
-            const isPluginElement = target.closest(".notes-plugin");
+            const isPluginElement = target.closest( ".notes-plugin" );
 
             // If we clicked on a plugin element (but not the interaction blocker), don't create a note
-            if (isPluginElement && !isInteractionBlocker) {
-                console.log("Clicked on plugin element, not creating note");
+            if ( isPluginElement && !isInteractionBlocker ) {
+                console.log( "Clicked on plugin element, not creating note" );
                 return;
             }
 
-            console.log("Creating note for element", hoveredElement);
+            console.log( "Creating note for element", hoveredElement );
 
             // Store current scroll position
             const scrollX = window.scrollX;
             const scrollY = window.scrollY;
 
             // Create the note if we're in inspector mode and have a hovered element
-            createNote(hoveredElement);
-            setHoveredElement(null);
+            createNote( hoveredElement );
+            setHoveredElement( null );
 
             // Use our new selectElementForNote helper function
-            if (hoveredElement instanceof HTMLElement) {
-                selectElementForNote(hoveredElement);
+            if ( hoveredElement instanceof HTMLElement ) {
+                selectElementForNote( hoveredElement );
             }
 
             // Use requestAnimationFrame to restore scroll position after the note is created
-            requestAnimationFrame(() => {
-                window.scrollTo(scrollX, scrollY);
-            });
+            requestAnimationFrame( () => {
+                window.scrollTo( scrollX, scrollY );
+            } );
         },
         [
             isInspectorMode,
@@ -119,31 +119,31 @@ export const ShadowDOM: React.FC = () => {
         ]
     );
 
-    useEffect(() => {
-        if (isInspectorMode) {
-            document.addEventListener("click", handleClick, { capture: true });
-            return () => document.removeEventListener("click", handleClick, { capture: true });
+    useEffect( () => {
+        if ( isInspectorMode ) {
+            document.addEventListener( "click", handleClick, { capture: true } );
+            return () => document.removeEventListener( "click", handleClick, { capture: true } );
         }
-    }, [isInspectorMode, handleClick]);
+    }, [ isInspectorMode, handleClick ] );
 
     // Function to handle note dismissal
-    const handleNoteDismissed = useCallback(() => {
+    const handleNoteDismissed = useCallback( () => {
         // Set a flag to prevent immediate click handling
-        setIsProcessingNoteDismissal(true);
+        setIsProcessingNoteDismissal( true );
 
         // Use our new dismissNote helper function
         dismissNote();
 
         // Reset the flag after a short delay to allow the DOM to update
-        setTimeout(() => {
-            setIsProcessingNoteDismissal(false);
-        }, 100);
-    }, [dismissNote]);
+        setTimeout( () => {
+            setIsProcessingNoteDismissal( false );
+        }, 100 );
+    }, [ dismissNote ] );
 
     return (
         <ThemeProvider>
             <div ref={notesContainerRef} className="notes-plugin">
-                {notes.map((note) => (
+                {notes.map( ( note ) => (
                     <NoteComponent
                         key={note.id}
                         note={note}
@@ -151,7 +151,7 @@ export const ShadowDOM: React.FC = () => {
                         setSelectedElement={setSelectedElement}
                         onNoteDismissed={handleNoteDismissed}
                     />
-                ))}
+                ) )}
             </div>
         </ThemeProvider>
     );

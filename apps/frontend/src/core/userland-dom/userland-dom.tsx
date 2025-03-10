@@ -5,153 +5,153 @@ import { ThemeProvider } from "../theme/theme-provider";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { useHighlightStore } from "../../stores/highlight-store";
 
-export const UserlandDOM: React.FC = () => {
-    const [overlayStyle, setOverlayStyle] = useState({
+export const UserlandDOM : React.FC = () => {
+    const [ overlayStyle, setOverlayStyle ] = useState( {
         top: "0px",
         left: "0px",
         width: "0px",
         height: "0px",
-    });
-    const [isVisible, setIsVisible] = useState(false);
-    const [currentInspectedElement, setCurrentInspectedElement] = useState<HTMLElement | null>(
+    } );
+    const [ isVisible, setIsVisible ] = useState( false );
+    const [ currentInspectedElement, setCurrentInspectedElement ] = useState<HTMLElement | null>(
         null
     );
-    const [isShiftPressed, setIsShiftPressed] = useState(false);
+    const [ isShiftPressed, setIsShiftPressed ] = useState( false );
 
     // Track mode changes using the new system
-    const hasActiveMode = useModeStore((state) =>
-        state.hasAnyMode([AppMode.INSPECTOR_MODE, AppMode.NOTES_MODE])
+    const hasActiveMode = useModeStore( ( state ) =>
+        state.hasAnyMode( [ AppMode.INSPECTOR_MODE, AppMode.NOTES_MODE ] )
     );
 
     // Update overlay position
-    const updateOverlay = (element: Element | null) => {
-        if (!element) {
-            setOverlayStyle((prev) => ({ ...prev }));
+    const updateOverlay = ( element : Element | null ) => {
+        if ( !element ) {
+            setOverlayStyle( ( prev ) => ( { ...prev } ) );
             return;
         }
 
         const rect = element.getBoundingClientRect();
-        setOverlayStyle({
-            top: `${rect.top}px`,
-            left: `${rect.left}px`,
-            width: `${rect.width}px`,
-            height: `${rect.height}px`,
-        });
+        setOverlayStyle( {
+            top: `${ rect.top }px`,
+            left: `${ rect.left }px`,
+            width: `${ rect.width }px`,
+            height: `${ rect.height }px`,
+        } );
     };
 
     // Handle mouse movement
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = ( e : MouseEvent ) => {
         const modeStore = useModeStore.getState();
-        if (!modeStore.isMode(AppMode.INSPECTOR_MODE) || modeStore.isMode(AppMode.NOTES_MODE)) {
-            if (currentInspectedElement) {
+        if ( !modeStore.isMode( AppMode.INSPECTOR_MODE ) || modeStore.isMode( AppMode.NOTES_MODE ) ) {
+            if ( currentInspectedElement ) {
                 currentInspectedElement.style.cursor = "";
-                setCurrentInspectedElement(null);
+                setCurrentInspectedElement( null );
 
                 // Clean up highlight store state when not in inspector mode
                 const highlightStore = useHighlightStore.getState();
-                highlightStore.setHoveredElement(null);
+                highlightStore.setHoveredElement( null );
                 highlightStore.clearAllHighlights();
 
-                if (!currentInspectedElement) {
-                    updateOverlay(null);
+                if ( !currentInspectedElement ) {
+                    updateOverlay( null );
                 }
             }
             return;
         }
 
-        const element = document.elementFromPoint(e.clientX, e.clientY);
+        const element = document.elementFromPoint( e.clientX, e.clientY );
 
         if (
             !element ||
             element === currentInspectedElement ||
-            element.closest(`#eye-note-shadow-dom`) ||
-            element.closest(".notes-plugin")
+            element.closest( `#eye-note-shadow-dom` ) ||
+            element.closest( ".notes-plugin" )
         ) {
             return;
         }
 
-        if (element instanceof HTMLElement) {
-            if (currentInspectedElement && currentInspectedElement !== element) {
+        if ( element instanceof HTMLElement ) {
+            if ( currentInspectedElement && currentInspectedElement !== element ) {
                 currentInspectedElement.style.cursor = "";
                 // Clean up previous element highlight
                 const highlightStore = useHighlightStore.getState();
-                highlightStore.removeHighlight(currentInspectedElement);
+                highlightStore.removeHighlight( currentInspectedElement );
             }
 
             element.style.cursor = "none";
-            setCurrentInspectedElement(element);
+            setCurrentInspectedElement( element );
 
             // Add highlight to current element
             const highlightStore = useHighlightStore.getState();
-            highlightStore.addHighlight(element);
-            updateOverlay(element);
+            highlightStore.addHighlight( element );
+            updateOverlay( element );
         }
     };
 
     // Handle keyboard events
-    const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Shift" && !isShiftPressed) {
-            setIsShiftPressed(true);
+    const handleKeyDown = ( e : KeyboardEvent ) => {
+        if ( e.key === "Shift" && !isShiftPressed ) {
+            setIsShiftPressed( true );
             // Update mode store state
-            useModeStore.getState().addMode(AppMode.INSPECTOR_MODE);
+            useModeStore.getState().addMode( AppMode.INSPECTOR_MODE );
 
             // Reset state if not in notes mode
-            if (!useModeStore.getState().isMode(AppMode.NOTES_MODE)) {
-                setCurrentInspectedElement(null);
+            if ( !useModeStore.getState().isMode( AppMode.NOTES_MODE ) ) {
+                setCurrentInspectedElement( null );
             }
 
-            if (window.getSelection) {
+            if ( window.getSelection ) {
                 window.getSelection()?.removeAllRanges();
             }
         }
     };
 
-    const handleKeyUp = (e: KeyboardEvent) => {
-        if (e.key === "Shift") {
-            setIsShiftPressed(false);
+    const handleKeyUp = ( e : KeyboardEvent ) => {
+        if ( e.key === "Shift" ) {
+            setIsShiftPressed( false );
             // Only remove inspector mode if we're not in notes mode
             const modeStore = useModeStore.getState();
-            if (!modeStore.isMode(AppMode.NOTES_MODE)) {
-                modeStore.removeMode(AppMode.INSPECTOR_MODE);
+            if ( !modeStore.isMode( AppMode.NOTES_MODE ) ) {
+                modeStore.removeMode( AppMode.INSPECTOR_MODE );
 
                 // Clean up any inspected element
-                if (currentInspectedElement) {
+                if ( currentInspectedElement ) {
                     currentInspectedElement.style.cursor = "";
-                    setCurrentInspectedElement(null);
+                    setCurrentInspectedElement( null );
                 }
 
                 // Clear the overlay
-                updateOverlay(null);
+                updateOverlay( null );
             }
         }
     };
 
     // Setup event listeners
-    useEffect(() => {
-        (window as any).updateOverlay = updateOverlay;
+    useEffect( () => {
+        ( window as Window ).updateOverlay = updateOverlay;
 
         // Add event listeners
-        document.addEventListener("mousemove", handleMouseMove);
-        document.addEventListener("keydown", handleKeyDown);
-        document.addEventListener("keyup", handleKeyUp);
+        document.addEventListener( "mousemove", handleMouseMove );
+        document.addEventListener( "keydown", handleKeyDown );
+        document.addEventListener( "keyup", handleKeyUp );
 
         return () => {
-            delete (window as any).updateOverlay;
-            document.removeEventListener("mousemove", handleMouseMove);
-            document.removeEventListener("keydown", handleKeyDown);
-            document.removeEventListener("keyup", handleKeyUp);
+            delete ( window as Window ).updateOverlay;
+            document.removeEventListener( "mousemove", handleMouseMove );
+            document.removeEventListener( "keydown", handleKeyDown );
+            document.removeEventListener( "keyup", handleKeyUp );
 
             // Clean up any remaining cursor styles
-            if (currentInspectedElement) {
+            if ( currentInspectedElement ) {
                 currentInspectedElement.style.cursor = "";
             }
         };
-    }, [currentInspectedElement, isShiftPressed]);
+    }, [ currentInspectedElement, isShiftPressed ] );
 
     // Handle visibility
-    useEffect(() => {
-        setIsVisible(hasActiveMode);
-    }, [hasActiveMode]);
+    useEffect( () => {
+        setIsVisible( hasActiveMode );
+    }, [ hasActiveMode ] );
 
     return (
         <ThemeProvider>

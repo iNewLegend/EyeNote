@@ -14,42 +14,55 @@ import {
 import { Switch } from "../../components/ui/switch.tsx";
 import { Label } from "../../components/ui/label.tsx";
 import { ThemeProvider } from "../theme/theme-provider";
+import { ChromeMessage, ChromeResponse, MockChromeAPI } from "../../types/chrome";
 import "./extension-popup.css";
 
 interface User {
-    id: string;
-    email: string;
-    name: string;
-    picture: string;
+    id : string;
+    email : string;
+    name : string;
+    picture : string;
+}
+
+interface StorageSettings {
+    enabled : boolean;
+    notificationSound : boolean;
+    showUnreadBadge : boolean;
+}
+
+interface StorageData {
+    settings : StorageSettings;
+    activeGroups : string[];
 }
 
 // Development mocks
 const DEV_MODE = process.env.NODE_ENV === "development";
-const mockStorage = {
+const mockStorage : StorageData = {
     settings: {
         enabled: true,
         notificationSound: true,
         showUnreadBadge: true,
     },
-    activeGroups: ["Development Group"],
+    activeGroups: [ "Development Group" ],
 };
 
-const mockChromeAPI = {
+// Use mock or real Chrome API
+const chromeAPI = DEV_MODE ? {
     storage: {
         local: {
-            get: (key: string, callback: (result: any) => void) => {
-                callback({ [key]: mockStorage[key as keyof typeof mockStorage] });
+            get: <T,>( key : string, callback : ( result : { [key : string] : T } ) => void ) => {
+                callback( { [ key ]: mockStorage[ key as keyof typeof mockStorage ] as T } );
             },
-            set: (items: object) => {
-                Object.assign(mockStorage, items);
+            set: ( items : object ) => {
+                Object.assign( mockStorage, items );
             },
         },
     },
     runtime: {
-        sendMessage: (message: any, callback?: (response: any) => void) => {
-            if (callback) {
-                if (message.type === "GET_AUTH_STATUS") {
-                    callback({
+        sendMessage: ( message : ChromeMessage, callback ?: ( response : ChromeResponse ) => void ) => {
+            if ( callback ) {
+                if ( message.type === "GET_AUTH_STATUS" ) {
+                    callback( {
                         isAuthenticated: true,
                         user: {
                             id: "dev",
@@ -58,77 +71,74 @@ const mockChromeAPI = {
                             picture:
                                 "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQCAvE4NQuOnrjboZSCZCOfDv7ry3l4yysuLg&s",
                         },
-                    });
-                } else if (message.type === "SIGN_OUT") {
-                    callback({ success: true });
+                    } );
+                } else if ( message.type === "SIGN_OUT" ) {
+                    callback( { success: true } );
                 }
             }
-            return Promise.resolve({ success: true });
+            return Promise.resolve( { success: true } );
         },
     },
-};
+} as MockChromeAPI : ( chrome as unknown as MockChromeAPI );
 
-// Use mock or real Chrome API
-const chromeAPI = DEV_MODE ? mockChromeAPI : chrome;
-
-export function ExtensionPopup() {
-    const [settings, setSettings] = useState({
+export function ExtensionPopup () {
+    const [ settings, setSettings ] = useState<StorageSettings>( {
         enabled: true,
         notificationSound: true,
         showUnreadBadge: true,
-    });
+    } );
 
-    const [activeGroups, setActiveGroups] = useState<string[]>([]);
-    const [isAuthOpen, setIsAuthOpen] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [user, setUser] = useState<User | null>(null);
+    const [ activeGroups, setActiveGroups ] = useState<string[]>( [] );
+    const [ isAuthOpen, setIsAuthOpen ] = useState( false );
+    const [ isAuthenticated, setIsAuthenticated ] = useState( false );
+    const [ user, setUser ] = useState<User | null>( null );
 
-    useEffect(() => {
+    useEffect( () => {
         // Load settings
-        chromeAPI.storage.local.get("settings", (result) => {
-            if (result.settings) {
-                setSettings(result.settings);
+        chromeAPI.storage.local.get<StorageSettings>( "settings", ( result ) => {
+            if ( result.settings ) {
+                setSettings( result.settings );
             }
-        });
+        } );
 
         // Load active groups
-        chromeAPI.storage.local.get("activeGroups", (result) => {
-            if (result.activeGroups) {
-                setActiveGroups(result.activeGroups);
+        chromeAPI.storage.local.get<string[]>( "activeGroups", ( result ) => {
+            if ( result.activeGroups ) {
+                setActiveGroups( result.activeGroups );
             }
-        });
+        } );
 
         // Check authentication status
-        chromeAPI.runtime.sendMessage({ type: "GET_AUTH_STATUS" }, (response) => {
-            setIsAuthenticated(response.isAuthenticated);
-            setUser(response.user || null);
-        });
-    }, []);
+        chromeAPI.runtime.sendMessage( { type: "GET_AUTH_STATUS" }, ( response ) => {
+            setIsAuthenticated( !!response.isAuthenticated );
+            setUser( response.user || null );
+        } );
+    }, [] );
 
     const handleSignOut = async () => {
         try {
-            const response = await chromeAPI.runtime.sendMessage({ type: "SIGN_OUT" });
-            if (response.success) {
-                setIsAuthenticated(false);
-                setUser(null);
-                toast("Signed out", {
+            const response = await chromeAPI.runtime.sendMessage( { type: "SIGN_OUT" } );
+            if ( response.success ) {
+                setIsAuthenticated( false );
+                setUser( null );
+                toast( "Signed out", {
                     description: "You have been successfully signed out",
-                });
+                } );
             }
-        } catch (error) {
-            toast("Error", {
+        } catch ( error ) {
+            toast( "Error", {
                 description: "Failed to sign out. Please try again.",
-            });
+            } );
         }
     };
 
-    const toggleSetting = (key: keyof typeof settings) => {
+    const toggleSetting = ( key : keyof typeof settings ) => {
         const newSettings = {
             ...settings,
-            [key]: !settings[key],
+            [ key ]: !settings[ key ],
         };
-        setSettings(newSettings);
-        chromeAPI.storage.local.set({ settings: newSettings });
+        setSettings( newSettings );
+        chromeAPI.storage.local.set( { settings: newSettings } );
     };
 
     return (
@@ -159,7 +169,7 @@ export function ExtensionPopup() {
                                 </Button>
                             </div>
                         ) : (
-                            <Button variant="default" size="sm" onClick={() => setIsAuthOpen(true)}>
+                            <Button variant="default" size="sm" onClick={() => setIsAuthOpen( true )}>
                                 Sign In
                             </Button>
                         )}
@@ -183,7 +193,7 @@ export function ExtensionPopup() {
                                     <Switch
                                         id="enable-notes"
                                         checked={settings.enabled}
-                                        onCheckedChange={() => toggleSetting("enabled")}
+                                        onCheckedChange={() => toggleSetting( "enabled" )}
                                     />
                                 </div>
                                 <div className="flex items-center justify-between space-x-4">
@@ -196,7 +206,7 @@ export function ExtensionPopup() {
                                     <Switch
                                         id="notification-sound"
                                         checked={settings.notificationSound}
-                                        onCheckedChange={() => toggleSetting("notificationSound")}
+                                        onCheckedChange={() => toggleSetting( "notificationSound" )}
                                     />
                                 </div>
                                 <div className="flex items-center justify-between space-x-4">
@@ -209,7 +219,7 @@ export function ExtensionPopup() {
                                     <Switch
                                         id="unread-badge"
                                         checked={settings.showUnreadBadge}
-                                        onCheckedChange={() => toggleSetting("showUnreadBadge")}
+                                        onCheckedChange={() => toggleSetting( "showUnreadBadge" )}
                                     />
                                 </div>
                             </div>
@@ -225,7 +235,7 @@ export function ExtensionPopup() {
                                 </div>
                             ) : (
                                 <div className="space-y-2">
-                                    {activeGroups.map((group) => (
+                                    {activeGroups.map( ( group ) => (
                                         <div
                                             key={group}
                                             className="flex items-center p-2 bg-secondary/50 rounded-md text-sm"
@@ -233,7 +243,7 @@ export function ExtensionPopup() {
                                             <span className="w-2 h-2 rounded-full bg-primary mr-2" />
                                             {group}
                                         </div>
-                                    ))}
+                                    ) )}
                                 </div>
                             )}
                         </div>
@@ -285,7 +295,7 @@ export function ExtensionPopup() {
                                     </p>
                                 </div>
                             </div>
-                            <Button size="lg" onClick={() => setIsAuthOpen(true)}>
+                            <Button size="lg" onClick={() => setIsAuthOpen( true )}>
                                 Get Started
                             </Button>
                         </div>
@@ -293,24 +303,24 @@ export function ExtensionPopup() {
                 )}
             </Card>
 
-            <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+            <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen( false )} />
         </>
     );
 }
 
 // Mount the app
-console.log("Popup mounting...");
+console.log( "Popup mounting..." );
 
 try {
-    const rootElement = document.getElementById("root");
-    console.log("Found root element:", rootElement);
+    const rootElement = document.getElementById( "root" );
+    console.log( "Found root element:", rootElement );
 
-    if (!rootElement) {
-        throw new Error("Root element not found");
+    if ( !rootElement ) {
+        throw new Error( "Root element not found" );
     }
 
-    const root = createRoot(rootElement);
-    console.log("Created React root");
+    const root = createRoot( rootElement );
+    console.log( "Created React root" );
 
     root.render(
         <React.StrictMode>
@@ -321,7 +331,7 @@ try {
         </React.StrictMode>
     );
 
-    console.log("Rendered React app");
-} catch (error) {
-    console.error("Error mounting React app:", error);
+    console.log( "Rendered React app" );
+} catch ( error ) {
+    console.error( "Error mounting React app:", error );
 }
