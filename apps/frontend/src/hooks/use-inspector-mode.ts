@@ -3,6 +3,7 @@ import { useHighlightStore } from "../stores/highlight-store";
 import { useModeStore, AppMode } from "../stores/use-mode-store";
 import { usePreserveScroll } from "./use-preserve-scroll";
 import { useEventListener } from "./use-event-listener";
+import { useElementHighlight } from "./use-element-highlight";
 
 export function useInspectorMode () {
     const {
@@ -13,6 +14,7 @@ export function useInspectorMode () {
     } = useHighlightStore();
     const { modes, setMode, addMode, removeMode, isMode } = useModeStore();
     const preserveScroll = usePreserveScroll();
+    const { handleElementHighlight } = useElementHighlight();
 
     // Handle shift key events to toggle inspector mode
     const handleKeyDown = useCallback( ( e : KeyboardEvent ) => {
@@ -39,27 +41,8 @@ export function useInspectorMode () {
 
     // Handle mouse movement for element inspection
     const handleMouseMove = useCallback( ( e : MouseEvent ) => {
-        // If we're in notes mode, don't process mouse movements for highlighting
-        if ( isMode( AppMode.NOTES_MODE ) ) {
-            return;
-        }
-
-        if ( !isMode( AppMode.INSPECTOR_MODE ) ) {
-            setHoveredElement( null );
-            return;
-        }
-
-        const element = document.elementFromPoint( e.clientX, e.clientY );
-        if ( !element ) return;
-
-        // Don't highlight plugin elements
-        if ( element.closest( ".notes-plugin" ) || element.closest( "#eye-note-shadow-dom" ) ) {
-            setHoveredElement( null );
-            return;
-        }
-
-        setHoveredElement( element );
-    }, [ isMode, setHoveredElement ] );
+        handleElementHighlight( e.clientX, e.clientY );
+    }, [ handleElementHighlight ] );
 
     useEventListener( 'mousemove', handleMouseMove );
 
