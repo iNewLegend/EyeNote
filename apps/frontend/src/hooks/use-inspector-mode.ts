@@ -1,10 +1,9 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import { useHighlightStore } from "../stores/highlight-store";
 import { useNotesStore } from "../stores/notes-store";
 import { useModeStore, AppMode } from "../stores/use-mode-store";
 
 export function useInspectorMode () {
-    const lastProcessedElement = useRef<Element | null>( null );
     const {
         hoveredElement,
         setHoveredElement,
@@ -20,11 +19,10 @@ export function useInspectorMode () {
     useEffect( () => {
         const handleKeyDown = ( e : KeyboardEvent ) => {
             if ( e.key === "Shift" && !isMode( AppMode.INSPECTOR_MODE ) ) {
-                // Reset the last processed element when entering inspector mode
+                // Only enter inspector mode if we're not in notes mode
                 if ( !isMode( AppMode.NOTES_MODE ) ) {
-                    lastProcessedElement.current = null;
+                    addMode( AppMode.INSPECTOR_MODE );
                 }
-                addMode( AppMode.INSPECTOR_MODE );
             }
         };
 
@@ -34,7 +32,6 @@ export function useInspectorMode () {
                 if ( !isMode( AppMode.NOTES_MODE ) ) {
                     removeMode( AppMode.INSPECTOR_MODE );
                     clearAllHighlights();
-                    lastProcessedElement.current = null;
                 }
             }
         };
@@ -57,10 +54,7 @@ export function useInspectorMode () {
             }
 
             if ( !isMode( AppMode.INSPECTOR_MODE ) ) {
-                if ( lastProcessedElement.current ) {
-                    setHoveredElement( null );
-                    lastProcessedElement.current = null;
-                }
+                setHoveredElement( null );
                 return;
             }
 
@@ -70,12 +64,10 @@ export function useInspectorMode () {
             // Don't highlight plugin elements
             if ( element.closest( ".notes-plugin" ) || element.closest( "#eye-note-shadow-dom" ) ) {
                 setHoveredElement( null );
-                lastProcessedElement.current = element;
                 return;
             }
 
             setHoveredElement( element );
-            lastProcessedElement.current = element;
         };
 
         document.addEventListener( "mousemove", handleMouseMove );
@@ -123,7 +115,6 @@ export function useInspectorMode () {
         clearAllHighlights();
         setHoveredElement( null );
         setSelectedElement( null );
-        lastProcessedElement.current = null;
     }, [
         modes,
         removeMode,
