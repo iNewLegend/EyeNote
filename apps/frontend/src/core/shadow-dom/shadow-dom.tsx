@@ -5,6 +5,7 @@ import { useInspectorMode } from "../../hooks/use-inspector-mode";
 import { ThemeProvider } from "../theme/theme-provider";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { useHighlightStore } from "../../stores/highlight-store";
+import { InteractionBlocker } from "../../components/interaction-blocker";
 
 export const ShadowDOM : React.FC = () => {
     const { notes, createNote } = useNotesStore();
@@ -143,6 +144,7 @@ export const ShadowDOM : React.FC = () => {
     return (
         <ThemeProvider>
             <div ref={notesContainerRef} className="notes-plugin">
+                <InteractionBlocker isVisible={isInspectorMode} />
                 {notes.map( ( note ) => (
                     <NoteComponent
                         key={note.id}

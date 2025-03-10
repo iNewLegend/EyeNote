@@ -25,13 +25,6 @@ export function useInspectorMode () {
                     lastProcessedElement.current = null;
                 }
                 addMode( AppMode.INSPECTOR_MODE );
-
-                // Configure the interaction blocker
-                const interactionBlocker = document.getElementById( "eye-note-interaction-blocker" );
-                if ( interactionBlocker ) {
-                    interactionBlocker.style.display = "block";
-                    interactionBlocker.style.pointerEvents = "none";
-                }
             }
         };
 
@@ -50,14 +43,6 @@ export function useInspectorMode () {
                         currentElement.style.cursor = "";
                     }
                     lastProcessedElement.current = null;
-
-                    // Hide the overlay and interaction blocker
-                    const interactionBlocker = document.getElementById(
-                        "eye-note-interaction-blocker"
-                    );
-                    if ( interactionBlocker ) {
-                        interactionBlocker.style.display = "none";
-                    }
                 }
             }
         };
@@ -116,7 +101,6 @@ export function useInspectorMode () {
 
             setHoveredElement( element );
             lastProcessedElement.current = element;
-
         };
 
         document.addEventListener( "mousemove", handleMouseMove );
