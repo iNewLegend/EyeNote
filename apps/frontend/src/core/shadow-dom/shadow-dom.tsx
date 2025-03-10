@@ -1,11 +1,8 @@
-import React from "react";
-import { useEffect, useCallback, useState } from "react";
-import { toast } from "sonner";
+import React, { useEffect, useCallback, useState, useRef } from "react";
 import { useNotesStore } from "../../stores/notes-store";
 import { NoteComponent } from "../../features/notes/note-component";
 import { useInspectorMode } from "../../hooks/use-inspector-mode";
 import { ThemeProvider } from "../theme/theme-provider";
-import { Toaster } from "../../components/ui/sonner";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { useHighlightStore } from "../../stores/highlight-store";
 
@@ -21,6 +18,7 @@ export const ShadowDOM: React.FC = () => {
     } = useInspectorMode();
     const [isProcessingNoteDismissal, setIsProcessingNoteDismissal] = useState(false);
     const [, setLocalSelectedElement] = useState<HTMLElement | null>(null);
+    const notesContainerRef = useRef<HTMLDivElement>(null);
 
     // Handle note element selection
     useEffect(() => {
@@ -144,14 +142,13 @@ export const ShadowDOM: React.FC = () => {
 
     return (
         <ThemeProvider>
-            <Toaster />
-            <div className="notes-plugin">
+            <div ref={notesContainerRef} className="notes-plugin">
                 {notes.map((note) => (
                     <NoteComponent
                         key={note.id}
                         note={note}
+                        container={notesContainerRef.current!.parentElement}
                         setSelectedElement={setSelectedElement}
-                        onUpdateToast={(title, description) => toast(title, { description })}
                         onNoteDismissed={handleNoteDismissed}
                     />
                 ))}
