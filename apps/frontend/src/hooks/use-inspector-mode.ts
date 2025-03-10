@@ -7,7 +7,6 @@ export function useInspectorMode () {
     const {
         hoveredElement,
         setHoveredElement,
-        selectedElement,
         setSelectedElement,
         clearAllHighlights,
         highlightedElements,
@@ -82,8 +81,8 @@ export function useInspectorMode () {
         highlightedElements,
     ] );
 
-    // Handle element selection for note creation
-    const selectElementForNote = useCallback(
+    // Handle element selection
+    const selectElement = useCallback(
         ( element : HTMLElement ) => {
             // Store current scroll position
             const scrollX = window.scrollX;
@@ -100,8 +99,8 @@ export function useInspectorMode () {
         [ setSelectedElement, addMode ]
     );
 
-    // Handle note dismissal
-    const dismissNote = useCallback( () => {
+    // Handle dismissal
+    const dismiss = useCallback( () => {
         // Clear all modes except DEBUG_MODE
         const currentModes = modes;
         if ( currentModes & AppMode.NOTES_MODE ) {
@@ -136,11 +135,9 @@ export function useInspectorMode () {
     return {
         hoveredElement,
         setHoveredElement,
-        selectedElement,
         setSelectedElement,
-        isInspectorMode: isMode( AppMode.INSPECTOR_MODE ),
-        isAddingNote: isMode( AppMode.NOTES_MODE ),
-        selectElementForNote,
-        dismissNote,
+        isActive: isMode( AppMode.INSPECTOR_MODE ),
+        selectElement,
+        dismiss,
     };
 }

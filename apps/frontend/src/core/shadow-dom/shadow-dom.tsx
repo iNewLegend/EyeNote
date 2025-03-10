@@ -13,9 +13,9 @@ export const ShadowDOM : React.FC = () => {
         hoveredElement,
         setHoveredElement,
         setSelectedElement,
-        selectElementForNote,
-        dismissNote,
-        isInspectorMode,
+        selectElement,
+        dismiss,
+        isActive,
     } = useInspectorMode();
     const [ isProcessingNoteDismissal, setIsProcessingNoteDismissal ] = useState( false );
     const [ , setLocalSelectedElement ] = useState<HTMLElement | null>( null );
@@ -57,7 +57,7 @@ export const ShadowDOM : React.FC = () => {
                 target: e.target,
                 currentTarget: e.currentTarget,
                 hoveredElement,
-                isInspectorMode,
+                isActive,
                 isInteractionBlocker: ( e.target as Element ).id === "eye-note-interaction-blocker",
                 isProcessingNoteDismissal,
             } );
@@ -70,7 +70,7 @@ export const ShadowDOM : React.FC = () => {
                 return;
             }
 
-            if ( !isInspectorMode || !hoveredElement ) {
+            if ( !isActive || !hoveredElement ) {
                 console.log( "Not in inspector mode or no hovered element" );
                 return;
             }
@@ -102,7 +102,7 @@ export const ShadowDOM : React.FC = () => {
 
             // Use our new selectElementForNote helper function
             if ( hoveredElement instanceof HTMLElement ) {
-                selectElementForNote( hoveredElement );
+                selectElement( hoveredElement );
             }
 
             // Use requestAnimationFrame to restore scroll position after the note is created
@@ -111,21 +111,21 @@ export const ShadowDOM : React.FC = () => {
             } );
         },
         [
-            isInspectorMode,
+            isActive,
             hoveredElement,
             setHoveredElement,
             createNote,
-            selectElementForNote,
+            selectElement,
             isProcessingNoteDismissal,
         ]
     );
 
     useEffect( () => {
-        if ( isInspectorMode ) {
+        if ( isActive ) {
             document.addEventListener( "click", handleClick, { capture: true } );
             return () => document.removeEventListener( "click", handleClick, { capture: true } );
         }
-    }, [ isInspectorMode, handleClick ] );
+    }, [ isActive, handleClick ] );
 
     // Function to handle note dismissal
     const handleNoteDismissed = useCallback( () => {
@@ -133,18 +133,18 @@ export const ShadowDOM : React.FC = () => {
         setIsProcessingNoteDismissal( true );
 
         // Use our new dismissNote helper function
-        dismissNote();
+        dismiss();
 
         // Reset the flag after a short delay to allow the DOM to update
         setTimeout( () => {
             setIsProcessingNoteDismissal( false );
         }, 100 );
-    }, [ dismissNote ] );
+    }, [ dismiss ] );
 
     return (
         <ThemeProvider>
             <div ref={notesContainerRef} className="notes-plugin">
-                <InteractionBlocker isVisible={isInspectorMode} />
+                <InteractionBlocker isVisible={isActive} />
                 {notes.map( ( note ) => (
                     <NoteComponent
                         key={note.id}
