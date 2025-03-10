@@ -33,15 +33,7 @@ export function useInspectorMode () {
                 // Only remove inspector mode if we're not in notes mode
                 if ( !isMode( AppMode.NOTES_MODE ) ) {
                     removeMode( AppMode.INSPECTOR_MODE );
-
-                    // Only clear highlights if we're not in notes mode
                     clearAllHighlights();
-
-                    // Reset the last processed element
-                    const currentElement = lastProcessedElement.current;
-                    if ( currentElement instanceof HTMLElement ) {
-                        currentElement.style.cursor = "";
-                    }
                     lastProcessedElement.current = null;
                 }
             }
@@ -67,11 +59,6 @@ export function useInspectorMode () {
             if ( !isMode( AppMode.INSPECTOR_MODE ) ) {
                 if ( lastProcessedElement.current ) {
                     setHoveredElement( null );
-                    // Remove any cursor style changes
-                    const currentElement = lastProcessedElement.current;
-                    if ( currentElement instanceof HTMLElement ) {
-                        currentElement.style.cursor = "";
-                    }
                     lastProcessedElement.current = null;
                 }
                 return;
@@ -83,20 +70,8 @@ export function useInspectorMode () {
             // Don't highlight plugin elements
             if ( element.closest( ".notes-plugin" ) || element.closest( "#eye-note-shadow-dom" ) ) {
                 setHoveredElement( null );
-                if ( lastProcessedElement.current instanceof HTMLElement ) {
-                    lastProcessedElement.current.style.cursor = "";
-                }
                 lastProcessedElement.current = element;
                 return;
-            }
-
-            // Always update cursor style and highlight for the current element
-            if ( lastProcessedElement.current instanceof HTMLElement ) {
-                lastProcessedElement.current.style.cursor = "";
-            }
-
-            if ( element instanceof HTMLElement ) {
-                element.style.cursor = "none";
             }
 
             setHoveredElement( element );
@@ -148,12 +123,7 @@ export function useInspectorMode () {
         clearAllHighlights();
         setHoveredElement( null );
         setSelectedElement( null );
-
-        // Reset cursor styles
-        if ( lastProcessedElement.current instanceof HTMLElement ) {
-            lastProcessedElement.current.style.cursor = "";
-            lastProcessedElement.current = null;
-        }
+        lastProcessedElement.current = null;
     }, [
         modes,
         removeMode,
