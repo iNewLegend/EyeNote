@@ -1,6 +1,5 @@
 import { useEffect, useCallback } from "react";
 import { useHighlightStore } from "../stores/highlight-store";
-import { useNotesStore } from "../stores/notes-store";
 import { useModeStore, AppMode } from "../stores/use-mode-store";
 
 export function useInspectorMode () {
@@ -9,10 +8,8 @@ export function useInspectorMode () {
         setHoveredElement,
         setSelectedElement,
         clearAllHighlights,
-        highlightedElements,
     } = useHighlightStore();
     const { modes, setMode, addMode, removeMode, isMode } = useModeStore();
-    const { hasNoteForElement } = useNotesStore();
 
     // Handle shift key events to toggle inspector mode
     useEffect( () => {
@@ -77,8 +74,6 @@ export function useInspectorMode () {
     }, [
         isMode,
         setHoveredElement,
-        hasNoteForElement,
-        highlightedElements,
     ] );
 
     // Handle element selection
