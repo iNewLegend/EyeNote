@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from "react";
 import { useHighlightStore } from "../stores/highlight-store";
 import { useModeStore, AppMode } from "../stores/use-mode-store";
+import { usePreserveScroll } from "./use-preserve-scroll";
 
 export function useInspectorMode () {
     const {
@@ -10,6 +11,7 @@ export function useInspectorMode () {
         clearAllHighlights,
     } = useHighlightStore();
     const { modes, setMode, addMode, removeMode, isMode } = useModeStore();
+    const preserveScroll = usePreserveScroll();
 
     // Handle shift key events to toggle inspector mode
     useEffect( () => {
@@ -79,19 +81,12 @@ export function useInspectorMode () {
     // Handle element selection
     const selectElement = useCallback(
         ( element : HTMLElement ) => {
-            // Store current scroll position
-            const scrollX = window.scrollX;
-            const scrollY = window.scrollY;
-
-            setSelectedElement( element );
-            addMode( AppMode.NOTES_MODE );
-
-            // Restore scroll position
-            requestAnimationFrame( () => {
-                window.scrollTo( scrollX, scrollY );
+            preserveScroll( () => {
+                setSelectedElement( element );
+                addMode( AppMode.NOTES_MODE );
             } );
         },
-        [ setSelectedElement, addMode ]
+        [ setSelectedElement, addMode, preserveScroll ]
     );
 
     // Handle dismissal
