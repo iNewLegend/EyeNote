@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from "react";
-import userlandStyles from "./userland-dom.css?inline";
 import { CursorDotWrapper } from "../../components/cursor-dot-wrapper";
 import { HighlightOverlay } from "../../components/highlight-overlay";
-import { ThemeProvider } from "../../core/theme/theme-provider";
-import { useThemeStore } from "../../stores/theme-store";
+import { ThemeProvider } from "../theme/theme-provider";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { useHighlightStore } from "../../stores/highlight-store";
 
 export const UserlandDOM: React.FC = () => {
     const [overlayStyle, setOverlayStyle] = useState({
-        display: "none",
         top: "0px",
         left: "0px",
         width: "0px",
@@ -29,13 +26,12 @@ export const UserlandDOM: React.FC = () => {
     // Update overlay position
     const updateOverlay = (element: Element | null) => {
         if (!element) {
-            setOverlayStyle((prev) => ({ ...prev, display: "none" }));
+            setOverlayStyle((prev) => ({ ...prev }));
             return;
         }
 
         const rect = element.getBoundingClientRect();
         setOverlayStyle({
-            display: "block",
             top: `${rect.top}px`,
             left: `${rect.left}px`,
             width: `${rect.width}px`,
@@ -68,7 +64,7 @@ export const UserlandDOM: React.FC = () => {
         if (
             !element ||
             element === currentInspectedElement ||
-            element.closest(`#eye-not-shadow-dom`) ||
+            element.closest(`#eye-note-shadow-dom`) ||
             element.closest(".notes-plugin")
         ) {
             return;
@@ -157,20 +153,11 @@ export const UserlandDOM: React.FC = () => {
         setIsVisible(hasActiveMode);
     }, [hasActiveMode]);
 
-    if (!isVisible) return null;
-
     return (
         <ThemeProvider>
-            <div id="eye-not-userland-dom">
-                {/* Styles */}
-                <style>{userlandStyles}</style>
+            <CursorDotWrapper />
 
-                {/* Cursor Dot */}
-                <CursorDotWrapper />
-
-                {/* Highlight Overlay */}
-                <HighlightOverlay style={overlayStyle} visible={isVisible} />
-            </div>
+            <HighlightOverlay style={overlayStyle} visible={isVisible} />
         </ThemeProvider>
     );
 };

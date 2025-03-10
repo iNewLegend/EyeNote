@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { useModeStore } from "./use-mode-store";
 
 interface HighlightStore {
     highlightedElements: Set<Element>;

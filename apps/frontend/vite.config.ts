@@ -24,6 +24,9 @@ export default defineConfig(({ mode }) => {
     if (isContentScript) {
         return {
             ...commonConfig,
+            plugins: [
+                ...commonConfig.plugins,
+            ],
             build: {
                 ...commonConfig.build,
                 rollupOptions: {

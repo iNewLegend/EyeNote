@@ -20,7 +20,7 @@ export const ShadowDOM: React.FC = () => {
         isInspectorMode,
     } = useInspectorMode();
     const [isProcessingNoteDismissal, setIsProcessingNoteDismissal] = useState(false);
-    const [selectedElement, setLocalSelectedElement] = useState<HTMLElement | null>(null);
+    const [, setLocalSelectedElement] = useState<HTMLElement | null>(null);
 
     // Handle note element selection
     useEffect(() => {
@@ -144,19 +144,17 @@ export const ShadowDOM: React.FC = () => {
 
     return (
         <ThemeProvider>
-            <div id="eye-not-shadow-dom">
-                <Toaster />
-                <div className="notes-plugin">
-                    {notes.map((note) => (
-                        <NoteComponent
-                            key={note.id}
-                            note={note}
-                            setSelectedElement={setSelectedElement}
-                            onUpdateToast={(title, description) => toast(title, { description })}
-                            onNoteDismissed={handleNoteDismissed}
-                        />
-                    ))}
-                </div>
+            <Toaster />
+            <div className="notes-plugin">
+                {notes.map((note) => (
+                    <NoteComponent
+                        key={note.id}
+                        note={note}
+                        setSelectedElement={setSelectedElement}
+                        onUpdateToast={(title, description) => toast(title, { description })}
+                        onNoteDismissed={handleNoteDismissed}
+                    />
+                ))}
             </div>
         </ThemeProvider>
     );

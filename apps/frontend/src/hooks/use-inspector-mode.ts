@@ -16,44 +16,6 @@ export function useInspectorMode() {
     const { modes, setMode, addMode, removeMode, isMode } = useModeStore();
     const { hasNoteForElement } = useNotesStore();
 
-    // Function to update overlay position
-    const updateOverlayPosition = useCallback((element: Element | null) => {
-        const overlay = document.getElementById("eye-note-highlight-overlay");
-        if (!overlay) return;
-
-        if (!element) {
-            overlay.style.display = "none";
-            return;
-        }
-
-        // Store current scroll position
-        const scrollX = window.scrollX;
-        const scrollY = window.scrollY;
-
-        const rect = element.getBoundingClientRect();
-        overlay.style.display = "block";
-        overlay.style.top = rect.top + "px";
-        overlay.style.left = rect.left + "px";
-        overlay.style.width = rect.width + "px";
-        overlay.style.height = rect.height + "px";
-
-        // Restore scroll position to prevent unwanted scrolling
-        requestAnimationFrame(() => {
-            window.scrollTo(scrollX, scrollY);
-        });
-    }, []);
-
-    // Function to update cursor dot position
-    const updateCursorPosition = useCallback((x: number, y: number) => {
-        const cursorDot = document.querySelector(".cursor-dot");
-        if (!cursorDot) return;
-
-        requestAnimationFrame(() => {
-            (cursorDot as HTMLElement).style.left = `${x}px`;
-            (cursorDot as HTMLElement).style.top = `${y}px`;
-        });
-    }, []);
-
     // Handle shift key events to toggle inspector mode
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -90,7 +52,6 @@ export function useInspectorMode() {
                     lastProcessedElement.current = null;
 
                     // Hide the overlay and interaction blocker
-                    updateOverlayPosition(null);
                     const interactionBlocker = document.getElementById(
                         "eye-note-interaction-blocker"
                     );
@@ -108,16 +69,11 @@ export function useInspectorMode() {
             document.removeEventListener("keydown", handleKeyDown);
             document.removeEventListener("keyup", handleKeyUp);
         };
-    }, [isMode, addMode, removeMode, clearAllHighlights, updateOverlayPosition]);
+    }, [isMode, addMode, removeMode, clearAllHighlights ]);
 
     // Handle mouse movement for element inspection
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
-            // Always update cursor dot position in inspector mode
-            if (isMode(AppMode.INSPECTOR_MODE)) {
-                updateCursorPosition(e.clientX, e.clientY);
-            }
-
             // If we're in notes mode, don't process mouse movements for highlighting
             if (isMode(AppMode.NOTES_MODE)) {
                 return;
@@ -140,7 +96,7 @@ export function useInspectorMode() {
             if (!element) return;
 
             // Don't highlight plugin elements
-            if (element.closest(".notes-plugin") || element.closest("#eye-not-shadow-dom")) {
+            if (element.closest(".notes-plugin") || element.closest("#eye-note-shadow-dom")) {
                 setHoveredElement(null);
                 if (lastProcessedElement.current instanceof HTMLElement) {
                     lastProcessedElement.current.style.cursor = "";
@@ -161,8 +117,6 @@ export function useInspectorMode() {
             setHoveredElement(element);
             lastProcessedElement.current = element;
 
-            // Update the overlay to highlight the element
-            updateOverlayPosition(element);
         };
 
         document.addEventListener("mousemove", handleMouseMove);
@@ -175,8 +129,6 @@ export function useInspectorMode() {
         setHoveredElement,
         hasNoteForElement,
         highlightedElements,
-        updateOverlayPosition,
-        updateCursorPosition,
     ]);
 
     // Handle element selection for note creation
@@ -188,14 +140,13 @@ export function useInspectorMode() {
 
             setSelectedElement(element);
             addMode(AppMode.NOTES_MODE);
-            updateOverlayPosition(element);
 
             // Restore scroll position
             requestAnimationFrame(() => {
                 window.scrollTo(scrollX, scrollY);
             });
         },
-        [setSelectedElement, addMode, updateOverlayPosition]
+        [setSelectedElement, addMode]
     );
 
     // Handle note dismissal
@@ -213,7 +164,6 @@ export function useInspectorMode() {
         clearAllHighlights();
         setHoveredElement(null);
         setSelectedElement(null);
-        updateOverlayPosition(null);
 
         // Reset cursor styles
         if (lastProcessedElement.current instanceof HTMLElement) {
@@ -226,7 +176,6 @@ export function useInspectorMode() {
         clearAllHighlights,
         setHoveredElement,
         setSelectedElement,
-        updateOverlayPosition,
     ]);
 
     // Cleanup on unmount
