@@ -2,6 +2,7 @@ import { useEffect, useCallback } from "react";
 import { useHighlightStore } from "../stores/highlight-store";
 import { useModeStore, AppMode } from "../stores/use-mode-store";
 import { usePreserveScroll } from "./use-preserve-scroll";
+import { useEventListener } from "./use-event-listener";
 
 export function useInspectorMode () {
     const {
@@ -14,69 +15,53 @@ export function useInspectorMode () {
     const preserveScroll = usePreserveScroll();
 
     // Handle shift key events to toggle inspector mode
-    useEffect( () => {
-        const handleKeyDown = ( e : KeyboardEvent ) => {
-            if ( e.key === "Shift" && !isMode( AppMode.INSPECTOR_MODE ) ) {
-                // Only enter inspector mode if we're not in notes mode
-                if ( !isMode( AppMode.NOTES_MODE ) ) {
-                    addMode( AppMode.INSPECTOR_MODE );
-                }
+    const handleKeyDown = useCallback( ( e : KeyboardEvent ) => {
+        if ( e.key === "Shift" && !isMode( AppMode.INSPECTOR_MODE ) ) {
+            // Only enter inspector mode if we're not in notes mode
+            if ( !isMode( AppMode.NOTES_MODE ) ) {
+                addMode( AppMode.INSPECTOR_MODE );
             }
-        };
+        }
+    }, [ isMode, addMode ] );
 
-        const handleKeyUp = ( e : KeyboardEvent ) => {
-            if ( e.key === "Shift" ) {
-                // Only remove inspector mode if we're not in notes mode
-                if ( !isMode( AppMode.NOTES_MODE ) ) {
-                    removeMode( AppMode.INSPECTOR_MODE );
-                    clearAllHighlights();
-                }
+    const handleKeyUp = useCallback( ( e : KeyboardEvent ) => {
+        if ( e.key === "Shift" ) {
+            // Only remove inspector mode if we're not in notes mode
+            if ( !isMode( AppMode.NOTES_MODE ) ) {
+                removeMode( AppMode.INSPECTOR_MODE );
+                clearAllHighlights();
             }
-        };
+        }
+    }, [ isMode, removeMode, clearAllHighlights ] );
 
-        document.addEventListener( "keydown", handleKeyDown );
-        document.addEventListener( "keyup", handleKeyUp );
-
-        return () => {
-            document.removeEventListener( "keydown", handleKeyDown );
-            document.removeEventListener( "keyup", handleKeyUp );
-        };
-    }, [ isMode, addMode, removeMode, clearAllHighlights ] );
+    useEventListener( 'keydown', handleKeyDown );
+    useEventListener( 'keyup', handleKeyUp );
 
     // Handle mouse movement for element inspection
-    useEffect( () => {
-        const handleMouseMove = ( e : MouseEvent ) => {
-            // If we're in notes mode, don't process mouse movements for highlighting
-            if ( isMode( AppMode.NOTES_MODE ) ) {
-                return;
-            }
+    const handleMouseMove = useCallback( ( e : MouseEvent ) => {
+        // If we're in notes mode, don't process mouse movements for highlighting
+        if ( isMode( AppMode.NOTES_MODE ) ) {
+            return;
+        }
 
-            if ( !isMode( AppMode.INSPECTOR_MODE ) ) {
-                setHoveredElement( null );
-                return;
-            }
+        if ( !isMode( AppMode.INSPECTOR_MODE ) ) {
+            setHoveredElement( null );
+            return;
+        }
 
-            const element = document.elementFromPoint( e.clientX, e.clientY );
-            if ( !element ) return;
+        const element = document.elementFromPoint( e.clientX, e.clientY );
+        if ( !element ) return;
 
-            // Don't highlight plugin elements
-            if ( element.closest( ".notes-plugin" ) || element.closest( "#eye-note-shadow-dom" ) ) {
-                setHoveredElement( null );
-                return;
-            }
+        // Don't highlight plugin elements
+        if ( element.closest( ".notes-plugin" ) || element.closest( "#eye-note-shadow-dom" ) ) {
+            setHoveredElement( null );
+            return;
+        }
 
-            setHoveredElement( element );
-        };
+        setHoveredElement( element );
+    }, [ isMode, setHoveredElement ] );
 
-        document.addEventListener( "mousemove", handleMouseMove );
-
-        return () => {
-            document.removeEventListener( "mousemove", handleMouseMove );
-        };
-    }, [
-        isMode,
-        setHoveredElement,
-    ] );
+    useEventListener( 'mousemove', handleMouseMove );
 
     // Handle element selection
     const selectElement = useCallback(
