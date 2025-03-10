@@ -3,8 +3,8 @@ import { useHighlightStore } from "../stores/highlight-store";
 import { useNotesStore } from "../stores/notes-store";
 import { useModeStore, AppMode } from "../stores/use-mode-store";
 
-export function useInspectorMode() {
-    const lastProcessedElement = useRef<Element | null>(null);
+export function useInspectorMode () {
+    const lastProcessedElement = useRef<Element | null>( null );
     const {
         hoveredElement,
         setHoveredElement,
@@ -17,36 +17,36 @@ export function useInspectorMode() {
     const { hasNoteForElement } = useNotesStore();
 
     // Handle shift key events to toggle inspector mode
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Shift" && !isMode(AppMode.INSPECTOR_MODE)) {
+    useEffect( () => {
+        const handleKeyDown = ( e : KeyboardEvent ) => {
+            if ( e.key === "Shift" && !isMode( AppMode.INSPECTOR_MODE ) ) {
                 // Reset the last processed element when entering inspector mode
-                if (!isMode(AppMode.NOTES_MODE)) {
+                if ( !isMode( AppMode.NOTES_MODE ) ) {
                     lastProcessedElement.current = null;
                 }
-                addMode(AppMode.INSPECTOR_MODE);
+                addMode( AppMode.INSPECTOR_MODE );
 
                 // Configure the interaction blocker
-                const interactionBlocker = document.getElementById("eye-note-interaction-blocker");
-                if (interactionBlocker) {
+                const interactionBlocker = document.getElementById( "eye-note-interaction-blocker" );
+                if ( interactionBlocker ) {
                     interactionBlocker.style.display = "block";
                     interactionBlocker.style.pointerEvents = "none";
                 }
             }
         };
 
-        const handleKeyUp = (e: KeyboardEvent) => {
-            if (e.key === "Shift") {
+        const handleKeyUp = ( e : KeyboardEvent ) => {
+            if ( e.key === "Shift" ) {
                 // Only remove inspector mode if we're not in notes mode
-                if (!isMode(AppMode.NOTES_MODE)) {
-                    removeMode(AppMode.INSPECTOR_MODE);
+                if ( !isMode( AppMode.NOTES_MODE ) ) {
+                    removeMode( AppMode.INSPECTOR_MODE );
 
                     // Only clear highlights if we're not in notes mode
                     clearAllHighlights();
 
                     // Reset the last processed element
                     const currentElement = lastProcessedElement.current;
-                    if (currentElement instanceof HTMLElement) {
+                    if ( currentElement instanceof HTMLElement ) {
                         currentElement.style.cursor = "";
                     }
                     lastProcessedElement.current = null;
@@ -55,36 +55,36 @@ export function useInspectorMode() {
                     const interactionBlocker = document.getElementById(
                         "eye-note-interaction-blocker"
                     );
-                    if (interactionBlocker) {
+                    if ( interactionBlocker ) {
                         interactionBlocker.style.display = "none";
                     }
                 }
             }
         };
 
-        document.addEventListener("keydown", handleKeyDown);
-        document.addEventListener("keyup", handleKeyUp);
+        document.addEventListener( "keydown", handleKeyDown );
+        document.addEventListener( "keyup", handleKeyUp );
 
         return () => {
-            document.removeEventListener("keydown", handleKeyDown);
-            document.removeEventListener("keyup", handleKeyUp);
+            document.removeEventListener( "keydown", handleKeyDown );
+            document.removeEventListener( "keyup", handleKeyUp );
         };
-    }, [isMode, addMode, removeMode, clearAllHighlights ]);
+    }, [ isMode, addMode, removeMode, clearAllHighlights ] );
 
     // Handle mouse movement for element inspection
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
+    useEffect( () => {
+        const handleMouseMove = ( e : MouseEvent ) => {
             // If we're in notes mode, don't process mouse movements for highlighting
-            if (isMode(AppMode.NOTES_MODE)) {
+            if ( isMode( AppMode.NOTES_MODE ) ) {
                 return;
             }
 
-            if (!isMode(AppMode.INSPECTOR_MODE)) {
-                if (lastProcessedElement.current) {
-                    setHoveredElement(null);
+            if ( !isMode( AppMode.INSPECTOR_MODE ) ) {
+                if ( lastProcessedElement.current ) {
+                    setHoveredElement( null );
                     // Remove any cursor style changes
                     const currentElement = lastProcessedElement.current;
-                    if (currentElement instanceof HTMLElement) {
+                    if ( currentElement instanceof HTMLElement ) {
                         currentElement.style.cursor = "";
                     }
                     lastProcessedElement.current = null;
@@ -92,13 +92,13 @@ export function useInspectorMode() {
                 return;
             }
 
-            const element = document.elementFromPoint(e.clientX, e.clientY);
-            if (!element) return;
+            const element = document.elementFromPoint( e.clientX, e.clientY );
+            if ( !element ) return;
 
             // Don't highlight plugin elements
-            if (element.closest(".notes-plugin") || element.closest("#eye-note-shadow-dom")) {
-                setHoveredElement(null);
-                if (lastProcessedElement.current instanceof HTMLElement) {
+            if ( element.closest( ".notes-plugin" ) || element.closest( "#eye-note-shadow-dom" ) ) {
+                setHoveredElement( null );
+                if ( lastProcessedElement.current instanceof HTMLElement ) {
                     lastProcessedElement.current.style.cursor = "";
                 }
                 lastProcessedElement.current = element;
@@ -106,67 +106,67 @@ export function useInspectorMode() {
             }
 
             // Always update cursor style and highlight for the current element
-            if (lastProcessedElement.current instanceof HTMLElement) {
+            if ( lastProcessedElement.current instanceof HTMLElement ) {
                 lastProcessedElement.current.style.cursor = "";
             }
 
-            if (element instanceof HTMLElement) {
+            if ( element instanceof HTMLElement ) {
                 element.style.cursor = "none";
             }
 
-            setHoveredElement(element);
+            setHoveredElement( element );
             lastProcessedElement.current = element;
 
         };
 
-        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener( "mousemove", handleMouseMove );
 
         return () => {
-            document.removeEventListener("mousemove", handleMouseMove);
+            document.removeEventListener( "mousemove", handleMouseMove );
         };
     }, [
         isMode,
         setHoveredElement,
         hasNoteForElement,
         highlightedElements,
-    ]);
+    ] );
 
     // Handle element selection for note creation
     const selectElementForNote = useCallback(
-        (element: HTMLElement) => {
+        ( element : HTMLElement ) => {
             // Store current scroll position
             const scrollX = window.scrollX;
             const scrollY = window.scrollY;
 
-            setSelectedElement(element);
-            addMode(AppMode.NOTES_MODE);
+            setSelectedElement( element );
+            addMode( AppMode.NOTES_MODE );
 
             // Restore scroll position
-            requestAnimationFrame(() => {
-                window.scrollTo(scrollX, scrollY);
-            });
+            requestAnimationFrame( () => {
+                window.scrollTo( scrollX, scrollY );
+            } );
         },
-        [setSelectedElement, addMode]
+        [ setSelectedElement, addMode ]
     );
 
     // Handle note dismissal
-    const dismissNote = useCallback(() => {
+    const dismissNote = useCallback( () => {
         // Clear all modes except DEBUG_MODE
         const currentModes = modes;
-        if (currentModes & AppMode.NOTES_MODE) {
-            removeMode(AppMode.NOTES_MODE);
+        if ( currentModes & AppMode.NOTES_MODE ) {
+            removeMode( AppMode.NOTES_MODE );
         }
-        if (currentModes & AppMode.INSPECTOR_MODE) {
-            removeMode(AppMode.INSPECTOR_MODE);
+        if ( currentModes & AppMode.INSPECTOR_MODE ) {
+            removeMode( AppMode.INSPECTOR_MODE );
         }
 
         // Clean up all states
         clearAllHighlights();
-        setHoveredElement(null);
-        setSelectedElement(null);
+        setHoveredElement( null );
+        setSelectedElement( null );
 
         // Reset cursor styles
-        if (lastProcessedElement.current instanceof HTMLElement) {
+        if ( lastProcessedElement.current instanceof HTMLElement ) {
             lastProcessedElement.current.style.cursor = "";
             lastProcessedElement.current = null;
         }
@@ -176,25 +176,25 @@ export function useInspectorMode() {
         clearAllHighlights,
         setHoveredElement,
         setSelectedElement,
-    ]);
+    ] );
 
     // Cleanup on unmount
-    useEffect(() => {
+    useEffect( () => {
         return () => {
-            if (isMode(AppMode.INSPECTOR_MODE)) {
+            if ( isMode( AppMode.INSPECTOR_MODE ) ) {
                 clearAllHighlights();
-                setMode(AppMode.NEUTRAL);
+                setMode( AppMode.NEUTRAL );
             }
         };
-    }, [isMode, clearAllHighlights, setMode]);
+    }, [ isMode, clearAllHighlights, setMode ] );
 
     return {
         hoveredElement,
         setHoveredElement,
         selectedElement,
         setSelectedElement,
-        isInspectorMode: isMode(AppMode.INSPECTOR_MODE),
-        isAddingNote: isMode(AppMode.NOTES_MODE),
+        isInspectorMode: isMode( AppMode.INSPECTOR_MODE ),
+        isAddingNote: isMode( AppMode.NOTES_MODE ),
         selectElementForNote,
         dismissNote,
     };

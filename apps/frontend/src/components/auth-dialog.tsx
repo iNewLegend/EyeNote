@@ -4,24 +4,24 @@ import { toast } from "sonner";
 import { useAuthStore } from "../stores/auth-store";
 
 interface AuthDialogProps {
-    isOpen: boolean;
-    onClose: () => void;
+    isOpen : boolean;
+    onClose : () => void;
 }
 
-export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
+export function AuthDialog ( { isOpen, onClose } : AuthDialogProps ) {
     const { signIn } = useAuthStore();
 
     const handleSignIn = async () => {
         try {
             await signIn();
             onClose();
-            toast("Success", {
+            toast( "Success", {
                 description: "You have been successfully signed in",
-            });
-        } catch (error) {
-            toast("Error", {
+            } );
+        } catch ( error ) {
+            toast( "Error", {
                 description: "Failed to sign in. Please try again.",
-            });
+            } );
         }
     };
 

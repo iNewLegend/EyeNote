@@ -16,78 +16,78 @@ const DOM_IDS = {
     ROOT_CONTAINER: "eye-note-root-container",
 } as const;
 
-function initializeDOMContainers() {
-    const shadowContainer = document.createElement("div");
+function initializeDOMContainers () {
+    const shadowContainer = document.createElement( "div" );
     shadowContainer.id = DOM_IDS.SHADOW_CONTAINER;
 
-    const userlandContainer = document.createElement("div");
+    const userlandContainer = document.createElement( "div" );
     userlandContainer.id = DOM_IDS.USERLAND_CONTAINER;
 
     return { shadowContainer, userlandContainer };
 }
 
-function initializeShadowDOM(container: HTMLElement) {
-    const shadowRoot = container.attachShadow({ mode: "open" });
+function initializeShadowDOM ( container : HTMLElement ) {
+    const shadowRoot = container.attachShadow( { mode: "open" } );
 
-    const shadowStyles = document.createElement("style");
+    const shadowStyles = document.createElement( "style" );
     shadowStyles.id = DOM_IDS.SHADOW_STYLES;
     shadowStyles.textContent = shadowDOMStyles;
-    shadowRoot.appendChild(shadowStyles);
+    shadowRoot.appendChild( shadowStyles );
 
-    const contentContainer = document.createElement("div");
+    const contentContainer = document.createElement( "div" );
     contentContainer.id = DOM_IDS.SHADOW_CONTENT;
-    shadowRoot.appendChild(contentContainer);
+    shadowRoot.appendChild( contentContainer );
 
     return { shadowRoot, contentContainer };
 }
 
-function initializeUserlandDOM(container: HTMLElement) {
+function initializeUserlandDOM ( container : HTMLElement ) {
     // Create a shadow DOM for the userland container too - this is the key change
-    const userlandShadowRoot = container.attachShadow({ mode: "open" });
+    const userlandShadowRoot = container.attachShadow( { mode: "open" } );
 
     // Add styles inside the shadow DOM
-    const userlandStyles = document.createElement("style");
+    const userlandStyles = document.createElement( "style" );
     userlandStyles.id = DOM_IDS.USERLAND_STYLES;
     userlandStyles.textContent = userlandDOMStyles;
-    userlandShadowRoot.appendChild(userlandStyles);
+    userlandShadowRoot.appendChild( userlandStyles );
 
     // Create content container inside the shadow DOM
-    const contentContainer = document.createElement("div");
+    const contentContainer = document.createElement( "div" );
     contentContainer.id = DOM_IDS.USERLAND_CONTENT;
-    userlandShadowRoot.appendChild(contentContainer);
+    userlandShadowRoot.appendChild( contentContainer );
 
     return { userlandShadowRoot, contentContainer };
 }
 
-function initializeApp() {
+function initializeApp () {
     // Check if already initialized
-    if (document.getElementById(DOM_IDS.ROOT_CONTAINER)) {
+    if ( document.getElementById( DOM_IDS.ROOT_CONTAINER ) ) {
         return;
     }
 
     // Create root container
-    const eyeNoteRootContainer = document.createElement("div");
+    const eyeNoteRootContainer = document.createElement( "div" );
     eyeNoteRootContainer.id = DOM_IDS.ROOT_CONTAINER;
 
     // Initialize containers
     const { shadowContainer, userlandContainer } = initializeDOMContainers();
 
     // Setup shadow DOM
-    const { contentContainer: shadowContentContainer } = initializeShadowDOM(shadowContainer);
+    const { contentContainer: shadowContentContainer } = initializeShadowDOM( shadowContainer );
 
     // Setup userland DOM with its own shadow root for isolation
-    const { contentContainer: userlandContentContainer } = initializeUserlandDOM(userlandContainer);
+    const { contentContainer: userlandContentContainer } = initializeUserlandDOM( userlandContainer );
 
     // Add all containers to root
-    eyeNoteRootContainer.appendChild(shadowContainer);
-    eyeNoteRootContainer.appendChild(userlandContainer);
+    eyeNoteRootContainer.appendChild( shadowContainer );
+    eyeNoteRootContainer.appendChild( userlandContainer );
 
     // Append root container to body
-    document.body.appendChild(eyeNoteRootContainer);
+    document.body.appendChild( eyeNoteRootContainer );
 
     // Render React components
-    const root = createRoot(shadowContentContainer);
-    const userlandRoot = createRoot(userlandContentContainer);
+    const root = createRoot( shadowContentContainer );
+    const userlandRoot = createRoot( userlandContentContainer );
 
     root.render(
         <React.StrictMode>

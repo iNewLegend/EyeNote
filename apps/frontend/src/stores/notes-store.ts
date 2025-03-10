@@ -3,30 +3,30 @@ import type { Note } from "../types";
 import { getElementPath } from "../utils/element-path";
 
 interface NotesStore {
-    notes: Note[];
-    createNote: (element: Element) => Note;
-    updateNote: (id: number, content: string) => void;
-    deleteNote: (id: number) => void;
-    setNoteEditing: (id: number, isEditing: boolean) => void;
-    hasNoteForElement: (element: Element) => boolean;
+    notes : Note[];
+    createNote : ( element : Element ) => Note;
+    updateNote : ( id : number, content : string ) => void;
+    deleteNote : ( id : number ) => void;
+    setNoteEditing : ( id : number, isEditing : boolean ) => void;
+    hasNoteForElement : ( element : Element ) => boolean;
 }
 
-export const useNotesStore = create<NotesStore>((set, get) => ({
+export const useNotesStore = create<NotesStore>( ( set, get ) => ( {
     notes: [],
-    createNote: (element: Element) => {
-        const elementPath = getElementPath(element);
+    createNote: ( element : Element ) => {
+        const elementPath = getElementPath( element );
         const rect = element.getBoundingClientRect();
 
-        console.log("Creating note", {
+        console.log( "Creating note", {
             element,
             elementPath,
             rect: {
                 right: rect.right,
                 top: rect.top,
             },
-        });
+        } );
 
-        const newNote: Note = {
+        const newNote : Note = {
             id: Date.now(),
             elementPath,
             content: "",
@@ -41,29 +41,29 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
             highlightedElement: element,
         };
 
-        set((state) => {
-            return { notes: [...state.notes, newNote] };
-        });
+        set( ( state ) => {
+            return { notes: [ ...state.notes, newNote ] };
+        } );
         return newNote;
     },
-    updateNote: (id: number, content: string) => {
-        set((state) => ({
-            notes: state.notes.map((note) =>
+    updateNote: ( id : number, content : string ) => {
+        set( ( state ) => ( {
+            notes: state.notes.map( ( note ) =>
                 note.id === id ? { ...note, content, isEditing: false } : note
             ),
-        }));
+        } ) );
     },
-    deleteNote: (id: number) => {
-        set((state) => ({
-            notes: state.notes.filter((note) => note.id !== id),
-        }));
+    deleteNote: ( id : number ) => {
+        set( ( state ) => ( {
+            notes: state.notes.filter( ( note ) => note.id !== id ),
+        } ) );
     },
-    setNoteEditing: (id: number, isEditing: boolean) => {
-        set((state) => ({
-            notes: state.notes.map((note) => (note.id === id ? { ...note, isEditing } : note)),
-        }));
+    setNoteEditing: ( id : number, isEditing : boolean ) => {
+        set( ( state ) => ( {
+            notes: state.notes.map( ( note ) => ( note.id === id ? { ...note, isEditing } : note ) ),
+        } ) );
     },
-    hasNoteForElement: (element: Element) => {
-        return get().notes.some((note) => note.highlightedElement === element);
+    hasNoteForElement: ( element : Element ) => {
+        return get().notes.some( ( note ) => note.highlightedElement === element );
     },
-}));
+} ) );

@@ -6,28 +6,28 @@ interface CursorDotProps {
     /**
      * Primary color for the cursor dot
      */
-    color?: string;
+    color ?: string;
     /**
      * Whether the cursor dot is visible
      */
-    visible: boolean;
+    visible : boolean;
 }
 
 /**
  * CursorDot component that follows the mouse cursor
  */
-export const CursorDot: React.FC<CursorDotProps> = ({ color = "#7c3aed", visible }) => {
-    const cursorDotRef = useRef<HTMLDivElement | null>(null);
+export const CursorDot : React.FC<CursorDotProps> = ( { color = "#7c3aed", visible } ) => {
+    const cursorDotRef = useRef<HTMLDivElement | null>( null );
     const { position } = useCursorStore();
 
-    useEffect(() => {
+    useEffect( () => {
         const cursorDot = cursorDotRef.current;
-        if (!cursorDot) return;
+        if ( !cursorDot ) return;
 
         // Only update position and color dynamically
-        cursorDot.style.left = `${position.x}px`;
-        cursorDot.style.top = `${position.y}px`;
-    }, [position]);
+        cursorDot.style.left = `${ position.x }px`;
+        cursorDot.style.top = `${ position.y }px`;
+    }, [ position ] );
 
     return (
         <>
@@ -45,8 +45,8 @@ export const CursorDot: React.FC<CursorDotProps> = ({ color = "#7c3aed", visible
                 style={
                     {
                         backgroundColor: color,
-                        left: `${position.x}px`,
-                        top: `${position.y}px`,
+                        left: `${ position.x }px`,
+                        top: `${ position.y }px`,
                         "--pulse-color": color,
                     } as React.CSSProperties
                 }
