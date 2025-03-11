@@ -4,6 +4,7 @@ import { HighlightOverlay } from "../../components/highlight-overlay";
 import { ThemeProvider } from "../theme/theme-provider";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { useHighlightStore } from "../../stores/highlight-store";
+import { useEventListener } from "../../hooks/use-event-listener";
 
 export const UserlandDOM : React.FC = () => {
     const [ overlayStyle, setOverlayStyle ] = useState( {
@@ -130,16 +131,8 @@ export const UserlandDOM : React.FC = () => {
     useEffect( () => {
         ( window as Window ).updateOverlay = updateOverlay;
 
-        // Add event listeners
-        document.addEventListener( "mousemove", handleMouseMove );
-        document.addEventListener( "keydown", handleKeyDown );
-        document.addEventListener( "keyup", handleKeyUp );
-
         return () => {
             delete ( window as Window ).updateOverlay;
-            document.removeEventListener( "mousemove", handleMouseMove );
-            document.removeEventListener( "keydown", handleKeyDown );
-            document.removeEventListener( "keyup", handleKeyUp );
 
             // Clean up any remaining cursor styles
             if ( currentInspectedElement ) {
@@ -147,6 +140,11 @@ export const UserlandDOM : React.FC = () => {
             }
         };
     }, [ currentInspectedElement, isShiftPressed ] );
+
+    // Add event listeners using useEventListener hook - React-friendly approach
+    useEventListener( "mousemove", handleMouseMove );
+    useEventListener( "keydown", handleKeyDown );
+    useEventListener( "keyup", handleKeyUp );
 
     // Handle visibility
     useEffect( () => {
