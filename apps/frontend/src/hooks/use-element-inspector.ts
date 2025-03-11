@@ -1,13 +1,12 @@
 import { useRef, useCallback } from "react";
 import { useInspectorMode } from "./use-inspector-mode";
-import { useModeStore, AppMode } from "../stores/use-mode-store";
 
 type InspectionBoundsUpdater = ( element : Element | null ) => void;
 
 export type InspectionEvent = 
-  | { type : 'element:highlight'; element : HTMLElement }
-  | { type : 'element:unhighlight'; element : HTMLElement }
-  | { type : 'element:hover'; element : HTMLElement | null }
+  | { type : 'inspection:highlight'; element : HTMLElement }
+  | { type : 'inspection:unhighlight'; element : HTMLElement }
+  | { type : 'inspection:hover'; element : HTMLElement | null }
   | { type : 'inspection:clear' };
 
 export type InspectionEventHandler = ( event : InspectionEvent ) => void;
@@ -46,7 +45,7 @@ export function useElementInspector ( {
             inspectedElementRef.current.style.cursor = "";
             // Emit unhighlight event for previous element
             onInspectionEvent( { 
-                type: 'element:unhighlight', 
+                type: 'inspection:unhighlight', 
                 element: inspectedElementRef.current 
             } );
         }
@@ -58,7 +57,7 @@ export function useElementInspector ( {
         if ( element ) {
             element.style.cursor = "none";
             // Emit highlight event for new element
-            onInspectionEvent( { type: 'element:highlight', element } );
+            onInspectionEvent( { type: 'inspection:highlight', element } );
             updateInspectionBounds( element );
         } else {
             // Clear the overlay when element is null
@@ -72,7 +71,7 @@ export function useElementInspector ( {
         if ( !inspectorMode.isActive ) {
             if ( inspectedElementRef.current ) {
                 // Clean up element and emit events
-                onInspectionEvent( { type: 'element:hover', element: null } );
+                onInspectionEvent( { type: 'inspection:hover', element: null } );
                 onInspectionEvent( { type: 'inspection:clear' } );
                 setInspectedElement( null );
             }
@@ -94,7 +93,7 @@ export function useElementInspector ( {
 
         if ( element instanceof HTMLElement ) {
             // Emit hover event before selection
-            onInspectionEvent( { type: 'element:hover', element } );
+            onInspectionEvent( { type: 'inspection:hover', element } );
             setInspectedElement( element );
         }
     }, [ setInspectedElement, inspectorMode.isActive, onInspectionEvent, excludeSelectors ] );
@@ -118,24 +117,16 @@ export function useElementInspector ( {
         if ( e.key === "Shift" ) {
             isShiftPressedRef.current = false;
             
-            // Important: Only clean up if notes mode is NOT active
-            // We need to check this from useInspectorMode because 
-            // inspector mode should remain active during notes mode
-            const modeStore = useModeStore.getState();
-            const isNotesMode = modeStore.isMode( AppMode.NOTES_MODE );
-            
-            if ( !isNotesMode ) {
-                // Clean up any inspected element if needed
+            // useInspectorMode already handles the mode changes
+            // We just need to clean up our internal state if the element
+            // is no longer being inspected
+            if ( !inspectorMode.isActive ) {
                 if ( inspectedElementRef.current ) {
                     setInspectedElement( null );
                 }
-                
-                // The actual mode changes are handled by useInspectorMode,
-                // but we still need to ensure cleanup is proper
-                onInspectionEvent( { type: 'inspection:clear' } );
             }
         }
-    }, [ setInspectedElement, onInspectionEvent ] );
+    }, [ setInspectedElement, inspectorMode.isActive ] );
 
     // Clean up function for external use
     const cleanup = useCallback( () => {

@@ -44,13 +44,13 @@ export const UserlandDOM : React.FC = () => {
         const highlightStore = useHighlightStore.getState();
         
         switch ( event.type ) {
-            case 'element:highlight':
+            case 'inspection:highlight':
                 highlightStore.addHighlight( event.element );
                 break;
-            case 'element:unhighlight':
+            case 'inspection:unhighlight':
                 highlightStore.removeHighlight( event.element );
                 break;
-            case 'element:hover':
+            case 'inspection:hover':
                 highlightStore.setHoveredElement( event.element );
                 break;
             case 'inspection:clear':
