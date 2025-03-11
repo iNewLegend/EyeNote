@@ -11,13 +11,12 @@ interface HighlightStore {
     clearAllHighlights : () => void;
 }
 
-export const useHighlightStore = create<HighlightStore>( ( set, get ) => ( {
+export const useHighlightStore = create<HighlightStore>( ( set ) => ( {
     highlightedElements: new Set(),
     hoveredElement: null,
     selectedElement: null,
 
     addHighlight: ( element : Element ) => {
-        element.classList.add( "eye-note-highlight" );
         set( ( state ) => {
             const newHighlightedElements = new Set( state.highlightedElements );
             newHighlightedElements.add( element );
@@ -26,7 +25,6 @@ export const useHighlightStore = create<HighlightStore>( ( set, get ) => ( {
     },
 
     removeHighlight: ( element : Element ) => {
-        element.classList.remove( "eye-note-highlight" );
         set( ( state ) => {
             const newHighlightedElements = new Set( state.highlightedElements );
             newHighlightedElements.delete( element );
@@ -43,10 +41,6 @@ export const useHighlightStore = create<HighlightStore>( ( set, get ) => ( {
     },
 
     clearAllHighlights: () => {
-        const state = get();
-        state.highlightedElements.forEach( ( element ) => {
-            element.classList.remove( "eye-note-highlight" );
-        } );
         set( { highlightedElements: new Set() } );
     },
 } ) );
