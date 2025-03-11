@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import { useInspectorMode } from "./use-inspector-mode";
 
 type InspectionBoundsUpdater = ( element : Element | null ) => void;
@@ -19,27 +19,31 @@ interface UseElementInspectorProps {
 
 interface UseElementInspectorReturn {
     inspectedElementRef : React.RefObject<HTMLElement | null>;
-    setInspectedElement : ( element : HTMLElement | null ) => void;
-    handleMouseMove : ( e : MouseEvent ) => void;
-    handleKeyDown : ( e : KeyboardEvent ) => void;
-    handleKeyUp : ( e : KeyboardEvent ) => void;
-    isShiftPressed : boolean;
     cleanup : () => void;
 }
 
+/**
+ * A hook that handles element inspection visuals using the core useInspectorMode hook.
+ * This hook focuses purely on the visual aspects of inspection and delegates
+ * mode management and element detection to useInspectorMode.
+ * 
+ * This approach eliminates redundancy by:
+ * 1. Removing duplicate keyboard event handling (already in useInspectorMode)
+ * 2. Utilizing hoveredElement from useInspectorMode instead of duplicating element detection
+ * 3. Focusing purely on the visual representation and event emission aspects
+ */
 export function useElementInspector ( {
     updateInspectionBounds,
     onInspectionEvent = () => {},
     excludeSelectors = []
 } : UseElementInspectorProps ) : UseElementInspectorReturn {
     const inspectedElementRef = useRef<HTMLElement | null>( null );
-    const isShiftPressedRef = useRef( false );
     
-    // Use the existing inspector mode hook
+    // Use the existing inspector mode hook for core functionality
     const inspectorMode = useInspectorMode();
 
-    // Function to set the inspected element
-    const setInspectedElement = useCallback( ( element : HTMLElement | null ) => {
+    // Function to set cursor style and update bounds
+    const updateInspectedElement = useCallback( ( element : HTMLElement | null ) => {
         // Clean up previous element if it exists
         if ( inspectedElementRef.current && element !== inspectedElementRef.current ) {
             inspectedElementRef.current.style.cursor = "";
@@ -65,68 +69,43 @@ export function useElementInspector ( {
         }
     }, [ updateInspectionBounds, onInspectionEvent ] );
 
-    // Handle mouse movement - defer to useInspectorMode for mode checking
-    const handleMouseMove = useCallback( ( e : MouseEvent ) => {
-        // Use isActive from inspector mode hook instead of our custom logic
-        if ( !inspectorMode.isActive ) {
-            if ( inspectedElementRef.current ) {
-                // Clean up element and emit events
-                onInspectionEvent( { type: 'inspection:hover', element: null } );
-                onInspectionEvent( { type: 'inspection:clear' } );
-                setInspectedElement( null );
-            }
-            return;
-        }
-
-        const element = document.elementFromPoint( e.clientX, e.clientY );
-
-        if ( !element || element === inspectedElementRef.current ) {
-            return;
-        }
-
-        // Check against excluded selectors
-        for ( const selector of excludeSelectors ) {
-            if ( element.closest( selector ) ) {
-                return;
-            }
-        }
-
-        if ( element instanceof HTMLElement ) {
-            // Emit hover event before selection
-            onInspectionEvent( { type: 'inspection:hover', element } );
-            setInspectedElement( element );
-        }
-    }, [ setInspectedElement, inspectorMode.isActive, onInspectionEvent, excludeSelectors ] );
-
-    // Handle keyboard events - already handled by useInspectorMode
-    const handleKeyDown = useCallback( ( e : KeyboardEvent ) => {
-        if ( e.key === "Shift" && !isShiftPressedRef.current ) {
-            isShiftPressedRef.current = true;
+    // Monitor the hovered element from inspectorMode
+    useEffect( () => {
+        // Only process if the inspector is active
+        if ( inspectorMode.isActive ) {
+            const hoveredElement = inspectorMode.hoveredElement;
             
-            // Reset selected element
-            setInspectedElement( null );
-            
-            // Clear text selection
-            if ( window.getSelection ) {
-                window.getSelection()?.removeAllRanges();
-            }
-        }
-    }, [ setInspectedElement ] );
-
-    const handleKeyUp = useCallback( ( e : KeyboardEvent ) => {
-        if ( e.key === "Shift" ) {
-            isShiftPressedRef.current = false;
-            
-            // useInspectorMode already handles the mode changes
-            // We just need to clean up our internal state if the element
-            // is no longer being inspected
-            if ( !inspectorMode.isActive ) {
-                if ( inspectedElementRef.current ) {
-                    setInspectedElement( null );
+            // Skip elements that match excluded selectors
+            if ( hoveredElement ) {
+                // The core hook already applies some exclusion logic,
+                // but we can add additional exclusions here if needed
+                for ( const selector of excludeSelectors ) {
+                    if ( hoveredElement.closest( selector ) ) {
+                        return;
+                    }
+                }
+                
+                // Emit hover event
+                if ( hoveredElement instanceof HTMLElement ) {
+                    onInspectionEvent( { type: 'inspection:hover', element: hoveredElement } );
+                    
+                    // Update the inspected element
+                    updateInspectedElement( hoveredElement );
                 }
             }
+        } else if ( inspectedElementRef.current ) {
+            // Clean up when inspector becomes inactive
+            onInspectionEvent( { type: 'inspection:hover', element: null } );
+            onInspectionEvent( { type: 'inspection:clear' } );
+            updateInspectedElement( null );
         }
-    }, [ setInspectedElement, inspectorMode.isActive ] );
+    }, [
+        inspectorMode.isActive, 
+        inspectorMode.hoveredElement, 
+        excludeSelectors, 
+        onInspectionEvent, 
+        updateInspectedElement
+    ] );
 
     // Clean up function for external use
     const cleanup = useCallback( () => {
@@ -139,11 +118,6 @@ export function useElementInspector ( {
 
     return {
         inspectedElementRef,
-        setInspectedElement,
-        handleMouseMove,
-        handleKeyDown,
-        handleKeyUp,
-        isShiftPressed: isShiftPressedRef.current,
         cleanup
     };
 } 

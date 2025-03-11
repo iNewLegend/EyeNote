@@ -4,7 +4,6 @@ import { HighlightOverlay } from "../../components/highlight-overlay";
 import { ThemeProvider } from "../theme/theme-provider";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { useHighlightStore } from "../../stores/highlight-store";
-import { useEventListener } from "../../hooks/use-event-listener";
 import { useElementInspector, InspectionEvent } from "../../hooks/use-element-inspector";
 
 // Extend Window interface to include our custom property
@@ -65,13 +64,8 @@ export const UserlandDOM : React.FC = () => {
         `.notes-plugin`
     ], [] );
 
-    // Use the element inspector hook with event-based interface
-    const {
-        handleMouseMove,
-        handleKeyDown,
-        handleKeyUp,
-        cleanup
-    } = useElementInspector( {
+    // Use the simplified element inspector hook with event-based interface
+    const { cleanup } = useElementInspector( {
         updateInspectionBounds,
         onInspectionEvent: handleInspectionEvent,
         excludeSelectors
@@ -97,11 +91,6 @@ export const UserlandDOM : React.FC = () => {
             cleanup();
         };
     }, [ updateInspectionBounds, cleanup ] );
-
-    // Add event listeners using useEventListener hook - React-friendly approach
-    useEventListener( "mousemove", handleMouseMove );
-    useEventListener( "keydown", handleKeyDown );
-    useEventListener( "keyup", handleKeyUp );
 
     // Handle visibility
     useEffect( () => {
