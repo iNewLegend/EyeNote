@@ -39,7 +39,7 @@ export const UserlandDOM : React.FC = () => {
         } );
     }, [] );
 
-    // Create adapters for the generic hook
+    // Create adapter for the highlighter
     const highlighter = useMemo( () => {
         const highlightStore = useHighlightStore.getState();
         return {
@@ -50,22 +50,13 @@ export const UserlandDOM : React.FC = () => {
         };
     }, [] );
 
-    const modeChecker = useMemo( () => {
-        return {
-            isInspectorMode: () => useModeStore.getState().isMode( AppMode.INSPECTOR_MODE ),
-            isNotesMode: () => useModeStore.getState().isMode( AppMode.NOTES_MODE ),
-            enterInspectorMode: () => useModeStore.getState().addMode( AppMode.INSPECTOR_MODE ),
-            exitInspectorMode: () => useModeStore.getState().removeMode( AppMode.INSPECTOR_MODE )
-        };
-    }, [] );
-
     // Define excluded selectors
     const excludeSelectors = useMemo( () => [
         `#eye-note-shadow-dom`,
         `.notes-plugin`
     ], [] );
 
-    // Use the element inspector hook
+    // Use the element inspector hook with simplified interface
     const {
         handleMouseMove,
         handleKeyDown,
@@ -74,7 +65,6 @@ export const UserlandDOM : React.FC = () => {
     } = useElementInspector( {
         updateInspectionBounds,
         highlighter,
-        modeChecker,
         excludeSelectors
     } );
 

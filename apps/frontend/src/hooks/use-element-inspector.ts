@@ -1,4 +1,5 @@
 import { useRef, useCallback } from "react";
+import { useInspectorMode } from "./use-inspector-mode";
 
 type InspectionBoundsUpdater = ( element : Element | null ) => void;
 
@@ -9,17 +10,9 @@ interface ElementHighlighter {
     setHoveredElement ?: ( element : HTMLElement | null ) => void;
 }
 
-interface ModeChecker {
-    isInspectorMode : () => boolean;
-    isNotesMode : () => boolean;
-    enterInspectorMode : () => void;
-    exitInspectorMode : () => void;
-}
-
 interface UseElementInspectorProps {
     updateInspectionBounds : InspectionBoundsUpdater;
     highlighter : ElementHighlighter;
-    modeChecker : ModeChecker;
     excludeSelectors ?: string[];
 }
 
@@ -36,11 +29,13 @@ interface UseElementInspectorReturn {
 export function useElementInspector ( {
     updateInspectionBounds,
     highlighter,
-    modeChecker,
     excludeSelectors = []
 } : UseElementInspectorProps ) : UseElementInspectorReturn {
     const inspectedElementRef = useRef<HTMLElement | null>( null );
     const isShiftPressedRef = useRef( false );
+    
+    // Use the existing inspector mode hook
+    const inspectorMode = useInspectorMode();
 
     // Function to set the inspected element
     const setInspectedElement = useCallback( ( element : HTMLElement | null ) => {
@@ -65,9 +60,10 @@ export function useElementInspector ( {
         }
     }, [ updateInspectionBounds, highlighter ] );
 
-    // Handle mouse movement
+    // Handle mouse movement - defer to useInspectorMode for mode checking
     const handleMouseMove = useCallback( ( e : MouseEvent ) => {
-        if ( !modeChecker.isInspectorMode() || modeChecker.isNotesMode() ) {
+        // Use isActive from inspector mode hook instead of our custom logic
+        if ( !inspectorMode.isActive ) {
             if ( inspectedElementRef.current ) {
                 // Clean up element and highlights
                 if ( highlighter.setHoveredElement ) {
@@ -95,40 +91,33 @@ export function useElementInspector ( {
         if ( element instanceof HTMLElement ) {
             setInspectedElement( element );
         }
-    }, [ setInspectedElement, modeChecker, highlighter, excludeSelectors ] );
+    }, [ setInspectedElement, inspectorMode.isActive, highlighter, excludeSelectors ] );
 
-    // Handle keyboard events
+    // Handle keyboard events - already handled by useInspectorMode
     const handleKeyDown = useCallback( ( e : KeyboardEvent ) => {
         if ( e.key === "Shift" && !isShiftPressedRef.current ) {
             isShiftPressedRef.current = true;
-            // Update mode
-            modeChecker.enterInspectorMode();
-
-            // Reset state if not in notes mode
-            if ( !modeChecker.isNotesMode() ) {
-                setInspectedElement( null );
-            }
-
+            
+            // Reset selected element
+            setInspectedElement( null );
+            
+            // Clear text selection
             if ( window.getSelection ) {
                 window.getSelection()?.removeAllRanges();
             }
         }
-    }, [ setInspectedElement, modeChecker ] );
+    }, [ setInspectedElement ] );
 
     const handleKeyUp = useCallback( ( e : KeyboardEvent ) => {
         if ( e.key === "Shift" ) {
             isShiftPressedRef.current = false;
-            // Only remove inspector mode if we're not in notes mode
-            if ( !modeChecker.isNotesMode() ) {
-                modeChecker.exitInspectorMode();
-
-                // Clean up any inspected element
-                if ( inspectedElementRef.current ) {
-                    setInspectedElement( null );
-                }
+            
+            // Clean up any inspected element if needed
+            if ( inspectedElementRef.current ) {
+                setInspectedElement( null );
             }
         }
-    }, [ setInspectedElement, modeChecker ] );
+    }, [ setInspectedElement ] );
 
     // Clean up function for external use
     const cleanup = useCallback( () => {
