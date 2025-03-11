@@ -5,7 +5,7 @@ import { ThemeProvider } from "../theme/theme-provider";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { useHighlightStore } from "../../stores/highlight-store";
 import { useEventListener } from "../../hooks/use-event-listener";
-import { useElementInspector } from "../../hooks/use-element-inspector";
+import { useElementInspector, InspectionEvent } from "../../hooks/use-element-inspector";
 
 // Extend Window interface to include our custom property
 declare global {
@@ -39,15 +39,24 @@ export const UserlandDOM : React.FC = () => {
         } );
     }, [] );
 
-    // Create adapter for the highlighter
-    const highlighter = useMemo( () => {
+    // Handle inspection events
+    const handleInspectionEvent = useCallback( ( event : InspectionEvent ) => {
         const highlightStore = useHighlightStore.getState();
-        return {
-            addHighlight: ( element : HTMLElement ) => highlightStore.addHighlight( element ),
-            removeHighlight: ( element : HTMLElement ) => highlightStore.removeHighlight( element ),
-            clearAllHighlights: () => highlightStore.clearAllHighlights(),
-            setHoveredElement: ( element : HTMLElement | null ) => highlightStore.setHoveredElement( element )
-        };
+        
+        switch ( event.type ) {
+            case 'element:highlight':
+                highlightStore.addHighlight( event.element );
+                break;
+            case 'element:unhighlight':
+                highlightStore.removeHighlight( event.element );
+                break;
+            case 'element:hover':
+                highlightStore.setHoveredElement( event.element );
+                break;
+            case 'inspection:clear':
+                highlightStore.clearAllHighlights();
+                break;
+        }
     }, [] );
 
     // Define excluded selectors
@@ -56,7 +65,7 @@ export const UserlandDOM : React.FC = () => {
         `.notes-plugin`
     ], [] );
 
-    // Use the element inspector hook with simplified interface
+    // Use the element inspector hook with event-based interface
     const {
         handleMouseMove,
         handleKeyDown,
@@ -64,7 +73,7 @@ export const UserlandDOM : React.FC = () => {
         cleanup
     } = useElementInspector( {
         updateInspectionBounds,
-        highlighter,
+        onInspectionEvent: handleInspectionEvent,
         excludeSelectors
     } );
 
