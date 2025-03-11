@@ -1,11 +1,26 @@
 import { useRef, useCallback } from "react";
-import { useHighlightStore } from "../stores/highlight-store";
-import { useModeStore, AppMode } from "../stores/use-mode-store";
 
-type UpdateOverlayFunction = ( element : Element | null ) => void;
+type InspectionBoundsUpdater = ( element : Element | null ) => void;
+
+interface ElementHighlighter {
+    addHighlight : ( element : HTMLElement ) => void;
+    removeHighlight : ( element : HTMLElement ) => void;
+    clearAllHighlights : () => void;
+    setHoveredElement ?: ( element : HTMLElement | null ) => void;
+}
+
+interface ModeChecker {
+    isInspectorMode : () => boolean;
+    isNotesMode : () => boolean;
+    enterInspectorMode : () => void;
+    exitInspectorMode : () => void;
+}
 
 interface UseElementInspectorProps {
-    updateOverlay : UpdateOverlayFunction;
+    updateInspectionBounds : InspectionBoundsUpdater;
+    highlighter : ElementHighlighter;
+    modeChecker : ModeChecker;
+    excludeSelectors ?: string[];
 }
 
 interface UseElementInspectorReturn {
@@ -18,7 +33,12 @@ interface UseElementInspectorReturn {
     cleanup : () => void;
 }
 
-export function useElementInspector ( { updateOverlay } : UseElementInspectorProps ) : UseElementInspectorReturn {
+export function useElementInspector ( {
+    updateInspectionBounds,
+    highlighter,
+    modeChecker,
+    excludeSelectors = []
+} : UseElementInspectorProps ) : UseElementInspectorReturn {
     const inspectedElementRef = useRef<HTMLElement | null>( null );
     const isShiftPressedRef = useRef( false );
 
@@ -28,8 +48,7 @@ export function useElementInspector ( { updateOverlay } : UseElementInspectorPro
         if ( inspectedElementRef.current && element !== inspectedElementRef.current ) {
             inspectedElementRef.current.style.cursor = "";
             // Clean up previous element highlight if clearing or changing
-            const highlightStore = useHighlightStore.getState();
-            highlightStore.removeHighlight( inspectedElementRef.current );
+            highlighter.removeHighlight( inspectedElementRef.current );
         }
 
         // Set the new element
@@ -38,24 +57,23 @@ export function useElementInspector ( { updateOverlay } : UseElementInspectorPro
         // Set up new element if it exists
         if ( element ) {
             element.style.cursor = "none";
-            const highlightStore = useHighlightStore.getState();
-            highlightStore.addHighlight( element );
-            updateOverlay( element );
+            highlighter.addHighlight( element );
+            updateInspectionBounds( element );
         } else {
             // Clear the overlay when element is null
-            updateOverlay( null );
+            updateInspectionBounds( null );
         }
-    }, [ updateOverlay ] );
+    }, [ updateInspectionBounds, highlighter ] );
 
     // Handle mouse movement
     const handleMouseMove = useCallback( ( e : MouseEvent ) => {
-        const modeStore = useModeStore.getState();
-        if ( !modeStore.isMode( AppMode.INSPECTOR_MODE ) || modeStore.isMode( AppMode.NOTES_MODE ) ) {
+        if ( !modeChecker.isInspectorMode() || modeChecker.isNotesMode() ) {
             if ( inspectedElementRef.current ) {
                 // Clean up element and highlights
-                const highlightStore = useHighlightStore.getState();
-                highlightStore.setHoveredElement( null );
-                highlightStore.clearAllHighlights();
+                if ( highlighter.setHoveredElement ) {
+                    highlighter.setHoveredElement( null );
+                }
+                highlighter.clearAllHighlights();
                 setInspectedElement( null );
             }
             return;
@@ -63,29 +81,31 @@ export function useElementInspector ( { updateOverlay } : UseElementInspectorPro
 
         const element = document.elementFromPoint( e.clientX, e.clientY );
 
-        if (
-            !element ||
-            element === inspectedElementRef.current ||
-            element.closest( `#eye-note-shadow-dom` ) ||
-            element.closest( ".notes-plugin" )
-        ) {
+        if ( !element || element === inspectedElementRef.current ) {
             return;
+        }
+
+        // Check against excluded selectors
+        for ( const selector of excludeSelectors ) {
+            if ( element.closest( selector ) ) {
+                return;
+            }
         }
 
         if ( element instanceof HTMLElement ) {
             setInspectedElement( element );
         }
-    }, [ setInspectedElement ] );
+    }, [ setInspectedElement, modeChecker, highlighter, excludeSelectors ] );
 
     // Handle keyboard events
     const handleKeyDown = useCallback( ( e : KeyboardEvent ) => {
         if ( e.key === "Shift" && !isShiftPressedRef.current ) {
             isShiftPressedRef.current = true;
-            // Update mode store state
-            useModeStore.getState().addMode( AppMode.INSPECTOR_MODE );
+            // Update mode
+            modeChecker.enterInspectorMode();
 
             // Reset state if not in notes mode
-            if ( !useModeStore.getState().isMode( AppMode.NOTES_MODE ) ) {
+            if ( !modeChecker.isNotesMode() ) {
                 setInspectedElement( null );
             }
 
@@ -93,15 +113,14 @@ export function useElementInspector ( { updateOverlay } : UseElementInspectorPro
                 window.getSelection()?.removeAllRanges();
             }
         }
-    }, [ setInspectedElement ] );
+    }, [ setInspectedElement, modeChecker ] );
 
     const handleKeyUp = useCallback( ( e : KeyboardEvent ) => {
         if ( e.key === "Shift" ) {
             isShiftPressedRef.current = false;
             // Only remove inspector mode if we're not in notes mode
-            const modeStore = useModeStore.getState();
-            if ( !modeStore.isMode( AppMode.NOTES_MODE ) ) {
-                modeStore.removeMode( AppMode.INSPECTOR_MODE );
+            if ( !modeChecker.isNotesMode() ) {
+                modeChecker.exitInspectorMode();
 
                 // Clean up any inspected element
                 if ( inspectedElementRef.current ) {
@@ -109,7 +128,7 @@ export function useElementInspector ( { updateOverlay } : UseElementInspectorPro
                 }
             }
         }
-    }, [ setInspectedElement ] );
+    }, [ setInspectedElement, modeChecker ] );
 
     // Clean up function for external use
     const cleanup = useCallback( () => {

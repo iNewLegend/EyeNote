@@ -1,10 +1,18 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { CursorDotWrapper } from "../../components/cursor-dot-wrapper";
 import { HighlightOverlay } from "../../components/highlight-overlay";
 import { ThemeProvider } from "../theme/theme-provider";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
+import { useHighlightStore } from "../../stores/highlight-store";
 import { useEventListener } from "../../hooks/use-event-listener";
 import { useElementInspector } from "../../hooks/use-element-inspector";
+
+// Extend Window interface to include our custom property
+declare global {
+    interface Window {
+        updateInspectionBounds ?: ( element : Element | null ) => void;
+    }
+}
 
 export const UserlandDOM : React.FC = () => {
     const [ overlayStyle, setOverlayStyle ] = useState( {
@@ -15,8 +23,8 @@ export const UserlandDOM : React.FC = () => {
     } );
     const [ isVisible, setIsVisible ] = useState( false );
 
-    // Update overlay position
-    const updateOverlay = useCallback( ( element : Element | null ) => {
+    // Handle visual representation of the inspected element
+    const updateInspectionBounds = useCallback( ( element : Element | null ) => {
         if ( !element ) {
             setOverlayStyle( ( prev ) => ( { ...prev } ) );
             return;
@@ -31,6 +39,32 @@ export const UserlandDOM : React.FC = () => {
         } );
     }, [] );
 
+    // Create adapters for the generic hook
+    const highlighter = useMemo( () => {
+        const highlightStore = useHighlightStore.getState();
+        return {
+            addHighlight: ( element : HTMLElement ) => highlightStore.addHighlight( element ),
+            removeHighlight: ( element : HTMLElement ) => highlightStore.removeHighlight( element ),
+            clearAllHighlights: () => highlightStore.clearAllHighlights(),
+            setHoveredElement: ( element : HTMLElement | null ) => highlightStore.setHoveredElement( element )
+        };
+    }, [] );
+
+    const modeChecker = useMemo( () => {
+        return {
+            isInspectorMode: () => useModeStore.getState().isMode( AppMode.INSPECTOR_MODE ),
+            isNotesMode: () => useModeStore.getState().isMode( AppMode.NOTES_MODE ),
+            enterInspectorMode: () => useModeStore.getState().addMode( AppMode.INSPECTOR_MODE ),
+            exitInspectorMode: () => useModeStore.getState().removeMode( AppMode.INSPECTOR_MODE )
+        };
+    }, [] );
+
+    // Define excluded selectors
+    const excludeSelectors = useMemo( () => [
+        `#eye-note-shadow-dom`,
+        `.notes-plugin`
+    ], [] );
+
     // Use the element inspector hook
     const {
         handleMouseMove,
@@ -38,7 +72,10 @@ export const UserlandDOM : React.FC = () => {
         handleKeyUp,
         cleanup
     } = useElementInspector( {
-        updateOverlay
+        updateInspectionBounds,
+        highlighter,
+        modeChecker,
+        excludeSelectors
     } );
 
     // Track mode changes using the new system
@@ -46,15 +83,21 @@ export const UserlandDOM : React.FC = () => {
         state.hasAnyMode( [ AppMode.INSPECTOR_MODE, AppMode.NOTES_MODE ] )
     );
 
-    // Setup window properties
+    // Setup window properties for legacy support
     useEffect( () => {
-        ( window as Window ).updateOverlay = updateOverlay;
+        // Only add to window if needed for compatibility with legacy code
+        if ( typeof window !== 'undefined' ) {
+            window.updateInspectionBounds = updateInspectionBounds;
+        }
 
         return () => {
-            delete ( window as Window ).updateOverlay;
+            // Clean up window property if it exists
+            if ( typeof window !== 'undefined' && window.updateInspectionBounds ) {
+                delete window.updateInspectionBounds;
+            }
             cleanup();
         };
-    }, [ updateOverlay, cleanup ] );
+    }, [ updateInspectionBounds, cleanup ] );
 
     // Add event listeners using useEventListener hook - React-friendly approach
     useEventListener( "mousemove", handleMouseMove );
