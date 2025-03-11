@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { CursorDotWrapper } from "../../components/cursor-dot-wrapper";
 import { HighlightOverlay } from "../../components/highlight-overlay";
 import { ThemeProvider } from "../theme/theme-provider";
@@ -14,10 +14,30 @@ export const UserlandDOM : React.FC = () => {
         height: "0px",
     } );
     const [ isVisible, setIsVisible ] = useState( false );
-    const [ currentInspectedElement, setCurrentInspectedElement ] = useState<HTMLElement | null>(
-        null
-    );
+    const inspectedElementRef = useRef<HTMLElement | null>( null );
     const [ isShiftPressed, setIsShiftPressed ] = useState( false );
+
+    // Function to set the inspected element
+    const setInspectedElement = useCallback( ( element : HTMLElement | null ) => {
+        // Clean up previous element if it exists
+        if ( inspectedElementRef.current && element !== inspectedElementRef.current ) {
+            inspectedElementRef.current.style.cursor = "";
+            // Clean up previous element highlight if clearing or changing
+            const highlightStore = useHighlightStore.getState();
+            highlightStore.removeHighlight( inspectedElementRef.current );
+        }
+
+        // Set the new element
+        inspectedElementRef.current = element;
+
+        // Set up new element if it exists
+        if ( element ) {
+            element.style.cursor = "none";
+            const highlightStore = useHighlightStore.getState();
+            highlightStore.addHighlight( element );
+            updateOverlay( element );
+        }
+    }, [] );
 
     // Track mode changes using the new system
     const hasActiveMode = useModeStore( ( state ) =>
@@ -44,16 +64,14 @@ export const UserlandDOM : React.FC = () => {
     const handleMouseMove = ( e : MouseEvent ) => {
         const modeStore = useModeStore.getState();
         if ( !modeStore.isMode( AppMode.INSPECTOR_MODE ) || modeStore.isMode( AppMode.NOTES_MODE ) ) {
-            if ( currentInspectedElement ) {
-                currentInspectedElement.style.cursor = "";
-                setCurrentInspectedElement( null );
-
-                // Clean up highlight store state when not in inspector mode
+            if ( inspectedElementRef.current ) {
+                // Clean up element and highlights
                 const highlightStore = useHighlightStore.getState();
                 highlightStore.setHoveredElement( null );
                 highlightStore.clearAllHighlights();
+                setInspectedElement( null );
 
-                if ( !currentInspectedElement ) {
+                if ( !inspectedElementRef.current ) {
                     updateOverlay( null );
                 }
             }
@@ -64,7 +82,7 @@ export const UserlandDOM : React.FC = () => {
 
         if (
             !element ||
-            element === currentInspectedElement ||
+            element === inspectedElementRef.current ||
             element.closest( `#eye-note-shadow-dom` ) ||
             element.closest( ".notes-plugin" )
         ) {
@@ -72,20 +90,7 @@ export const UserlandDOM : React.FC = () => {
         }
 
         if ( element instanceof HTMLElement ) {
-            if ( currentInspectedElement && currentInspectedElement !== element ) {
-                currentInspectedElement.style.cursor = "";
-                // Clean up previous element highlight
-                const highlightStore = useHighlightStore.getState();
-                highlightStore.removeHighlight( currentInspectedElement );
-            }
-
-            element.style.cursor = "none";
-            setCurrentInspectedElement( element );
-
-            // Add highlight to current element
-            const highlightStore = useHighlightStore.getState();
-            highlightStore.addHighlight( element );
-            updateOverlay( element );
+            setInspectedElement( element );
         }
     };
 
@@ -98,7 +103,7 @@ export const UserlandDOM : React.FC = () => {
 
             // Reset state if not in notes mode
             if ( !useModeStore.getState().isMode( AppMode.NOTES_MODE ) ) {
-                setCurrentInspectedElement( null );
+                setInspectedElement( null );
             }
 
             if ( window.getSelection ) {
@@ -116,9 +121,8 @@ export const UserlandDOM : React.FC = () => {
                 modeStore.removeMode( AppMode.INSPECTOR_MODE );
 
                 // Clean up any inspected element
-                if ( currentInspectedElement ) {
-                    currentInspectedElement.style.cursor = "";
-                    setCurrentInspectedElement( null );
+                if ( inspectedElementRef.current ) {
+                    setInspectedElement( null );
                 }
 
                 // Clear the overlay
@@ -135,11 +139,12 @@ export const UserlandDOM : React.FC = () => {
             delete ( window as Window ).updateOverlay;
 
             // Clean up any remaining cursor styles
-            if ( currentInspectedElement ) {
-                currentInspectedElement.style.cursor = "";
+            if ( inspectedElementRef.current ) {
+                inspectedElementRef.current.style.cursor = "";
+                inspectedElementRef.current = null;
             }
         };
-    }, [ currentInspectedElement, isShiftPressed ] );
+    }, [ isShiftPressed, setInspectedElement ] );
 
     // Add event listeners using useEventListener hook - React-friendly approach
     useEventListener( "mousemove", handleMouseMove );
