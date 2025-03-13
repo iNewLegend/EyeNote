@@ -18,7 +18,7 @@ export const HighlightOverlay : React.FC<HighlightOverlayProps> = ( {
         pointerEvents: "none",
         zIndex: 2147483645,
         border: "2px solid #7c3aed",
-        backgroundColor: "rgba(124, 58, 237, 0.1)",
+        backgroundColor: "rgba(124, 58, 237, 0.35)",
         transition: "all 0.2s ease",
         boxSizing: "border-box",
         display: visible ? "block" : "none",
