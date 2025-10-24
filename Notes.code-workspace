@@ -5,7 +5,15 @@
             "path": ".",
         },
         {
-            "name": "apps/frontend",
+            "name": "📐 packages/definitions",
+            "path": "packages/definitions",
+        },
+        {
+            "name": "💾 apps/backend",
+            "path": "apps/backend",
+        },
+        {
+            "name": "💻 apps/frontend",
             "path": "apps/frontend",
         },
     ],

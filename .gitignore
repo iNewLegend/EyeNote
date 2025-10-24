@@ -39,3 +39,5 @@ pnpm-debug.log*
 .stylelintcache
 
 temp/
+
+scripts/.vscode/chrome-debug-profile/

@@ -4,6 +4,7 @@ import { ShadowDOM } from "../shadow-dom/shadow-dom";
 import { UserlandDOM } from "../userland-dom/userland-dom";
 import shadowDOMStyles from "../shadow-dom/shadow-dom.css?inline";
 import userlandDOMStyles from "../userland-dom/userland-dom.css?inline";
+import { getPageAnalyzer } from "../../lib/page-analyzer";
 
 // Constants for DOM IDs
 const DOM_IDS = {
@@ -100,6 +101,13 @@ function initializeApp () {
             <UserlandDOM />
         </React.StrictMode>
     );
+
+    // Build the initial page map so notes can be associated with precise targets
+    try {
+        getPageAnalyzer().analyzePage();
+    } catch ( error ) {
+        console.error( "[EyeNote] Failed to analyze page", error );
+    }
 
     return { root, userlandRoot };
 }

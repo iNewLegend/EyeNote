@@ -10,8 +10,9 @@
         "https://www.googleapis.com/*"
     ],
     "oauth2": {
-        "client_id": "655366359218-u22o0btbt68bhisgae68qsvisci1gdtg.apps.googleusercontent.com",
+        "client_id": "655366359218-qe338seb3isjnmrklh194p7grp7nrcqm.apps.googleusercontent.com",
         "scopes": [
+            "openid",
             "https://www.googleapis.com/auth/userinfo.email",
             "https://www.googleapis.com/auth/userinfo.profile"
         ]

@@ -16,12 +16,13 @@ import { Label } from "../../components/ui/label.tsx";
 import { ThemeProvider } from "../theme/theme-provider";
 import { ChromeMessage, ChromeResponse, MockChromeAPI } from "../../types/chrome";
 import "./extension-popup.css";
+import { useAuthStore } from "../../stores/auth-store";
 
 interface User {
     id : string;
     email : string;
     name : string;
-    picture : string;
+    picture : string | null;
 }
 
 interface StorageSettings {
@@ -37,7 +38,7 @@ interface StorageData {
 
 // Development mocks
 const DEV_MODE = process.env.NODE_ENV === "development";
-const mockStorage : StorageData = {
+const mockStorage : StorageData & { authToken ?: string; user ?: User } = {
     settings: {
         enabled: true,
         notificationSound: true,
@@ -45,6 +46,18 @@ const mockStorage : StorageData = {
     },
     activeGroups: [ "Development Group" ],
 };
+const mockDefaultUser : User = {
+    id: "dev",
+    email: "dev@example.com",
+    name: "Developer",
+    picture:
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQCAvE4NQuOnrjboZSCZCOfDv7ry3l4yysuLg&s",
+};
+
+if ( DEV_MODE ) {
+    mockStorage.authToken = mockStorage.authToken ?? "dev-id-token";
+    mockStorage.user = mockStorage.user ?? mockDefaultUser;
+}
 
 // Use mock or real Chrome API
 const chromeAPI = DEV_MODE ? {
@@ -60,23 +73,35 @@ const chromeAPI = DEV_MODE ? {
     },
     runtime: {
         sendMessage: ( message : ChromeMessage, callback ?: ( response : ChromeResponse ) => void ) => {
-            if ( callback ) {
-                if ( message.type === "GET_AUTH_STATUS" ) {
-                    callback( {
-                        isAuthenticated: true,
-                        user: {
-                            id: "dev",
-                            email: "dev@example.com",
-                            name: "Developer",
-                            picture:
-                                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQCAvE4NQuOnrjboZSCZCOfDv7ry3l4yysuLg&s",
-                        },
-                    } );
-                } else if ( message.type === "SIGN_OUT" ) {
-                    callback( { success: true } );
-                }
+            let response : ChromeResponse;
+
+            switch ( message.type ) {
+                case "GET_AUTH_STATUS":
+                    response = {
+                        isAuthenticated: Boolean( mockStorage.authToken ),
+                        user: mockStorage.authToken ? ( mockStorage.user ?? mockDefaultUser ) : undefined,
+                    };
+                    break;
+                case "SIGN_IN":
+                    mockStorage.authToken = "dev-id-token";
+                    mockStorage.user = mockStorage.user ?? mockDefaultUser;
+                    response = { success: true, user: mockStorage.user };
+                    break;
+                case "SIGN_OUT":
+                    delete mockStorage.authToken;
+                    delete mockStorage.user;
+                    response = { success: true };
+                    break;
+                default:
+                    response = { success: true };
+                    break;
             }
-            return Promise.resolve( { success: true } );
+
+            if ( callback ) {
+                callback( response );
+            }
+
+            return Promise.resolve( response );
         },
     },
 } as MockChromeAPI : ( chrome as unknown as MockChromeAPI );
@@ -90,8 +115,10 @@ export function ExtensionPopup () {
 
     const [ activeGroups, setActiveGroups ] = useState<string[]>( [] );
     const [ isAuthOpen, setIsAuthOpen ] = useState( false );
-    const [ isAuthenticated, setIsAuthenticated ] = useState( false );
-    const [ user, setUser ] = useState<User | null>( null );
+    const authUser = useAuthStore( ( state ) => state.user );
+    const isAuthenticated = useAuthStore( ( state ) => state.isAuthenticated );
+    const refreshAuthStatus = useAuthStore( ( state ) => state.refreshStatus );
+    const signOutUser = useAuthStore( ( state ) => state.signOut );
 
     useEffect( () => {
         // Load settings
@@ -109,22 +136,39 @@ export function ExtensionPopup () {
         } );
 
         // Check authentication status
-        chromeAPI.runtime.sendMessage( { type: "GET_AUTH_STATUS" }, ( response ) => {
-            setIsAuthenticated( !!response.isAuthenticated );
-            setUser( response.user || null );
+        refreshAuthStatus().catch( ( error : unknown ) => {
+            console.error( "Failed to refresh auth status:", error );
         } );
-    }, [] );
+
+        if ( typeof chrome !== "undefined" && chrome.storage?.onChanged ) {
+            const listener : Parameters<typeof chrome.storage.onChanged.addListener>[0] = (
+                changes,
+                areaName
+            ) => {
+                if ( areaName !== "local" ) {
+                    return;
+                }
+
+                if ( changes.authToken || changes.authTokenExpiresAt ) {
+                    refreshAuthStatus().catch( ( error : unknown ) => {
+                        console.error( "Failed to refresh auth status after storage change:", error );
+                    } );
+                }
+            };
+
+            chrome.storage.onChanged.addListener( listener );
+            return () => {
+                chrome.storage.onChanged.removeListener( listener );
+            };
+        }
+    }, [ refreshAuthStatus ] );
 
     const handleSignOut = async () => {
         try {
-            const response = await chromeAPI.runtime.sendMessage( { type: "SIGN_OUT" } );
-            if ( response.success ) {
-                setIsAuthenticated( false );
-                setUser( null );
-                toast( "Signed out", {
-                    description: "You have been successfully signed out",
-                } );
-            }
+            await signOutUser();
+            toast( "Signed out", {
+                description: "You have been successfully signed out",
+            } );
         } catch ( error ) {
             toast( "Error", {
                 description: "Failed to sign out. Please try again.",
@@ -151,16 +195,16 @@ export function ExtensionPopup () {
                             <CardTitle className="text-xl font-bold bg-gradient-to-r from-primary/90 to-primary bg-clip-text text-transparent">
                                 EyeNote
                             </CardTitle>
-                            {isAuthenticated && user && (
-                                <CardDescription className="text-sm">{user.name}</CardDescription>
+                            {isAuthenticated && authUser && (
+                                <CardDescription className="text-sm">{authUser.name}</CardDescription>
                             )}
                         </div>
                         {isAuthenticated ? (
                             <div className="flex items-center gap-2">
-                                {user?.picture && (
+                                {authUser?.picture && (
                                     <img
-                                        src={user.picture}
-                                        alt={user.name}
+                                        src={authUser.picture}
+                                        alt={authUser.name}
                                         className="w-8 h-8 rounded-full ring-1 ring-border"
                                     />
                                 )}
