@@ -57,6 +57,23 @@ Both integrations help development teams:
 - Collaborate asynchronously without cluttering the codebase with comments
 - Make collective decisions with full discussion history preserved
 
+### AI-Powered Content Analysis
+
+**MCP (Model Context Protocol) Integration:**
+
+EyeNote will integrate with MCP to enable AI-powered content analysis and automatic note generation:
+
+- **Intelligent Content Analysis**: LLMs can analyze page content and automatically identify key sections, important information, or areas that might benefit from annotations
+- **Contextual Note Generation**: AI can create relevant notes based on page content, user preferences, and group context
+- **Smart Suggestions**: The system can suggest where notes might be helpful based on content patterns, user behavior, and group activity
+- **Automated Documentation**: For technical content, AI can automatically generate explanatory notes for complex concepts, code snippets, or technical documentation
+- **Content Summarization**: AI can create summary notes for long articles or complex pages, helping users quickly understand key points
+- **Accessibility Enhancement**: AI can identify and annotate accessibility issues or suggest improvements for better user experience
+- **Learning Assistance**: For educational content, AI can generate study notes, highlight important concepts, or create quiz questions
+- **Research Support**: AI can help researchers by identifying relevant information, creating citations, or suggesting related topics
+
+The MCP integration will work seamlessly with existing group functionality, allowing AI-generated notes to be shared with appropriate groups and maintaining the collaborative nature of the platform.
+
 ## Getting Started
 
 1. Clone this repository
