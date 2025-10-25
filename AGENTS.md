@@ -55,7 +55,7 @@ When generating commit messages, follow this exact format:
 ### Format Template
 
 ```
-Tag1: (`Tag2`) - Tag3
+Tag1(`Tag2`): Tag3
 ```
 
 ### Tag1 Categories (Required)
@@ -70,14 +70,7 @@ Choose ONE from these options:
 
 ### Tag2 - Package/Area (Required)
 
-Specify the current package or area in the monorepo:
-
-- `website` - Frontend website application
-- `docs` - Documentation site
-- `shared` - Shared utilities or components
-- `config` - Configuration files
-- `scripts` - Build or deployment scripts
-- `root` - Root-level changes affecting the entire workspace
+Specify the relevant workspace, package, or directory using slash notation (e.g. `frontend/groups`, `backend/api`, `shared/utils`). Pick the narrowest scope that reflects the change.
 
 ### Tag3 - Description (Required)
 
@@ -92,11 +85,11 @@ Provide a clear, concise explanation of what was done:
 ### Examples
 
 ```
-feat: (`website`) - add resume section reordering functionality
-fix: (`docs`) - resolve broken internal links in api documentation
-chore: (`shared`) - update typescript dependencies to latest versions
-infra: (`root`) - configure automated deployment pipeline
-tweak: (`website`) - improve resume component naming consistency
+feat(`frontend/app`): add resume section reordering functionality
+fix(`docs`): resolve broken internal links in api documentation
+chore(`shared/types`): update typescript dependencies to latest
+infra(`root`): configure automated deployment pipeline
+tweak(`frontend/groups`): centralize group bootstrap hook
 ```
 
 ### Instructions
@@ -111,6 +104,6 @@ When generating commit messages:
 6. Be consistent - Use the same style and terminology across commits
 
 Always provide the commit message in this exact format:
-Tag1: (`Tag2`) - Tag3
+Tag1(`Tag2`): Tag3
 
 Do not include additional explanations, just the commit message itself.
