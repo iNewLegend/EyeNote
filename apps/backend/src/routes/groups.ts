@@ -10,9 +10,30 @@ import type {
 import type { FastifyInstance } from "fastify";
 import { GroupModel, type GroupDocument } from "../models/group";
 
+const DEFAULT_GROUP_COLOR = "#6366f1";
+
+function normalizeColor ( color ?: string ) : string {
+    if ( !color ) {
+        return DEFAULT_GROUP_COLOR;
+    }
+
+    return color.toLowerCase();
+}
+
+const colorSchema = z
+    .string()
+    .regex( /^#(?:[0-9a-fA-F]{3}){1,2}$/ );
+
 const createGroupSchema = z.object( {
     name: z.string().min( 1 ).max( 80 ),
     description: z.string().max( 280 ).optional(),
+    color: colorSchema.optional(),
+} );
+
+const updateGroupSchema = z.object( {
+    name: z.string().min( 1 ).max( 80 ).optional(),
+    description: z.string().max( 280 ).optional(),
+    color: colorSchema.optional(),
 } );
 
 const joinGroupSchema = z.object( {
@@ -68,6 +89,7 @@ function serializeGroup ( doc : GroupDocument ) : GroupRecord {
         slug: doc.slug,
         inviteCode: doc.inviteCode,
         ownerId: doc.ownerId,
+        color: doc.color,
         memberCount: doc.memberIds.length,
         createdAt: doc.createdAt.toISOString(),
         updatedAt: doc.updatedAt.toISOString(),
@@ -115,6 +137,7 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
 
             const slug = await generateUniqueSlug( payload.name );
             const inviteCode = await generateUniqueInviteCode();
+            const color = normalizeColor( payload.color );
 
             const created = await GroupModel.create( {
                 name: payload.name,
@@ -123,6 +146,7 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
                 inviteCode,
                 ownerId: request.user!.id,
                 memberIds: [ request.user!.id ],
+                color,
             } );
 
             reply.code( 201 ).send( {
@@ -226,6 +250,67 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
             reply.code( 200 ).send( {
                 group: serializeGroup( group ),
                 left: true,
+            } );
+        },
+    } );
+
+    fastify.route( {
+        method: "PATCH",
+        url: "/api/groups/:groupId",
+        preHandler: fastify.authenticate,
+        handler: async ( request, reply ) => {
+            const paramsParseResult = leaveGroupParamsSchema.safeParse( request.params );
+
+            if ( !paramsParseResult.success ) {
+                reply.code( 400 ).send( { error: "invalid_group_id" } );
+                return;
+            }
+
+            const { groupId } = paramsParseResult.data;
+
+            if ( !Types.ObjectId.isValid( groupId ) ) {
+                reply.code( 400 ).send( { error: "invalid_group_id" } );
+                return;
+            }
+
+            const bodyParseResult = updateGroupSchema.safeParse( request.body );
+
+            if ( !bodyParseResult.success ) {
+                reply.code( 400 ).send( {
+                    error: "invalid_body",
+                    details: bodyParseResult.error.flatten(),
+                } );
+                return;
+            }
+
+            const updates = bodyParseResult.data;
+
+            const group = await GroupModel.findById( groupId ).exec();
+
+            if ( !group ) {
+                reply.code( 404 ).send( { error: "group_not_found" } );
+                return;
+            }
+
+            if ( group.ownerId !== request.user!.id ) {
+                reply.code( 403 ).send( { error: "group_update_forbidden" } );
+                return;
+            }
+
+            if ( updates.name !== undefined ) {
+                group.name = updates.name;
+            }
+            if ( updates.description !== undefined ) {
+                group.description = updates.description ?? null;
+            }
+            if ( updates.color !== undefined ) {
+                group.color = normalizeColor( updates.color );
+            }
+
+            await group.save();
+
+            reply.code( 200 ).send( {
+                group: serializeGroup( group ),
             } );
         },
     } );

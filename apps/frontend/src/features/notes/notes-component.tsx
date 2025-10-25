@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, type CSSProperties } from "react";
 import type { Note } from "../../types";
 import type { UpdateNotePayload } from "@eye-note/definitions";
 import {
@@ -56,6 +56,24 @@ export function NotesComponent ( {
     useEffect( () => {
         setSelectedGroupId( note.groupId ?? "" );
     }, [ note.groupId ] );
+
+    const currentGroup = useMemo( () => {
+        if ( !note.groupId ) {
+            return null;
+        }
+        return groups.find( ( item ) => item.id === note.groupId ) ?? null;
+    }, [ groups, note.groupId ] );
+
+    const groupColor = currentGroup?.color ?? "#646cff";
+
+    const markerStyle = useMemo<CSSProperties>( () => ( {
+        left: `${ note.x ?? 0 }px`,
+        top: `${ note.y ?? 0 }px`,
+        zIndex: 2147483647,
+        transform: "translate(-50%, -50%)",
+        backgroundColor: note.isPendingSync ? "#f97316" : groupColor,
+        borderColor: note.isPendingSync ? "#f97316" : groupColor,
+    } ), [ groupColor, note.isPendingSync, note.x, note.y ] );
 
     const groupOptions = useMemo<GroupOption[]>( () => {
         if ( groups.length === 0 ) {
@@ -200,12 +218,7 @@ export function NotesComponent ( {
     return (
         <div>
             <div
-                style={{
-                    left: `${ note.x ?? 0 }px`,
-                    top: `${ note.y ?? 0 }px`,
-                    zIndex: 2147483647,
-                    transform: "translate(-50%, -50%)",
-                }}
+                style={markerStyle}
                 data-note-id={note.id}
                 data-has-element={note.highlightedElement ? "1" : "0"}
                 data-pending={note.isPendingSync ? "1" : "0"}
@@ -259,6 +272,13 @@ export function NotesComponent ( {
                         Add or edit your note for the selected element. Use the textarea below to
                         write your note, then click Save to confirm or Delete to remove the note.
                     </DialogDescription>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span
+                            className="h-3 w-3 rounded-full border border-border"
+                            style={{ backgroundColor: groupColor }}
+                        />
+                        <span>{currentGroup?.name ?? ( note.groupId ? "Group" : "No group" )}</span>
+                    </div>
                     <div className="space-y-1">
                         <label
                             htmlFor={`note-group-${ note.id }`}

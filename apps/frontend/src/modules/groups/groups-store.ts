@@ -1,10 +1,11 @@
 import { create } from "zustand";
-import type { CreateGroupPayload, GroupRecord } from "@eye-note/definitions";
+import type { CreateGroupPayload, GroupRecord, UpdateGroupPayload } from "@eye-note/definitions";
 import {
     createGroup as createGroupApi,
     joinGroup as joinGroupApi,
     leaveGroup as leaveGroupApi,
     listGroups,
+    updateGroup as updateGroupApi,
 } from "./groups-api";
 import {
     getStoredActiveGroupIds,
@@ -30,6 +31,7 @@ type GroupsActions = {
         joined : boolean;
     }>;
     leaveGroup : ( groupId : string ) => Promise<void>;
+    updateGroup : ( groupId : string, payload : UpdateGroupPayload ) => Promise<GroupRecord>;
     setGroupActive : ( groupId : string, isActive : boolean ) => Promise<void>;
     setActiveGroupIds : ( groupIds : string[] ) => Promise<void>;
     reset : () => void;
@@ -190,6 +192,16 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
 
         const next = get().activeGroupIds.filter( ( id ) => id !== groupId );
         await get().setActiveGroupIds( next );
+    },
+    async updateGroup ( groupId, payload ) {
+        const updated = await updateGroupApi( groupId, payload );
+
+        set( ( state ) => ( {
+            ...state,
+            groups: state.groups.map( ( group ) => ( group.id === updated.id ? updated : group ) ),
+        } ) );
+
+        return updated;
     },
     reset () {
         if ( detachActiveGroupListener ) {

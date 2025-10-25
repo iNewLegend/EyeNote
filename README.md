@@ -11,6 +11,7 @@ See what others see! EyeNote is a browser extension that lets you create and sha
 - Real-time chat in notes
 - Cross-website compatibility
 - Interactive note markers
+- Per-group marker colors to instantly distinguish collaborators
 - Group-specific visibility (notes are only visible to group members)
 
 ## How It Works

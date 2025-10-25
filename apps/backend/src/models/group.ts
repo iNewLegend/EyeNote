@@ -7,6 +7,7 @@ export interface GroupDocument extends Document {
     inviteCode : string;
     ownerId : string;
     memberIds : string[];
+    color : string;
     createdAt : Date;
     updatedAt : Date;
 }
@@ -19,6 +20,7 @@ const groupSchema = new Schema<GroupDocument>(
         inviteCode: { type: String, required: true, unique: true },
         ownerId: { type: String, required: true, index: true },
         memberIds: { type: [ String ], required: true, index: true },
+        color: { type: String, required: true, default: "#6366f1" },
     },
     {
         timestamps: true,

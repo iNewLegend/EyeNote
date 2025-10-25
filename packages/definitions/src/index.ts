@@ -55,6 +55,7 @@ export type UpdateNotePayload = Partial<NoteBase>;
 export interface GroupBase {
     name : string;
     description ?: string;
+    color ?: string;
 }
 
 export interface GroupRecord extends GroupBase {
@@ -65,9 +66,12 @@ export interface GroupRecord extends GroupBase {
     memberCount : number;
     createdAt : string;
     updatedAt : string;
+    color : string;
 }
 
 export type CreateGroupPayload = GroupBase;
+
+export type UpdateGroupPayload = Partial<GroupBase>;
 
 export interface JoinGroupPayload {
     inviteCode : string;

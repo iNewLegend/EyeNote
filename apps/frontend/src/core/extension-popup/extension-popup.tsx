@@ -310,7 +310,10 @@ export function ExtensionPopup () {
                                                 key={group.id}
                                                 className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-secondary/40 px-3 py-1 text-xs"
                                             >
-                                                <span className="h-2 w-2 rounded-full bg-primary" />
+                                                <span
+                                                    className="h-2 w-2 rounded-full border border-border/60"
+                                                    style={{ backgroundColor: group.color }}
+                                                />
                                                 {group.name}
                                             </span>
                                         ) )}

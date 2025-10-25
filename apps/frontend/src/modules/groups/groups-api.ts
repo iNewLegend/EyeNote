@@ -3,6 +3,7 @@ import type {
     GroupRecord,
     JoinGroupPayload,
     ListGroupsResponse,
+    UpdateGroupPayload,
 } from "@eye-note/definitions";
 import { apiRequest } from "../../lib/api-client";
 
@@ -47,4 +48,13 @@ export async function leaveGroup ( groupId : string ) : Promise<{
     } );
 
     return response;
+}
+
+export async function updateGroup ( groupId : string, payload : UpdateGroupPayload ) : Promise<GroupRecord> {
+    const response = await apiRequest<{ group : GroupRecord }>( `/api/groups/${ groupId }`, {
+        method: "PATCH",
+        bodyJson: payload,
+    } );
+
+    return response.group;
 }
