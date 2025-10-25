@@ -13,9 +13,10 @@ export interface ChromeResponse {
         id : string;
         email : string;
         name : string;
-        picture : string;
+        picture : string | null;
     };
     success ?: boolean;
+    error ?: string;
 }
 
 export interface MockChromeAPI {
@@ -29,6 +30,6 @@ export interface MockChromeAPI {
         sendMessage : (
             message : ChromeMessage,
             callback ?: ( response : ChromeResponse ) => void
-        ) => Promise<{ success : boolean }>;
+        ) => Promise<ChromeResponse>;
     };
-} 
+}

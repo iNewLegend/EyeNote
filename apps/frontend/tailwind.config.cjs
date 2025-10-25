@@ -15,6 +15,9 @@ module.exports = {
             },
         },
         extend: {
+            borderColor: {
+                DEFAULT: "hsl(var(--border))",
+            },
             zIndex: {
                 "plugin-container": "9999",
                 "highlight-element": "99999",

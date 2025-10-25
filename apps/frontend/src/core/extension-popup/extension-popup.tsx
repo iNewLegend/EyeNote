@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { AuthDialog } from "../../components/auth-dialog.tsx";
+import { AuthDialog } from "../../modules/auth";
 import { Button } from "../../components/ui/button.tsx";
 import { toast } from "sonner";
 import { Toaster } from "../../components/ui/sonner.tsx";
@@ -14,72 +14,16 @@ import {
 import { Switch } from "../../components/ui/switch.tsx";
 import { Label } from "../../components/ui/label.tsx";
 import { ThemeProvider } from "../theme/theme-provider";
-import { ChromeMessage, ChromeResponse, MockChromeAPI } from "../../types/chrome";
 import "./extension-popup.css";
-
-interface User {
-    id : string;
-    email : string;
-    name : string;
-    picture : string;
-}
+import { useAuthStore } from "../../modules/auth";
+import { useAuthStatusEffects } from "../../modules/auth/hooks/use-auth-status-effects";
+import { useBackendHealthBridge } from "../../hooks/use-backend-health-bridge";
 
 interface StorageSettings {
     enabled : boolean;
     notificationSound : boolean;
     showUnreadBadge : boolean;
 }
-
-interface StorageData {
-    settings : StorageSettings;
-    activeGroups : string[];
-}
-
-// Development mocks
-const DEV_MODE = process.env.NODE_ENV === "development";
-const mockStorage : StorageData = {
-    settings: {
-        enabled: true,
-        notificationSound: true,
-        showUnreadBadge: true,
-    },
-    activeGroups: [ "Development Group" ],
-};
-
-// Use mock or real Chrome API
-const chromeAPI = DEV_MODE ? {
-    storage: {
-        local: {
-            get: <T,>( key : string, callback : ( result : { [key : string] : T } ) => void ) => {
-                callback( { [ key ]: mockStorage[ key as keyof typeof mockStorage ] as T } );
-            },
-            set: ( items : object ) => {
-                Object.assign( mockStorage, items );
-            },
-        },
-    },
-    runtime: {
-        sendMessage: ( message : ChromeMessage, callback ?: ( response : ChromeResponse ) => void ) => {
-            if ( callback ) {
-                if ( message.type === "GET_AUTH_STATUS" ) {
-                    callback( {
-                        isAuthenticated: true,
-                        user: {
-                            id: "dev",
-                            email: "dev@example.com",
-                            name: "Developer",
-                            picture:
-                                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQCAvE4NQuOnrjboZSCZCOfDv7ry3l4yysuLg&s",
-                        },
-                    } );
-                } else if ( message.type === "SIGN_OUT" ) {
-                    callback( { success: true } );
-                }
-            }
-            return Promise.resolve( { success: true } );
-        },
-    },
-} as MockChromeAPI : ( chrome as unknown as MockChromeAPI );
 
 export function ExtensionPopup () {
     const [ settings, setSettings ] = useState<StorageSettings>( {
@@ -90,41 +34,45 @@ export function ExtensionPopup () {
 
     const [ activeGroups, setActiveGroups ] = useState<string[]>( [] );
     const [ isAuthOpen, setIsAuthOpen ] = useState( false );
-    const [ isAuthenticated, setIsAuthenticated ] = useState( false );
-    const [ user, setUser ] = useState<User | null>( null );
+    const [ isSigningIn, setIsSigningIn ] = useState( false );
+    const authUser = useAuthStore( ( state ) => state.user );
+    const isAuthenticated = useAuthStore( ( state ) => state.isAuthenticated );
+    const refreshAuthStatus = useAuthStore( ( state ) => state.refreshStatus );
+    const signOutUser = useAuthStore( ( state ) => state.signOut );
+    const signInUser = useAuthStore( ( state ) => state.signIn );
+    const [ isBackendHealthy, setIsBackendHealthy ] = useState<boolean | null>( null );
 
     useEffect( () => {
-        // Load settings
-        chromeAPI.storage.local.get<StorageSettings>( "settings", ( result ) => {
-            if ( result.settings ) {
-                setSettings( result.settings );
-            }
-        } );
+        if ( typeof chrome !== "undefined" && chrome.storage?.local ) {
+            chrome.storage.local.get( "settings", ( result ) => {
+                const storedSettings = ( result as { settings ?: StorageSettings } ).settings;
+                if ( storedSettings ) {
+                    setSettings( storedSettings );
+                }
+            } );
 
-        // Load active groups
-        chromeAPI.storage.local.get<string[]>( "activeGroups", ( result ) => {
-            if ( result.activeGroups ) {
-                setActiveGroups( result.activeGroups );
-            }
-        } );
-
-        // Check authentication status
-        chromeAPI.runtime.sendMessage( { type: "GET_AUTH_STATUS" }, ( response ) => {
-            setIsAuthenticated( !!response.isAuthenticated );
-            setUser( response.user || null );
-        } );
+            chrome.storage.local.get( "activeGroups", ( result ) => {
+                const storedActiveGroups = ( result as { activeGroups ?: string[] } ).activeGroups;
+                if ( storedActiveGroups ) {
+                    setActiveGroups( storedActiveGroups );
+                }
+            } );
+        }
     }, [] );
+
+    useAuthStatusEffects( refreshAuthStatus );
+
+    useBackendHealthBridge( {
+        syncModeStore: false,
+        onUpdate: setIsBackendHealthy,
+    } );
 
     const handleSignOut = async () => {
         try {
-            const response = await chromeAPI.runtime.sendMessage( { type: "SIGN_OUT" } );
-            if ( response.success ) {
-                setIsAuthenticated( false );
-                setUser( null );
-                toast( "Signed out", {
-                    description: "You have been successfully signed out",
-                } );
-            }
+            await signOutUser();
+            toast( "Signed out", {
+                description: "You have been successfully signed out",
+            } );
         } catch ( error ) {
             toast( "Error", {
                 description: "Failed to sign out. Please try again.",
@@ -138,8 +86,32 @@ export function ExtensionPopup () {
             [ key ]: !settings[ key ],
         };
         setSettings( newSettings );
-        chromeAPI.storage.local.set( { settings: newSettings } );
+        if ( typeof chrome !== "undefined" && chrome.storage?.local ) {
+            chrome.storage.local.set( { settings: newSettings } );
+        }
     };
+
+    const handleGetStarted = async () => {
+        if ( isSigningIn ) {
+            return;
+        }
+
+        try {
+            setIsSigningIn( true );
+            await signInUser();
+            toast( "Welcome to EyeNote", {
+                description: "You are now signed in.",
+            } );
+        } catch ( error ) {
+            toast( "Error", {
+                description: "Failed to sign in. Please try again.",
+            } );
+        } finally {
+            setIsSigningIn( false );
+        }
+    };
+
+    const isBackendDown = isBackendHealthy === false;
 
     return (
         <>
@@ -151,32 +123,45 @@ export function ExtensionPopup () {
                             <CardTitle className="text-xl font-bold bg-gradient-to-r from-primary/90 to-primary bg-clip-text text-transparent">
                                 EyeNote
                             </CardTitle>
-                            {isAuthenticated && user && (
-                                <CardDescription className="text-sm">{user.name}</CardDescription>
+                            {!isBackendDown && isAuthenticated && authUser && (
+                                <CardDescription className="text-sm">{authUser.name}</CardDescription>
                             )}
                         </div>
-                        {isAuthenticated ? (
-                            <div className="flex items-center gap-2">
-                                {user?.picture && (
-                                    <img
-                                        src={user.picture}
-                                        alt={user.name}
-                                        className="w-8 h-8 rounded-full ring-1 ring-border"
-                                    />
-                                )}
-                                <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                                    Sign Out
+                        {!isBackendDown && (
+                            isAuthenticated ? (
+                                <div className="flex items-center gap-2">
+                                    {authUser?.picture && (
+                                        <img
+                                            src={authUser.picture}
+                                            alt={authUser.name}
+                                            className="w-8 h-8 rounded-full ring-1 ring-border"
+                                        />
+                                    )}
+                                    <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                                        Sign Out
+                                    </Button>
+                                </div>
+                            ) : (
+                                <Button variant="default" size="sm" onClick={() => setIsAuthOpen( true )}>
+                                    Sign In
                                 </Button>
-                            </div>
-                        ) : (
-                            <Button variant="default" size="sm" onClick={() => setIsAuthOpen( true )}>
-                                Sign In
-                            </Button>
+                            )
                         )}
                     </div>
                 </CardHeader>
 
-                {isAuthenticated ? (
+                {isBackendDown ? (
+                    <CardContent className="flex-1 flex items-center justify-center p-6 text-center">
+                        <div className="space-y-3">
+                            <h2 className="text-lg font-semibold text-destructive">
+                                Ops something went wrong, it’s not you, it’s us.
+                            </h2>
+                            <p className="text-sm text-muted-foreground">
+                                We’re having trouble reaching the servers. Try again in a moment.
+                            </p>
+                        </div>
+                    </CardContent>
+                ) : isAuthenticated ? (
                     <CardContent className="p-6 space-y-8 flex-1 overflow-auto">
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
@@ -295,15 +280,21 @@ export function ExtensionPopup () {
                                     </p>
                                 </div>
                             </div>
-                            <Button size="lg" onClick={() => setIsAuthOpen( true )}>
-                                Get Started
+                            <Button
+                                size="lg"
+                                onClick={handleGetStarted}
+                                disabled={isSigningIn}
+                            >
+                                {isSigningIn ? "Signing In..." : "Get Started"}
                             </Button>
                         </div>
                     </CardContent>
                 )}
             </Card>
 
-            <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen( false )} />
+            {!isBackendDown && (
+                <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen( false )} />
+            )}
         </>
     );
 }

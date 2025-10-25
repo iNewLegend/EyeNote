@@ -4,6 +4,7 @@ import { useModeStore, AppMode } from "../stores/use-mode-store";
 import { usePreserveScroll } from "./use-preserve-scroll";
 import { useEventListener } from "./use-event-listener";
 import { useElementHighlight } from "./use-element-highlight";
+import { useAuthStore } from "../modules/auth";
 
 export function useInspectorMode () {
     const {
@@ -12,40 +13,56 @@ export function useInspectorMode () {
         setSelectedElement,
         clearAllHighlights,
     } = useHighlightStore();
-    const { modes, setMode, addMode, removeMode, isMode } = useModeStore();
+    const modes = useModeStore( ( state ) => state.modes );
+    const addMode = useModeStore( ( state ) => state.addMode );
+    const removeMode = useModeStore( ( state ) => state.removeMode );
+    const isAuthenticated = useAuthStore( ( state ) => state.isAuthenticated );
+    const isConnected = ( modes & AppMode.CONNECTED ) === AppMode.CONNECTED;
+    const isInspectorActive = ( modes & AppMode.INSPECTOR_MODE ) === AppMode.INSPECTOR_MODE;
     const preserveScroll = usePreserveScroll();
     const { handleElementHighlight } = useElementHighlight();
 
     // Handle shift key events to toggle inspector mode
     const handleKeyDown = useCallback( ( e : KeyboardEvent ) => {
-        if ( e.key === "Shift" && !isMode( AppMode.INSPECTOR_MODE ) ) {
+        if ( e.key === "Shift" && !isInspectorActive ) {
+            if ( !isConnected ) {
+                console.warn( "[EyeNote] Cannot enter inspector mode until backend connection is established." );
+                return;
+            }
+            if ( !isAuthenticated ) {
+                console.warn( "[EyeNote] Cannot enter inspector mode until you are signed in." );
+                return;
+            }
             // Only enter inspector mode if we're not in notes mode
-            if ( !isMode( AppMode.NOTES_MODE ) ) {
+            if ( ( modes & AppMode.NOTES_MODE ) !== AppMode.NOTES_MODE ) {
                 addMode( AppMode.INSPECTOR_MODE );
             }
         }
-    }, [ isMode, addMode ] );
+    }, [ isInspectorActive, isConnected, modes, addMode, isAuthenticated ] );
 
     const handleKeyUp = useCallback( ( e : KeyboardEvent ) => {
         if ( e.key === "Shift" ) {
             // Only remove inspector mode if we're not in notes mode
-            if ( !isMode( AppMode.NOTES_MODE ) ) {
+            if ( ( modes & AppMode.NOTES_MODE ) !== AppMode.NOTES_MODE ) {
                 removeMode( AppMode.INSPECTOR_MODE );
                 clearAllHighlights();
             }
         }
-    }, [ isMode, removeMode, clearAllHighlights ] );
+    }, [ modes, removeMode, clearAllHighlights ] );
 
-    useEventListener( 'keydown', handleKeyDown );
-    useEventListener( 'keyup', handleKeyUp );
+    useEventListener( "keydown", handleKeyDown );
+    useEventListener( "keyup", handleKeyUp );
 
     // Handle mouse movement for element inspection
-    const handleMouseMove = useCallback( ( e : MouseEvent ) => {
-        const shouldHighlight = !isMode( AppMode.NOTES_MODE ) && isMode( AppMode.INSPECTOR_MODE );
-        handleElementHighlight( e.clientX, e.clientY, shouldHighlight );
-    }, [ handleElementHighlight, isMode ] );
+    const handleMouseMove = useCallback(
+        ( e : MouseEvent ) => {
+            const shouldHighlight = ( modes & AppMode.NOTES_MODE ) === 0 && isInspectorActive;
+            handleElementHighlight( e.clientX, e.clientY, shouldHighlight );
+        },
+        [ handleElementHighlight, modes, isInspectorActive ]
+    );
 
-    useEventListener( 'mousemove', handleMouseMove );
+    useEventListener( "mousemove", handleMouseMove );
 
     // Handle element selection
     const selectElement = useCallback(
@@ -53,9 +70,10 @@ export function useInspectorMode () {
             preserveScroll( () => {
                 setSelectedElement( element );
                 addMode( AppMode.NOTES_MODE );
+                removeMode( AppMode.INSPECTOR_MODE );
             } );
         },
-        [ setSelectedElement, addMode, preserveScroll ]
+        [ setSelectedElement, addMode, removeMode, preserveScroll ]
     );
 
     // Handle dismissal
@@ -73,29 +91,30 @@ export function useInspectorMode () {
         clearAllHighlights();
         setHoveredElement( null );
         setSelectedElement( null );
-    }, [
-        modes,
-        removeMode,
-        clearAllHighlights,
-        setHoveredElement,
-        setSelectedElement,
-    ] );
+    }, [ modes, removeMode, clearAllHighlights, setHoveredElement, setSelectedElement ] );
 
-    // Cleanup on unmount
+    useEffect( () => {
+        if ( ( !isConnected || !isAuthenticated ) && isInspectorActive ) {
+            removeMode( AppMode.INSPECTOR_MODE );
+            clearAllHighlights();
+        }
+    }, [ isConnected, isAuthenticated, isInspectorActive, removeMode, clearAllHighlights ] );
+
     useEffect( () => {
         return () => {
-            if ( isMode( AppMode.INSPECTOR_MODE ) ) {
+            const { modes: currentModes, setMode: resetMode } = useModeStore.getState();
+            if ( ( currentModes & AppMode.INSPECTOR_MODE ) === AppMode.INSPECTOR_MODE ) {
                 clearAllHighlights();
-                setMode( AppMode.NEUTRAL );
+                resetMode( AppMode.NEUTRAL );
             }
         };
-    }, [ isMode, clearAllHighlights, setMode ] );
+    }, [ clearAllHighlights ] );
 
     return {
         hoveredElement,
         setHoveredElement,
         setSelectedElement,
-        isActive: isMode( AppMode.INSPECTOR_MODE ),
+        isActive: isInspectorActive,
         selectElement,
         dismiss,
     };

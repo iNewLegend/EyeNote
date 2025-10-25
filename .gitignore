@@ -34,8 +34,11 @@ pnpm-debug.log*
 .env.*
 !.env.example
 
+apps/frontend/eye-note-extension.pem
+
 # Cache
 .eslintcache
 .stylelintcache
 
 temp/
+scripts/.vscode/chrome-debug-profile/

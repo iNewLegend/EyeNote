@@ -2,9 +2,10 @@ import { create } from "zustand";
 
 export const enum AppMode {
     NEUTRAL = 0, // 0000
-    DEBUG_MODE = 1 << 0, // 0001
-    INSPECTOR_MODE = 1 << 1, // 0010
-    NOTES_MODE = 1 << 2, // 0100
+    CONNECTED = 1 << 0,
+    DEBUG_MODE = 1 << 1,
+    INSPECTOR_MODE = 1 << 2,
+    NOTES_MODE = 1 << 3,
     // We can easily add more modes in the future
     // SOME_OTHER_MODE = 1 << 3,   // 1000
     // ANOTHER_MODE = 1 << 4,      // 10000
@@ -43,23 +44,27 @@ const updateDOMClasses = ( modes : number ) => {
 
 // Helper function to log mode changes when in debug mode
 const logModeChange = ( oldModes : number, newModes : number ) => {
-    if ( newModes & AppMode.DEBUG_MODE ) {
-        const getActiveModesNames = ( modes : number ) => {
-            const activeNames : string[] = [];
-            if ( modes & AppMode.DEBUG_MODE ) activeNames.push( "DEBUG_MODE" );
-            if ( modes & AppMode.INSPECTOR_MODE ) activeNames.push( "INSPECTOR_MODE" );
-            if ( modes & AppMode.NOTES_MODE ) activeNames.push( "NOTES_MODE" );
-            return activeNames.length ? activeNames.join( " | " ) : "NEUTRAL";
-        };
+    if ( process.env.NODE_ENV === "development" ) {
+        if ( newModes & AppMode.DEBUG_MODE ) {
+            const getActiveModesNames = ( modes: number ) => {
+                const activeNames: string[] = [];
+                if ( modes & AppMode.CONNECTED ) activeNames.push( "CONNECTED" );
+                if ( modes & AppMode.DEBUG_MODE ) activeNames.push( "DEBUG_MODE" );
+                if ( modes & AppMode.INSPECTOR_MODE ) activeNames.push( "INSPECTOR_MODE" );
+                if ( modes & AppMode.NOTES_MODE ) activeNames.push( "NOTES_MODE" );
+                return activeNames.length ? activeNames.join( " | " ) : "NEUTRAL";
+            };
 
-        console.log(
-            `Mode Change: ${ getActiveModesNames( oldModes ) } -> ${ getActiveModesNames( newModes ) }`
-        );
+            console.log(
+                `Mode Change: ${ getActiveModesNames( oldModes ) } -> ${ getActiveModesNames( newModes ) }`
+            );
+        }
     }
 };
 
-export const useModeStore = create<ModeStore>( ( set, get ) => ( {
-    modes: AppMode.DEBUG_MODE,
+export const useModeStore = create<ModeStore>( ( set, get ) => {
+    return {
+        modes: AppMode.DEBUG_MODE,
 
     setMode: ( mode : AppMode ) => {
         const oldModes = get().modes;
@@ -120,4 +125,5 @@ export const useModeStore = create<ModeStore>( ( set, get ) => ( {
         const combinedModes = modes.reduce( ( acc, mode ) => acc | mode, 0 );
         return ( get().modes & combinedModes ) !== 0;
     },
-} ) );
+    };
+} );

@@ -2,9 +2,13 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import sharp from "sharp";
+import { config as loadEnv } from "dotenv";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
+const workspaceRoot = path.resolve(rootDir, "..", "..");
+loadEnv({ path: path.join(workspaceRoot, ".env") });
+const googleClientId = process.env.GOOGLE_CLIENT_ID ?? process.env.VITE_GOOGLE_CLIENT_ID ?? "";
 const distDir = path.join(rootDir, "dist");
 const extensionDir = path.join(rootDir, "extension");
 const iconsDir = path.join(extensionDir, "icons");
@@ -199,8 +203,23 @@ async function prepareExtension() {
 
         // Copy manifest.json
         const manifestPath = path.join(extensionDir, "manifest.json");
-        const manifest = JSON.parse(await fs.readFile(path.join(rootDir, "manifest.json"), 'utf-8'));
-        
+        const manifestTemplate = await fs.readFile(path.join(rootDir, "manifest.json"), "utf-8");
+        const manifest = JSON.parse(manifestTemplate);
+
+        const templateClientId = manifest?.oauth2?.client_id ?? "";
+        const resolvedClientId =
+            googleClientId ||
+            (templateClientId.startsWith("{{ENV:") ? "" : templateClientId);
+
+        if ( !resolvedClientId ) {
+            throw new Error(
+                "GOOGLE_CLIENT_ID is not configured. Add it to the workspace .env file before building the extension."
+            );
+        }
+
+        manifest.oauth2 = manifest.oauth2 ?? {};
+        manifest.oauth2.client_id = resolvedClientId;
+
         await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 4));
         console.log("Updated manifest.json");
 
