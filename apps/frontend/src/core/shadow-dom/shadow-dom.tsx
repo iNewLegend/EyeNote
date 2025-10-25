@@ -13,7 +13,7 @@ import { useAuthStatusEffects } from "../../modules/auth/hooks/use-auth-status-e
 import { useNotesLifecycle } from "../../features/notes/use-notes-lifecycle";
 import { useElementSelectionListener } from "../../hooks/use-element-selection-listener";
 import {
-    initializeGroupsStore,
+    useGroupsBootstrap,
     useGroupsStore,
 } from "../../modules/groups";
 
@@ -23,8 +23,6 @@ export const ShadowDOM : React.FC = () => {
     const rehydrateNotes = useNotesStore( ( state ) => state.rehydrateNotes );
     const { createNote, loadNotes } = useNotesController();
     const activeGroupIds = useGroupsStore( ( state ) => state.activeGroupIds );
-    const fetchGroups = useGroupsStore( ( state ) => state.fetchGroups );
-    const resetGroups = useGroupsStore( ( state ) => state.reset );
     const isAuthenticated = useAuthStore( ( state ) => state.isAuthenticated );
     const refreshAuthStatus = useAuthStore( ( state ) => state.refreshStatus );
     const modes = useModeStore( ( state ) => state.modes );
@@ -43,42 +41,12 @@ export const ShadowDOM : React.FC = () => {
     const notesContainerRef = useRef<HTMLDivElement>( null );
 
     const lastKnownUrlRef = useUrlListener( setCurrentUrl );
-    useEffect( () => {
-        initializeGroupsStore().catch( ( error ) => {
-            console.warn( "[EyeNote] Failed to initialize groups store in content script", error );
-        } );
-    }, [] );
-
-    useEffect( () => {
-        if ( !isAuthenticated ) {
-            resetGroups();
-            return;
-        }
-
-        if ( !isConnected ) {
-            return;
-        }
-
-        let cancelled = false;
-
-        initializeGroupsStore()
-            .then( () => {
-                if ( cancelled ) {
-                    return;
-                }
-                return fetchGroups();
-            } )
-            .catch( ( error ) => {
-                if ( cancelled ) {
-                    return;
-                }
-                console.warn( "[EyeNote] Failed to fetch groups in content script", error );
-            } );
-
-        return () => {
-            cancelled = true;
-        };
-    }, [ fetchGroups, isAuthenticated, isConnected, resetGroups ] );
+    useGroupsBootstrap( {
+        isAuthenticated,
+        canSync: isConnected,
+        shouldResetOnUnsync: false,
+        logContext: "content-script",
+    } );
 
     useBackendHealthBridge();
     useAuthStatusEffects( refreshAuthStatus );

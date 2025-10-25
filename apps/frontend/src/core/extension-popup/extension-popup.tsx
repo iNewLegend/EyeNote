@@ -20,7 +20,7 @@ import { useAuthStatusEffects } from "../../modules/auth/hooks/use-auth-status-e
 import { useBackendHealthBridge } from "../../hooks/use-backend-health-bridge";
 import type { GroupRecord } from "@eye-note/definitions";
 import {
-    initializeGroupsStore,
+    useGroupsBootstrap,
     useGroupsStore,
 } from "../../modules/groups";
 
@@ -54,12 +54,10 @@ export function ExtensionPopup () {
     const activeGroupIds = useGroupsStore( ( state ) => state.activeGroupIds );
     const groupsError = useGroupsStore( ( state ) => state.error );
     const groupsLoading = useGroupsStore( ( state ) => state.isLoading );
-    const fetchGroups = useGroupsStore( ( state ) => state.fetchGroups );
     const setGroupActive = useGroupsStore( ( state ) => state.setGroupActive );
     const createGroup = useGroupsStore( ( state ) => state.createGroup );
     const joinGroupByCode = useGroupsStore( ( state ) => state.joinGroupByCode );
     const leaveGroup = useGroupsStore( ( state ) => state.leaveGroup );
-    const resetGroups = useGroupsStore( ( state ) => state.reset );
 
     useEffect( () => {
         if ( typeof chrome !== "undefined" && chrome.storage?.local ) {
@@ -72,42 +70,12 @@ export function ExtensionPopup () {
         }
     }, [] );
 
-    useEffect( () => {
-        initializeGroupsStore().catch( ( error ) => {
-            console.warn( "[EyeNote] Failed to initialize groups store", error );
-        } );
-    }, [] );
-
-    useEffect( () => {
-        if ( !isAuthenticated || isBackendHealthy === false ) {
-            resetGroups();
-            return;
-        }
-
-        if ( !isAuthenticated || isBackendHealthy === null ) {
-            return;
-        }
-
-        let cancelled = false;
-
-        initializeGroupsStore()
-            .then( () => {
-                if ( cancelled ) {
-                    return;
-                }
-                return fetchGroups();
-            } )
-            .catch( ( error ) => {
-                if ( cancelled ) {
-                    return;
-                }
-                console.warn( "[EyeNote] Failed to fetch groups", error );
-            } );
-
-        return () => {
-            cancelled = true;
-        };
-    }, [ fetchGroups, isAuthenticated, isBackendHealthy, resetGroups ] );
+    useGroupsBootstrap( {
+        isAuthenticated,
+        canSync: isBackendHealthy === true,
+        shouldResetOnUnsync: isBackendHealthy === false,
+        logContext: "popup",
+    } );
 
     useAuthStatusEffects( refreshAuthStatus );
 
