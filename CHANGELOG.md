@@ -4,6 +4,7 @@
 - Added shared group contracts, a Mongo-backed `GroupModel`, and `/api/groups` list/create/join/leave routes that validate membership before assigning notes; note queries now accept multi-group filters.
 - Shipped a popup group manager via a shared Zustand store that hydrates from Chrome storage, lets users create or join groups, toggle active sets, copy invite codes, and persists selections across contexts.
 - Updated the content script to initialize group data, filter note loading by the active groups, default new notes to the leading active group, and expose group selection inside the note dialog.
+- Refactored group management into a reusable panel, reusing it in the browser action popup and adding an in-page "Manage groups" dialog inside the content script overlay.
 - Regenerated frontend/backend/definitions type checks with `pnpm --filter @eye-note/{definitions,backend,frontend} exec tsc --noEmit`.
 
 # 2025-10-24

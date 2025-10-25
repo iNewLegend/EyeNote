@@ -193,8 +193,35 @@ function initializeApp () {
 
 initializeApp();
 
+const runtimeMessageHandler : Parameters<typeof chrome.runtime.onMessage.addListener>[ 0 ] = (
+    message,
+    _sender,
+    sendResponse
+) => {
+    if ( typeof window === "undefined" ) {
+        sendResponse?.( { success: false } );
+        return;
+    }
+
+    const payload = message as { type ?: string };
+    if ( payload?.type === "OPEN_GROUP_MANAGER" ) {
+        window.dispatchEvent( new CustomEvent( "eye-note-open-group-manager" ) );
+        sendResponse?.( { success: true } );
+        return;
+    }
+
+    sendResponse?.( { success: false } );
+};
+
+if ( typeof chrome !== "undefined" && chrome.runtime?.onMessage ) {
+    chrome.runtime.onMessage.addListener( runtimeMessageHandler );
+}
+
 if ( import.meta.hot ) {
     import.meta.hot.dispose( () => {
         connectionBridge.disconnect( false );
+        if ( typeof chrome !== "undefined" && chrome.runtime?.onMessage ) {
+            chrome.runtime.onMessage.removeListener( runtimeMessageHandler );
+        }
     } );
 }

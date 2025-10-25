@@ -15,7 +15,15 @@ import { useElementSelectionListener } from "../../hooks/use-element-selection-l
 import {
     useGroupsBootstrap,
     useGroupsStore,
+    GroupManagerPanel,
 } from "../../modules/groups";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "../../components/ui/dialog";
+import { Toaster } from "../../components/ui/sonner";
 
 export const ShadowDOM : React.FC = () => {
     const notes = useNotesStore( ( state ) => state.notes );
@@ -37,6 +45,7 @@ export const ShadowDOM : React.FC = () => {
     } = useInspectorMode();
     const [ isProcessingNoteDismissal, setIsProcessingNoteDismissal ] = useState( false );
     const [ currentUrl, setCurrentUrl ] = useState( () => window.location.href );
+    const [ isGroupManagerOpen, setIsGroupManagerOpen ] = useState( false );
     const [ , setLocalSelectedElement ] = useState<HTMLElement | null>( null );
     const notesContainerRef = useRef<HTMLDivElement>( null );
 
@@ -66,6 +75,20 @@ export const ShadowDOM : React.FC = () => {
         const candidate = activeGroupIds.find( ( id ) => id && id.trim().length > 0 );
         return candidate ?? null;
     }, [ activeGroupIds ] );
+    const canManageGroups = isAuthenticated && isConnected;
+
+    useEffect( () => {
+        const handler = () => {
+            if ( canManageGroups ) {
+                setIsGroupManagerOpen( true );
+            }
+        };
+
+        window.addEventListener( "eye-note-open-group-manager", handler );
+        return () => {
+            window.removeEventListener( "eye-note-open-group-manager", handler );
+        };
+    }, [ canManageGroups ] );
 
     useEffect( () => {
         lastKnownUrlRef.current = currentUrl;
@@ -188,12 +211,35 @@ export const ShadowDOM : React.FC = () => {
 
     return (
         <ThemeProvider>
+            <Toaster />
             <div
                 ref={notesContainerRef}
                 className="notes-plugin"
                 data-inspector-active={isActive ? "1" : "0"}
             >
                 <InteractionBlocker isVisible={isActive} />
+                <Dialog
+                    open={isGroupManagerOpen}
+                    onOpenChange={( next ) => {
+                        if ( next ) {
+                            if ( canManageGroups ) {
+                                setIsGroupManagerOpen( true );
+                            }
+                            return;
+                        }
+                        setIsGroupManagerOpen( false );
+                    }}
+                >
+                    <DialogContent
+                        container={notesContainerRef.current?.parentElement ?? undefined}
+                        className="max-h-[85vh] overflow-y-auto"
+                    >
+                        <DialogHeader>
+                            <DialogTitle>Manage groups</DialogTitle>
+                        </DialogHeader>
+                        <GroupManagerPanel onClose={() => setIsGroupManagerOpen( false )} />
+                    </DialogContent>
+                </Dialog>
                 {notes.map( ( note ) => (
                     <NotesComponent
                         key={note.id}
