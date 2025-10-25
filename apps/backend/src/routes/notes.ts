@@ -1,13 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import { Types } from "mongoose";
 import { z } from "zod";
-import type {
-    CreateNotePayload,
-    NoteBase,
-    NoteRecord,
-    UpdateNotePayload,
-} from "@eye-note/definitions";
+import type { NoteBase, NoteRecord } from "@eye-note/definitions";
 import { NoteModel } from "../models/note";
+import { GroupModel } from "../models/group";
 
 const vectorSchema = z.object( {
     x: z.number(),
@@ -23,11 +19,15 @@ const rectSchema = z.object( {
     height: z.number(),
 } );
 
+const groupIdSchema = z
+    .union( [ z.string().min( 1 ), z.literal( "" ), z.null() ] )
+    .optional();
+
 const notePayloadSchema = z.object( {
     elementPath: z.string().min( 1 ),
     content: z.string().default( "" ),
     url: z.string().url(),
-    groupId: z.string().optional(),
+    groupId: groupIdSchema,
     x: z.number().optional(),
     y: z.number().optional(),
     elementRect: rectSchema.optional(),
@@ -41,7 +41,17 @@ const noteUpdateSchema = notePayloadSchema.partial();
 
 const noteQuerySchema = z.object( {
     url: z.string().url().optional(),
-    groupId: z.string().optional(),
+    groupIds: z
+        .preprocess( ( value ) => {
+            if ( Array.isArray( value ) ) {
+                return value;
+            }
+            if ( typeof value === "string" ) {
+                return [ value ];
+            }
+            return undefined;
+        }, z.array( z.string() ).optional() )
+        .optional(),
 } );
 
 type NoteLean = NoteBase & {
@@ -57,7 +67,7 @@ function serializeNote ( doc : NoteLean ) : NoteRecord {
         elementPath: doc.elementPath,
         content: doc.content,
         url: doc.url,
-        groupId: doc.groupId ?? "",
+        groupId: doc.groupId ?? null,
         x: doc.x ?? undefined,
         y: doc.y ?? undefined,
         elementRect: doc.elementRect ?? undefined,
@@ -70,7 +80,26 @@ function serializeNote ( doc : NoteLean ) : NoteRecord {
     };
 }
 
-function buildFilter ( params : { id ?: string; userId : string; url ?: string; groupId ?: string } ) {
+function normalizeGroupId ( value : unknown ) : string | null | undefined {
+    if ( value === undefined ) {
+        return undefined;
+    }
+    if ( value === null ) {
+        return null;
+    }
+    if ( typeof value !== "string" ) {
+        return undefined;
+    }
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? null : trimmed;
+}
+
+function buildFilter ( params : {
+    id ?: string;
+    userId : string;
+    url ?: string;
+    groupIds ?: string[];
+} ) {
     const filter : Record<string, unknown> = {
         userId: params.userId,
     };
@@ -81,8 +110,28 @@ function buildFilter ( params : { id ?: string; userId : string; url ?: string; 
     if ( params.url ) {
         filter.url = params.url;
     }
-    if ( params.groupId ) {
-        filter.groupId = params.groupId;
+    if ( params.groupIds ) {
+        const trimmed = params.groupIds.map( ( id ) => id.trim() );
+
+        if ( trimmed.length === 0 ) {
+            filter._id = { $in: [] };
+        } else {
+            const includesUngrouped = trimmed.includes( "" );
+            const explicitGroupIds = trimmed.filter( ( id ) => id !== "" );
+
+            if ( includesUngrouped && explicitGroupIds.length > 0 ) {
+                filter.$or = [
+                    { groupId: null },
+                    { groupId: { $in: explicitGroupIds } },
+                ];
+            } else if ( includesUngrouped ) {
+                filter.groupId = null;
+            } else if ( explicitGroupIds.length > 0 ) {
+                filter.groupId = { $in: explicitGroupIds };
+            } else {
+                filter._id = { $in: [] };
+            }
+        }
     }
     return filter;
 }
@@ -100,13 +149,13 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
                 return;
             }
 
-            const { url, groupId } = queryParseResult.data;
+            const { url, groupIds } = queryParseResult.data;
 
             const docs = await NoteModel.find(
                 buildFilter( {
                     userId: request.user!.id,
                     url,
-                    groupId,
+                    groupIds,
                 } )
             )
                 .sort( { updatedAt: -1 } )
@@ -131,11 +180,30 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
                 return;
             }
 
-            const payload = bodyParseResult.data as CreateNotePayload;
+            const { groupId, ...rest } = bodyParseResult.data;
+            const normalizedGroupId = normalizeGroupId( groupId );
+
+            if ( typeof normalizedGroupId === "string" ) {
+                if ( !Types.ObjectId.isValid( normalizedGroupId ) ) {
+                    reply.status( 400 ).send( { error: "invalid_group_id" } );
+                    return;
+                }
+
+                const hasAccess = await GroupModel.exists( {
+                    _id: new Types.ObjectId( normalizedGroupId ),
+                    memberIds: request.user!.id,
+                } );
+
+                if ( !hasAccess ) {
+                    reply.status( 403 ).send( { error: "group_access_denied" } );
+                    return;
+                }
+            }
 
             const created = await NoteModel.create( {
                 userId: request.user!.id,
-                ...payload,
+                ...rest,
+                groupId: normalizedGroupId ?? null,
             } );
 
             const note = created.toObject() as NoteLean;
@@ -166,18 +234,42 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
                 return;
             }
 
-            const updates = bodyParseResult.data as UpdateNotePayload;
+            const updates = bodyParseResult.data;
 
             const updateDoc : Record<string, unknown> = {
                 updatedAt: new Date(),
             };
 
-            ( Object.keys( updates ) as ( keyof UpdateNotePayload )[] ).forEach( ( key ) => {
-                const value = updates[ key ];
+            for ( const [ key, value ] of Object.entries( updates ) ) {
+                if ( key === "groupId" ) {
+                    const normalized = normalizeGroupId( value );
+                    if ( normalized !== undefined ) {
+                        if ( typeof normalized === "string" ) {
+                            if ( !Types.ObjectId.isValid( normalized ) ) {
+                                reply.status( 400 ).send( { error: "invalid_group_id" } );
+                                return;
+                            }
+
+                            const hasAccess = await GroupModel.exists( {
+                                _id: new Types.ObjectId( normalized ),
+                                memberIds: request.user!.id,
+                            } );
+
+                            if ( !hasAccess ) {
+                                reply.status( 403 ).send( { error: "group_access_denied" } );
+                                return;
+                            }
+                        }
+
+                        updateDoc.groupId = normalized;
+                    }
+                    return;
+                }
+
                 if ( value !== undefined ) {
                     updateDoc[ key ] = value;
                 }
-            } );
+            }
 
             const updated = await NoteModel.findOneAndUpdate(
                 buildFilter( {

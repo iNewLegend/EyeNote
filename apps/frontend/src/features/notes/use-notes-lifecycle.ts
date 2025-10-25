@@ -5,9 +5,10 @@ type NotesLifecycleArgs = {
     isConnected : boolean;
     currentUrl : string;
     clearNotes : () => void;
-    loadNotes : ( params : { url : string } ) => Promise<void>;
+    loadNotes : ( params : { url : string; groupIds ?: string[] } ) => Promise<void>;
     notesLength : number;
     rehydrateNotes : () => void;
+    activeGroupIds : string[];
 };
 
 export function useNotesLifecycle ( {
@@ -18,6 +19,7 @@ export function useNotesLifecycle ( {
     loadNotes,
     notesLength,
     rehydrateNotes,
+    activeGroupIds,
 }: NotesLifecycleArgs ) {
     useEffect( () => {
         if ( ! isAuthenticated || ! isConnected ) {
@@ -27,10 +29,19 @@ export function useNotesLifecycle ( {
 
         clearNotes();
 
-        loadNotes( { url: currentUrl } ).catch( ( error: unknown ) => {
+        const groupIds = activeGroupIds.length > 0 ? activeGroupIds : undefined;
+
+        loadNotes( { url: currentUrl, groupIds } ).catch( ( error: unknown ) => {
             console.error( "Failed to load notes:", error );
         } );
-    }, [ isAuthenticated, isConnected, clearNotes, loadNotes, currentUrl ] );
+    }, [
+        activeGroupIds,
+        clearNotes,
+        currentUrl,
+        isAuthenticated,
+        isConnected,
+        loadNotes,
+    ] );
 
     useEffect( () => {
         if ( ! isConnected || notesLength === 0 ) {

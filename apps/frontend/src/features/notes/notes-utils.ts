@@ -29,7 +29,8 @@ export function mapRecordToNote ( record : NoteRecord, overrides : Partial<Note>
 
 export function createDraftFromElement (
     element : Element,
-    pointerPosition ?: ViewportPosition
+    pointerPosition ?: ViewportPosition,
+    initialGroupId ?: string | null
 ) : Note {
     const rect = element.getBoundingClientRect();
     const pointer : ViewportPosition = pointerPosition ?? {
@@ -46,7 +47,7 @@ export function createDraftFromElement (
         elementPath: snapshot.elementPath,
         content: "",
         url: window.location.href,
-        groupId: undefined,
+        groupId: initialGroupId ?? undefined,
         createdAt: timestamp,
         updatedAt: timestamp,
         x: snapshot.viewportPosition.x,
@@ -128,11 +129,13 @@ export function createPayloadFromDraft (
     draft : Note,
     updates : UpdateNotePayload
 ) : CreateNotePayload {
+    const resolvedGroupId = updates.groupId !== undefined ? updates.groupId : draft.groupId;
+
     return {
         elementPath: draft.elementPath,
         content: updates.content ?? draft.content ?? "",
         url: draft.url,
-        groupId: draft.groupId,
+        groupId: resolvedGroupId,
         x: draft.x,
         y: draft.y,
         elementRect: draft.elementRect,

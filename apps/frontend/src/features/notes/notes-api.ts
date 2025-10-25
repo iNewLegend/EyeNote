@@ -7,13 +7,13 @@ import type { Note } from "../../types";
 import { apiRequest } from "../../lib/api-client";
 import { createPayloadFromDraft, mapRecordToNote } from "./notes-utils";
 
-type FetchNotesArgs = Pick<ListNotesQuery, "groupId"> & { url : string };
+type FetchNotesArgs = Pick<ListNotesQuery, "groupIds"> & { url : string };
 
 export async function fetchNotesForPage ( params : FetchNotesArgs ) : Promise<Note[]> {
     const response = await apiRequest<{ notes : NoteRecord[] }>( "/api/notes", {
         searchParams: {
             url: params.url,
-            groupId: params.groupId,
+            groupIds: params.groupIds,
         },
     } );
 

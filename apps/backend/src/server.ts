@@ -5,6 +5,7 @@ import { mongoPlugin } from "./plugins/mongo";
 import { authPlugin } from "./plugins/auth";
 import { notesRoutes } from "./routes/notes";
 import { healthRoutes } from "./routes/health";
+import { groupsRoutes } from "./routes/groups";
 
 export async function buildServer () {
     const fastify = Fastify( {
@@ -30,6 +31,7 @@ export async function buildServer () {
     await fastify.register( authPlugin );
     await fastify.register( healthRoutes );
     await fastify.register( notesRoutes );
+    await fastify.register( groupsRoutes );
 
     return fastify;
 }

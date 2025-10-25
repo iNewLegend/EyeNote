@@ -52,6 +52,31 @@ export type CreateNotePayload = NoteBase;
 
 export type UpdateNotePayload = Partial<NoteBase>;
 
+export interface GroupBase {
+    name : string;
+    description ?: string;
+}
+
+export interface GroupRecord extends GroupBase {
+    id : string;
+    slug : string;
+    ownerId : string;
+    inviteCode : string;
+    memberCount : number;
+    createdAt : string;
+    updatedAt : string;
+}
+
+export type CreateGroupPayload = GroupBase;
+
+export interface JoinGroupPayload {
+    inviteCode : string;
+}
+
+export interface ListGroupsResponse {
+    groups : GroupRecord[];
+}
+
 export interface AuthUser {
     id : string;
     email ?: string;
@@ -68,7 +93,7 @@ export interface AuthSession {
 
 export interface ListNotesQuery {
     url ?: string;
-    groupId ?: string;
+    groupIds ?: string[];
 }
 
 export interface HealthResponse {

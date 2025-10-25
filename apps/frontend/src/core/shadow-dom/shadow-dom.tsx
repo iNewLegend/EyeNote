@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useRef } from "react";
+import React, { useEffect, useCallback, useState, useRef, useMemo } from "react";
 import { useNotesStore } from "../../features/notes/notes-store";
 import { useNotesController } from "../../features/notes/notes-controller";
 import { NotesComponent } from "../../features/notes/notes-component";
@@ -12,12 +12,19 @@ import { useBackendHealthBridge } from "../../hooks/use-backend-health-bridge";
 import { useAuthStatusEffects } from "../../modules/auth/hooks/use-auth-status-effects";
 import { useNotesLifecycle } from "../../features/notes/use-notes-lifecycle";
 import { useElementSelectionListener } from "../../hooks/use-element-selection-listener";
+import {
+    initializeGroupsStore,
+    useGroupsStore,
+} from "../../modules/groups";
 
 export const ShadowDOM : React.FC = () => {
     const notes = useNotesStore( ( state ) => state.notes );
     const clearNotes = useNotesStore( ( state ) => state.clearNotes );
     const rehydrateNotes = useNotesStore( ( state ) => state.rehydrateNotes );
     const { createNote, loadNotes } = useNotesController();
+    const activeGroupIds = useGroupsStore( ( state ) => state.activeGroupIds );
+    const fetchGroups = useGroupsStore( ( state ) => state.fetchGroups );
+    const resetGroups = useGroupsStore( ( state ) => state.reset );
     const isAuthenticated = useAuthStore( ( state ) => state.isAuthenticated );
     const refreshAuthStatus = useAuthStore( ( state ) => state.refreshStatus );
     const modes = useModeStore( ( state ) => state.modes );
@@ -36,6 +43,43 @@ export const ShadowDOM : React.FC = () => {
     const notesContainerRef = useRef<HTMLDivElement>( null );
 
     const lastKnownUrlRef = useUrlListener( setCurrentUrl );
+    useEffect( () => {
+        initializeGroupsStore().catch( ( error ) => {
+            console.warn( "[EyeNote] Failed to initialize groups store in content script", error );
+        } );
+    }, [] );
+
+    useEffect( () => {
+        if ( !isAuthenticated ) {
+            resetGroups();
+            return;
+        }
+
+        if ( !isConnected ) {
+            return;
+        }
+
+        let cancelled = false;
+
+        initializeGroupsStore()
+            .then( () => {
+                if ( cancelled ) {
+                    return;
+                }
+                return fetchGroups();
+            } )
+            .catch( ( error ) => {
+                if ( cancelled ) {
+                    return;
+                }
+                console.warn( "[EyeNote] Failed to fetch groups in content script", error );
+            } );
+
+        return () => {
+            cancelled = true;
+        };
+    }, [ fetchGroups, isAuthenticated, isConnected, resetGroups ] );
+
     useBackendHealthBridge();
     useAuthStatusEffects( refreshAuthStatus );
     useNotesLifecycle( {
@@ -46,8 +90,14 @@ export const ShadowDOM : React.FC = () => {
         loadNotes,
         notesLength: notes.length,
         rehydrateNotes,
+        activeGroupIds,
     } );
     useElementSelectionListener( setLocalSelectedElement );
+
+    const defaultGroupId = useMemo( () => {
+        const candidate = activeGroupIds.find( ( id ) => id && id.trim().length > 0 );
+        return candidate ?? null;
+    }, [ activeGroupIds ] );
 
     useEffect( () => {
         lastKnownUrlRef.current = currentUrl;
@@ -118,7 +168,7 @@ export const ShadowDOM : React.FC = () => {
             };
 
             try {
-                await createNote( hoveredElement, pointerPosition );
+                await createNote( hoveredElement, pointerPosition, defaultGroupId );
                 setHoveredElement( null );
 
                 // Use our new selectElementForNote helper function
@@ -135,14 +185,15 @@ export const ShadowDOM : React.FC = () => {
             }
         },
         [
-            isActive,
-            hoveredElement,
-            setHoveredElement,
             createNote,
-            selectElement,
-            isProcessingNoteDismissal,
-            isConnected,
+            defaultGroupId,
+            hoveredElement,
+            isActive,
             isAuthenticated,
+            isConnected,
+            isProcessingNoteDismissal,
+            selectElement,
+            setHoveredElement,
         ]
     );
 

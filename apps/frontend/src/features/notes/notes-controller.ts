@@ -38,7 +38,7 @@ export function useNotesController () : NotesController {
                 const url = params.url ?? window.location.href;
                 const notes = await fetchNotesForPage( {
                     url,
-                    groupId: params.groupId,
+                    groupIds: params.groupIds,
                 } );
 
                 setNotes( notes );
