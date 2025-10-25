@@ -1,11 +1,26 @@
 import { create } from "zustand";
-import type { CreateGroupPayload, GroupRecord, UpdateGroupPayload } from "@eye-note/definitions";
+import type { 
+    CreateGroupPayload, 
+    GroupRecord, 
+    UpdateGroupPayload,
+    GroupWithRoles,
+    GroupRoleRecord,
+    CreateGroupRolePayload,
+    UpdateGroupRolePayload,
+    AssignRolePayload,
+    RemoveRolePayload,
+} from "@eye-note/definitions";
 import {
     createGroup as createGroupApi,
     joinGroup as joinGroupApi,
     leaveGroup as leaveGroupApi,
     listGroups,
     updateGroup as updateGroupApi,
+    getGroupWithRoles as getGroupWithRolesApi,
+    createGroupRole as createGroupRoleApi,
+    updateGroupRole as updateGroupRoleApi,
+    assignRole as assignRoleApi,
+    removeRole as removeRoleApi,
 } from "./groups-api";
 import {
     getStoredActiveGroupIds,
@@ -19,6 +34,9 @@ type GroupsState = {
     isLoading : boolean;
     error ?: string;
     isHydrated : boolean;
+    selectedGroupWithRoles ?: GroupWithRoles;
+    rolesLoading : boolean;
+    rolesError ?: string;
 };
 
 type GroupsActions = {
@@ -34,6 +52,12 @@ type GroupsActions = {
     updateGroup : ( groupId : string, payload : UpdateGroupPayload ) => Promise<GroupRecord>;
     setGroupActive : ( groupId : string, isActive : boolean ) => Promise<void>;
     setActiveGroupIds : ( groupIds : string[] ) => Promise<void>;
+    fetchGroupWithRoles : ( groupId : string ) => Promise<void>;
+    createGroupRole : ( groupId : string, payload : CreateGroupRolePayload ) => Promise<GroupRoleRecord>;
+    updateGroupRole : ( groupId : string, roleId : string, payload : UpdateGroupRolePayload ) => Promise<GroupRoleRecord>;
+    assignRole : ( groupId : string, payload : AssignRolePayload ) => Promise<void>;
+    removeRole : ( groupId : string, payload : RemoveRolePayload ) => Promise<void>;
+    clearSelectedGroup : () => void;
     reset : () => void;
 };
 
@@ -45,6 +69,9 @@ const initialState : GroupsState = {
     isLoading: false,
     error: undefined,
     isHydrated: false,
+    selectedGroupWithRoles: undefined,
+    rolesLoading: false,
+    rolesError: undefined,
 };
 
 function normalizeActiveGroupIds ( groupIds : string[], groups : GroupRecord[] ) : string[] {
@@ -202,6 +229,86 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
         } ) );
 
         return updated;
+    },
+    async fetchGroupWithRoles ( groupId ) {
+        set( ( state ) => ( {
+            ...state,
+            rolesLoading: true,
+            rolesError: undefined,
+        } ) );
+
+        try {
+            const groupWithRoles = await getGroupWithRolesApi( groupId );
+            set( ( state ) => ( {
+                ...state,
+                selectedGroupWithRoles: groupWithRoles,
+                rolesLoading: false,
+            } ) );
+        } catch ( error ) {
+            const message = error instanceof Error ? error.message : "Failed to load group roles";
+            set( ( state ) => ( {
+                ...state,
+                rolesLoading: false,
+                rolesError: message,
+            } ) );
+        }
+    },
+    async createGroupRole ( groupId, payload ) {
+        const role = await createGroupRoleApi( groupId, payload );
+
+        set( ( state ) => {
+            if ( !state.selectedGroupWithRoles || state.selectedGroupWithRoles.id !== groupId ) {
+                return state;
+            }
+
+            return {
+                ...state,
+                selectedGroupWithRoles: {
+                    ...state.selectedGroupWithRoles,
+                    roles: [ role, ...state.selectedGroupWithRoles.roles ],
+                },
+            };
+        } );
+
+        return role;
+    },
+    async updateGroupRole ( groupId, roleId, payload ) {
+        const updated = await updateGroupRoleApi( groupId, roleId, payload );
+
+        set( ( state ) => {
+            if ( !state.selectedGroupWithRoles || state.selectedGroupWithRoles.id !== groupId ) {
+                return state;
+            }
+
+            return {
+                ...state,
+                selectedGroupWithRoles: {
+                    ...state.selectedGroupWithRoles,
+                    roles: state.selectedGroupWithRoles.roles.map( ( role ) => 
+                        role.id === updated.id ? updated : role 
+                    ),
+                },
+            };
+        } );
+
+        return updated;
+    },
+    async assignRole ( groupId, payload ) {
+        await assignRoleApi( groupId, payload );
+
+        await get().fetchGroupWithRoles( groupId );
+    },
+    async removeRole ( groupId, payload ) {
+        await removeRoleApi( groupId, payload );
+
+        await get().fetchGroupWithRoles( groupId );
+    },
+    clearSelectedGroup () {
+        set( ( state ) => ( {
+            ...state,
+            selectedGroupWithRoles: undefined,
+            rolesError: undefined,
+        } ) );
     },
     reset () {
         if ( detachActiveGroupListener ) {

@@ -13,6 +13,9 @@ See what others see! EyeNote is a browser extension that lets you create and sha
 - Interactive note markers
 - Per-group marker colors to instantly distinguish collaborators
 - Group-specific visibility (notes are only visible to group members)
+- **Discord-like role system** with granular permissions and hierarchy
+- **Custom roles** with specific permissions for different team members
+- **Role-based access control** for group management and content moderation
 
 ## How It Works
 
@@ -22,6 +25,8 @@ See what others see! EyeNote is a browser extension that lets you create and sha
 4. **Group Visibility**: Notes are only visible to members of the group they belong to
 5. **Real-time Chat**: Open any note to chat with group members
 6. **Automatic Discovery**: As you browse, see notes from your group members automatically
+7. **Role Management**: Group owners can create custom roles with specific permissions
+8. **Permission Control**: Roles determine what actions members can perform (create notes, moderate content, manage roles, etc.)
 
 ### IDE Integrations
 
@@ -74,6 +79,47 @@ EyeNote will integrate with MCP to enable AI-powered content analysis and automa
 
 The MCP integration will work seamlessly with existing group functionality, allowing AI-generated notes to be shared with appropriate groups and maintaining the collaborative nature of the platform.
 
+### Role System & Permissions
+
+EyeNote features a comprehensive Discord-like role system that gives group owners granular control over member permissions:
+
+#### Default Roles
+
+Every group automatically includes four default roles with predefined permissions:
+
+- **Owner** (Red) - Full control over the group, cannot be removed
+- **Admin** (Orange) - Manage group settings, roles, and members
+- **Moderator** (Blue) - Moderate content and help manage the group
+- **Member** (Purple) - Basic group participation and note creation
+
+#### Available Permissions
+
+- **Manage Group** - Update group settings, name, description, and color
+- **Manage Roles** - Create, edit, and assign roles to members
+- **Manage Members** - Kick members and manage group membership
+- **Moderate Content** - Delete inappropriate notes and moderate discussions
+- **Create Notes** - Create new notes on web pages
+- **Edit Notes** - Modify existing notes
+- **Delete Notes** - Remove notes from web pages
+- **View Notes** - See notes created by other group members
+
+#### Custom Roles
+
+Group owners can create custom roles with specific permission combinations:
+
+- **Reviewer** - Can view and edit notes but not delete them
+- **Editor** - Can create and edit notes but not moderate content
+- **Viewer** - Can only view notes, perfect for stakeholders
+- **Content Moderator** - Can moderate content but not manage roles
+
+#### Role Hierarchy
+
+Roles are organized by position (higher numbers = more permissions):
+- Higher roles can manage lower roles automatically
+- Owners can manage all roles
+- Admins can manage Moderator and Member roles
+- Role hierarchy prevents privilege escalation
+
 ## Getting Started
 
 1. Clone this repository
@@ -99,6 +145,8 @@ The MCP integration will work seamlessly with existing group functionality, allo
 4. Hold SHIFT to activate Inspector Mode, then click on any element to create a note
 5. Share and collaborate with your group members
 6. Chat with group members in any note
+7. **For Group Owners**: Click "Manage Roles" to create custom roles and assign permissions
+8. **Role Management**: Create roles like "Reviewer", "Editor", "Viewer" with specific permissions
 
 ## Development
 

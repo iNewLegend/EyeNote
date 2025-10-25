@@ -6,9 +6,17 @@ import type {
     GroupRecord,
     JoinGroupPayload,
     ListGroupsResponse,
+    GroupWithRoles,
+    CreateGroupRolePayload,
+    UpdateGroupRolePayload,
+    AssignRolePayload,
+    RemoveRolePayload,
 } from "@eye-note/definitions";
 import type { FastifyInstance } from "fastify";
 import { GroupModel, type GroupDocument } from "../models/group";
+import { GroupRoleModel, type GroupRoleDocument } from "../models/group-role";
+import { GroupMemberRoleModel, type GroupMemberRoleDocument } from "../models/group-member-role";
+import { RoleService } from "../services/role-service";
 
 const DEFAULT_GROUP_COLOR = "#6366f1";
 
@@ -96,6 +104,30 @@ function serializeGroup ( doc : GroupDocument ) : GroupRecord {
     };
 }
 
+function serializeGroupRole ( doc : GroupRoleDocument ) {
+    return {
+        id: doc._id.toHexString(),
+        name: doc.name,
+        description: doc.description ?? undefined,
+        color: doc.color,
+        permissions: doc.permissions,
+        position: doc.position,
+        groupId: doc.groupId,
+        isDefault: doc.isDefault,
+        createdAt: doc.createdAt.toISOString(),
+        updatedAt: doc.updatedAt.toISOString(),
+    };
+}
+
+function serializeGroupMemberRole ( doc : GroupMemberRoleDocument ) {
+    return {
+        userId: doc.userId,
+        roleId: doc.roleId,
+        assignedAt: doc.assignedAt.toISOString(),
+        assignedBy: doc.assignedBy,
+    };
+}
+
 export async function groupsRoutes ( fastify : FastifyInstance ) {
     fastify.route( {
         method: "GET",
@@ -148,6 +180,8 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
                 memberIds: [ request.user!.id ],
                 color,
             } );
+
+            await RoleService.createDefaultRoles( created._id.toHexString(), request.user!.id );
 
             reply.code( 201 ).send( {
                 group: serializeGroup( created ),
@@ -312,6 +346,340 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
             reply.code( 200 ).send( {
                 group: serializeGroup( group ),
             } );
+        },
+    } );
+
+    fastify.route( {
+        method: "GET",
+        url: "/api/groups/:groupId/roles",
+        preHandler: fastify.authenticate,
+        handler: async ( request, reply ) => {
+            const paramsParseResult = leaveGroupParamsSchema.safeParse( request.params );
+
+            if ( !paramsParseResult.success ) {
+                reply.code( 400 ).send( { error: "invalid_group_id" } );
+                return;
+            }
+
+            const { groupId } = paramsParseResult.data;
+
+            if ( !Types.ObjectId.isValid( groupId ) ) {
+                reply.code( 400 ).send( { error: "invalid_group_id" } );
+                return;
+            }
+
+            const group = await GroupModel.findById( groupId ).exec();
+
+            if ( !group ) {
+                reply.code( 404 ).send( { error: "group_not_found" } );
+                return;
+            }
+
+            if ( !group.memberIds.includes( request.user!.id ) ) {
+                reply.code( 403 ).send( { error: "not_group_member" } );
+                return;
+            }
+
+            const roles = await RoleService.getGroupRoles( groupId );
+            const memberRoles = await RoleService.getGroupMemberRoles( groupId );
+
+            const groupWithRoles : GroupWithRoles = {
+                ...serializeGroup( group ),
+                roles: roles.map( serializeGroupRole ),
+                memberRoles: memberRoles.map( serializeGroupMemberRole ),
+            };
+
+            reply.code( 200 ).send( { group: groupWithRoles } );
+        },
+    } );
+
+    fastify.route( {
+        method: "POST",
+        url: "/api/groups/:groupId/roles",
+        preHandler: fastify.authenticate,
+        handler: async ( request, reply ) => {
+            const paramsParseResult = leaveGroupParamsSchema.safeParse( request.params );
+
+            if ( !paramsParseResult.success ) {
+                reply.code( 400 ).send( { error: "invalid_group_id" } );
+                return;
+            }
+
+            const { groupId } = paramsParseResult.data;
+
+            if ( !Types.ObjectId.isValid( groupId ) ) {
+                reply.code( 400 ).send( { error: "invalid_group_id" } );
+                return;
+            }
+
+            const canManageRoles = await RoleService.hasPermission(
+                groupId,
+                request.user!.id,
+                "manage_roles" as any
+            );
+
+            if ( !canManageRoles ) {
+                reply.code( 403 ).send( { error: "insufficient_permissions" } );
+                return;
+            }
+
+            const createRoleSchema = z.object( {
+                name: z.string().min( 1 ).max( 50 ),
+                description: z.string().max( 200 ).optional(),
+                color: colorSchema.optional(),
+                permissions: z.array( z.string() ).min( 1 ),
+            } );
+
+            const bodyParseResult = createRoleSchema.safeParse( request.body );
+
+            if ( !bodyParseResult.success ) {
+                reply.code( 400 ).send( {
+                    error: "invalid_body",
+                    details: bodyParseResult.error.flatten(),
+                } );
+                return;
+            }
+
+            const payload = bodyParseResult.data as CreateGroupRolePayload;
+
+            const existingRoles = await RoleService.getGroupRoles( groupId );
+            const nextPosition = Math.max( ...existingRoles.map( r => r.position ), 0 ) + 1;
+
+            const created = await GroupRoleModel.create( {
+                name: payload.name,
+                description: payload.description ?? null,
+                color: normalizeColor( payload.color ),
+                permissions: payload.permissions as any[],
+                position: nextPosition,
+                groupId,
+                isDefault: false,
+            } );
+
+            reply.code( 201 ).send( {
+                role: serializeGroupRole( created ),
+            } );
+        },
+    } );
+
+    fastify.route( {
+        method: "PATCH",
+        url: "/api/groups/:groupId/roles/:roleId",
+        preHandler: fastify.authenticate,
+        handler: async ( request, reply ) => {
+            const paramsSchema = z.object( {
+                groupId: z.string().min( 1 ),
+                roleId: z.string().min( 1 ),
+            } );
+
+            const paramsParseResult = paramsSchema.safeParse( request.params );
+
+            if ( !paramsParseResult.success ) {
+                reply.code( 400 ).send( { error: "invalid_params" } );
+                return;
+            }
+
+            const { groupId, roleId } = paramsParseResult.data;
+
+            if ( !Types.ObjectId.isValid( groupId ) || !Types.ObjectId.isValid( roleId ) ) {
+                reply.code( 400 ).send( { error: "invalid_id" } );
+                return;
+            }
+
+            const canManageRole = await RoleService.canManageRole(
+                groupId,
+                request.user!.id,
+                roleId
+            );
+
+            if ( !canManageRole ) {
+                reply.code( 403 ).send( { error: "insufficient_permissions" } );
+                return;
+            }
+
+            const updateRoleSchema = z.object( {
+                name: z.string().min( 1 ).max( 50 ).optional(),
+                description: z.string().max( 200 ).optional(),
+                color: colorSchema.optional(),
+                permissions: z.array( z.string() ).min( 1 ).optional(),
+            } );
+
+            const bodyParseResult = updateRoleSchema.safeParse( request.body );
+
+            if ( !bodyParseResult.success ) {
+                reply.code( 400 ).send( {
+                    error: "invalid_body",
+                    details: bodyParseResult.error.flatten(),
+                } );
+                return;
+            }
+
+            const updates = bodyParseResult.data as UpdateGroupRolePayload;
+
+            const role = await GroupRoleModel.findOne( {
+                _id: roleId,
+                groupId,
+            } ).exec();
+
+            if ( !role ) {
+                reply.code( 404 ).send( { error: "role_not_found" } );
+                return;
+            }
+
+            if ( updates.name !== undefined ) {
+                role.name = updates.name;
+            }
+            if ( updates.description !== undefined ) {
+                role.description = updates.description ?? null;
+            }
+            if ( updates.color !== undefined ) {
+                role.color = normalizeColor( updates.color );
+            }
+            if ( updates.permissions !== undefined ) {
+                role.permissions = updates.permissions as any[];
+            }
+
+            await role.save();
+
+            reply.code( 200 ).send( {
+                role: serializeGroupRole( role ),
+            } );
+        },
+    } );
+
+    fastify.route( {
+        method: "POST",
+        url: "/api/groups/:groupId/roles/assign",
+        preHandler: fastify.authenticate,
+        handler: async ( request, reply ) => {
+            const paramsParseResult = leaveGroupParamsSchema.safeParse( request.params );
+
+            if ( !paramsParseResult.success ) {
+                reply.code( 400 ).send( { error: "invalid_group_id" } );
+                return;
+            }
+
+            const { groupId } = paramsParseResult.data;
+
+            if ( !Types.ObjectId.isValid( groupId ) ) {
+                reply.code( 400 ).send( { error: "invalid_group_id" } );
+                return;
+            }
+
+            const canManageRoles = await RoleService.hasPermission(
+                groupId,
+                request.user!.id,
+                "manage_roles" as any
+            );
+
+            if ( !canManageRoles ) {
+                reply.code( 403 ).send( { error: "insufficient_permissions" } );
+                return;
+            }
+
+            const assignRoleSchema = z.object( {
+                userId: z.string().min( 1 ),
+                roleId: z.string().min( 1 ),
+            } );
+
+            const bodyParseResult = assignRoleSchema.safeParse( request.body );
+
+            if ( !bodyParseResult.success ) {
+                reply.code( 400 ).send( {
+                    error: "invalid_body",
+                    details: bodyParseResult.error.flatten(),
+                } );
+                return;
+            }
+
+            const payload = bodyParseResult.data as AssignRolePayload;
+
+            const canManageTargetRole = await RoleService.canManageRole(
+                groupId,
+                request.user!.id,
+                payload.roleId
+            );
+
+            if ( !canManageTargetRole ) {
+                reply.code( 403 ).send( { error: "insufficient_permissions" } );
+                return;
+            }
+
+            await RoleService.assignRole(
+                groupId,
+                payload.userId,
+                payload.roleId,
+                request.user!.id
+            );
+
+            reply.code( 200 ).send( { success: true } );
+        },
+    } );
+
+    fastify.route( {
+        method: "POST",
+        url: "/api/groups/:groupId/roles/remove",
+        preHandler: fastify.authenticate,
+        handler: async ( request, reply ) => {
+            const paramsParseResult = leaveGroupParamsSchema.safeParse( request.params );
+
+            if ( !paramsParseResult.success ) {
+                reply.code( 400 ).send( { error: "invalid_group_id" } );
+                return;
+            }
+
+            const { groupId } = paramsParseResult.data;
+
+            if ( !Types.ObjectId.isValid( groupId ) ) {
+                reply.code( 400 ).send( { error: "invalid_group_id" } );
+                return;
+            }
+
+            const canManageRoles = await RoleService.hasPermission(
+                groupId,
+                request.user!.id,
+                "manage_roles" as any
+            );
+
+            if ( !canManageRoles ) {
+                reply.code( 403 ).send( { error: "insufficient_permissions" } );
+                return;
+            }
+
+            const removeRoleSchema = z.object( {
+                userId: z.string().min( 1 ),
+                roleId: z.string().min( 1 ),
+            } );
+
+            const bodyParseResult = removeRoleSchema.safeParse( request.body );
+
+            if ( !bodyParseResult.success ) {
+                reply.code( 400 ).send( {
+                    error: "invalid_body",
+                    details: bodyParseResult.error.flatten(),
+                } );
+                return;
+            }
+
+            const payload = bodyParseResult.data as RemoveRolePayload;
+
+            const canManageTargetRole = await RoleService.canManageRole(
+                groupId,
+                request.user!.id,
+                payload.roleId
+            );
+
+            if ( !canManageTargetRole ) {
+                reply.code( 403 ).send( { error: "insufficient_permissions" } );
+                return;
+            }
+
+            await RoleService.removeRole(
+                groupId,
+                payload.userId,
+                payload.roleId
+            );
+
+            reply.code( 200 ).send( { success: true } );
         },
     } );
 }

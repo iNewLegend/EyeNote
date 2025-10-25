@@ -6,6 +6,7 @@ import { Switch } from "../../../components/ui/switch";
 import { cn } from "../../../lib/utils";
 import { useAuthStore } from "../../../modules/auth";
 import { useGroupsStore } from "../groups-store";
+import { RoleManagementPanel } from "../../../components/role-management";
 import type { UpdateGroupPayload } from "@eye-note/definitions";
 
 type GroupManagerPanelProps = {
@@ -32,6 +33,7 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
     const [ isJoiningGroup, setIsJoiningGroup ] = useState( false );
     const [ leavingGroupId, setLeavingGroupId ] = useState<string | null>( null );
     const [ updatingGroupId, setUpdatingGroupId ] = useState<string | null>( null );
+    const [ managingRolesForGroupId, setManagingRolesForGroupId ] = useState<string | null>( null );
 
     const sortedGroups = useMemo(
         () => groups.slice().sort( ( a, b ) => a.name.localeCompare( b.name ) ),
@@ -190,6 +192,15 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
         }
     }, [ updateGroup ] );
 
+    if ( managingRolesForGroupId ) {
+        return (
+            <RoleManagementPanel
+                groupId={managingRolesForGroupId}
+                onClose={() => setManagingRolesForGroupId( null )}
+            />
+        );
+    }
+
     return (
         <div className={cn( "space-y-5", className )}>
             <div className="space-y-3">
@@ -312,6 +323,15 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
                                         />
                                     </label>
                                     {updatingGroupId === group.id && <span>Saving…</span>}
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setManagingRolesForGroupId( group.id )}
+                                        className="ml-auto"
+                                    >
+                                        Manage Roles
+                                    </Button>
                                 </div>
                             )}
                             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">

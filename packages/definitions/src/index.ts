@@ -104,3 +104,56 @@ export interface HealthResponse {
     status : string;
     timestamp : string;
 }
+
+export enum GroupPermission {
+    MANAGE_GROUP = "manage_group",
+    MANAGE_ROLES = "manage_roles",
+    MANAGE_MEMBERS = "manage_members",
+    MODERATE_CONTENT = "moderate_content",
+    CREATE_NOTES = "create_notes",
+    EDIT_NOTES = "edit_notes",
+    DELETE_NOTES = "delete_notes",
+    VIEW_NOTES = "view_notes",
+}
+
+export interface GroupRoleBase {
+    name : string;
+    description ?: string;
+    color ?: string;
+    permissions : GroupPermission[];
+    position : number;
+}
+
+export interface GroupRoleRecord extends GroupRoleBase {
+    id : string;
+    groupId : string;
+    isDefault : boolean;
+    createdAt : string;
+    updatedAt : string;
+}
+
+export type CreateGroupRolePayload = Omit<GroupRoleBase, "position">;
+
+export type UpdateGroupRolePayload = Partial<Omit<GroupRoleBase, "position">>;
+
+export interface GroupMemberRole {
+    userId : string;
+    roleId : string;
+    assignedAt : string;
+    assignedBy : string;
+}
+
+export interface GroupWithRoles extends GroupRecord {
+    roles : GroupRoleRecord[];
+    memberRoles : GroupMemberRole[];
+}
+
+export interface AssignRolePayload {
+    userId : string;
+    roleId : string;
+}
+
+export interface RemoveRolePayload {
+    userId : string;
+    roleId : string;
+}

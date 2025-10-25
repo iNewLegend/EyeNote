@@ -1,5 +1,16 @@
 # 2025-10-25
 
+## Discord-like role system for groups
+- Implemented comprehensive role-based permission system with hierarchy (Owner > Admin > Moderator > Member) and granular permissions (manage group, manage roles, manage members, moderate content, create/edit/delete/view notes).
+- Added `GroupRole` and `GroupMemberRole` MongoDB models with position-based hierarchy, custom colors, and permission arrays.
+- Created `RoleService` with permission checking, role assignment/removal, and hierarchy enforcement utilities.
+- Extended `/api/groups` routes with role management endpoints: create/update/assign/remove roles, get group with roles data.
+- Built role management UI components: `RoleManagementPanel`, `RoleList`, `RoleForm` with permission selection and role hierarchy display.
+- Integrated role management into existing group manager with "Manage Roles" button for group owners.
+- Added permission checking utilities and role-based access control throughout the application.
+- Automatically creates default roles (Owner, Admin, Moderator, Member) when new groups are created.
+- Regenerated frontend/backend/definitions type checks with `pnpm --filter @eye-note/{definitions,backend,frontend} exec tsc --noEmit`.
+
 ## Group collaboration foundation
 - Added shared group contracts, a Mongo-backed `GroupModel`, and `/api/groups` list/create/join/leave routes that validate membership before assigning notes; note queries now accept multi-group filters.
 - Shipped a popup group manager via a shared Zustand store that hydrates from Chrome storage, lets users create or join groups, toggle active sets, copy invite codes, and persists selections across contexts.

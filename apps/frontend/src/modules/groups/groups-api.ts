@@ -4,6 +4,12 @@ import type {
     JoinGroupPayload,
     ListGroupsResponse,
     UpdateGroupPayload,
+    GroupWithRoles,
+    GroupRoleRecord,
+    CreateGroupRolePayload,
+    UpdateGroupRolePayload,
+    AssignRolePayload,
+    RemoveRolePayload,
 } from "@eye-note/definitions";
 import { apiRequest } from "../../lib/api-client";
 
@@ -57,4 +63,41 @@ export async function updateGroup ( groupId : string, payload : UpdateGroupPaylo
     } );
 
     return response.group;
+}
+
+export async function getGroupWithRoles ( groupId : string ) : Promise<GroupWithRoles> {
+    const response = await apiRequest<{ group : GroupWithRoles }>( `/api/groups/${ groupId }/roles` );
+    return response.group;
+}
+
+export async function createGroupRole ( groupId : string, payload : CreateGroupRolePayload ) : Promise<GroupRoleRecord> {
+    const response = await apiRequest<{ role : GroupRoleRecord }>( `/api/groups/${ groupId }/roles`, {
+        method: "POST",
+        bodyJson: payload,
+    } );
+
+    return response.role;
+}
+
+export async function updateGroupRole ( groupId : string, roleId : string, payload : UpdateGroupRolePayload ) : Promise<GroupRoleRecord> {
+    const response = await apiRequest<{ role : GroupRoleRecord }>( `/api/groups/${ groupId }/roles/${ roleId }`, {
+        method: "PATCH",
+        bodyJson: payload,
+    } );
+
+    return response.role;
+}
+
+export async function assignRole ( groupId : string, payload : AssignRolePayload ) : Promise<void> {
+    await apiRequest<{ success : boolean }>( `/api/groups/${ groupId }/roles/assign`, {
+        method: "POST",
+        bodyJson: payload,
+    } );
+}
+
+export async function removeRole ( groupId : string, payload : RemoveRolePayload ) : Promise<void> {
+    await apiRequest<{ success : boolean }>( `/api/groups/${ groupId }/roles/remove`, {
+        method: "POST",
+        bodyJson: payload,
+    } );
 }
