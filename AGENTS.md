@@ -34,3 +34,16 @@
 
 ## Changelog & Task Log
 - Maintained in `CHANGELOG.md`. Read existing entries there and append new dated bullets in that file after every substantial task; this replaces `gpt-codex-history.txt`.
+
+## Cursor Rules
+- Always chase the root cause instead of patching with hacks or workarounds.
+- Keep code modular and reusable; favor implementation-agnostic naming.
+- Always write modular code that respects the Single Responsibility Principle.
+- Never create commits without explicit user permission.
+- Prefer React abstractions over direct DOM manipulation.
+- Use shadcn UI primitives for new interface components.
+- Favor Tailwind for styling whenever practical.
+- Make changes in small, testable steps before moving on.
+- Remember the workspace uses `pnpm` with a monorepo layout.
+- Name new TypeScript files with kebab-case filenames.
+- Reach for Zustand when a shared client-side store is warranted.

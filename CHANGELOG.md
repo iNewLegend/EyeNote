@@ -1,5 +1,19 @@
 # 2025-10-24
 
+## Notes store modularization
+- Shifted all API interaction out of the notes Zustand store into a controller/service layer to keep state updates pure.
+- Renamed the API helper module to `notes-api` to better reflect its responsibility.
+- Migrated note CRUD wrappers from `lib/api-client` into `notes-api` so the shared client stays transport-focused.
+- Updated backend config loading to prefer the workspace root `.env`, falling back to local defaults when absent.
+- Centralized the Google OAuth client ID: Vite, background auth, and the extension manifest now draw from the root `.env`, with the build script injecting the value during extension prep.
+- Extracted Chrome storage helpers into `lib/auth-storage` so the API client stays transport-focused.
+- Gathered auth code under `src/modules/auth` (background handlers, store, dialog, storage) and updated consumers to import from the module entrypoint.
+- Moved backend health polling into the background service worker and broadcast status updates to the page overlay instead of running timers inside hot-reloaded React components.
+- Synced the extension popup with background health updates so users see connection status even after HMR reloads.
+- Extracted shared hooks (`useBackendHealthBridge`, `useAuthStatusEffects`, `useNotesLifecycle`, etc.) so Shadow DOM and the popup share the same lifecycle logic.
+- Simplified the popup UI: removed connection labels and show a dedicated error state when the backend is unavailable.
+- Introduced a `useNotesController` hook for React consumers, updated store/service wiring, and re-ran `pnpm --filter @eye-note/frontend exec tsc --noEmit`.
+
 ## Inspector focus & per-URL notes
 - Dropped inspector mode once an element is selected so the add-note dialog retains focus.
 - Introduced URL change detection (history patch + polling) to reload notes per page.

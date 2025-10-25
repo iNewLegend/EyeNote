@@ -21,8 +21,8 @@
     --accent-foreground: 210 20% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 20% 98%;
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
+    --border: 267.3 41.8% 15.5%;
+    --input: 267.3 41.8% 15.5%;
     --ring: 263.4 70% 50.4%;
     --radius: 0.5rem;
 
@@ -43,20 +43,20 @@
     --primary-color: hsl(var(--violet-500));
     --primary-light: hsl(var(--violet-500) / 0.1);
     --primary-hover: hsl(var(--violet-600));
-    
+
     /* Background colors */
     --background-color: hsl(var(--violet-900));
     --background-lighter: hsl(var(--violet-800));
     --background-darker: hsl(var(--violet-950));
-    
+
     /* Border colors */
     --border-color: hsl(var(--violet-700));
     --border-light: hsl(var(--violet-600) / 0.3);
-    
+
     /* Text colors */
     --text-color: hsl(0 0% 100%);
     --text-muted: hsl(264 15% 65%);
-    
+
     /* Shadow colors */
     --shadow-color: hsl(var(--violet-950) / 0.5);
     --shadow-light: hsl(var(--violet-900) / 0.2);
@@ -65,7 +65,7 @@
     --input-background: hsl(var(--violet-800));
     --input-border: hsl(var(--violet-700));
     --input-focus-border: hsl(var(--violet-500));
-    
+
     /* Button colors */
     --button-background: hsl(var(--violet-500));
     --button-hover: hsl(var(--violet-600));
@@ -97,25 +97,25 @@
     --primary-color: hsl(var(--violet-600));
     --primary-light: hsl(var(--violet-100));
     --primary-hover: hsl(var(--violet-700));
-    
+
     --background-color: hsl(0 0% 100%);
     --background-lighter: hsl(var(--violet-50));
     --background-darker: hsl(var(--violet-100));
-    
+
     --border-color: hsl(var(--violet-200));
     --border-light: hsl(var(--violet-100));
-    
+
     --text-color: hsl(var(--violet-900));
     --text-muted: hsl(var(--violet-600));
-    
+
     --shadow-color: hsl(var(--violet-950) / 0.1);
     --shadow-light: hsl(var(--violet-900) / 0.05);
 
     --input-background: hsl(0 0% 100%);
     --input-border: hsl(var(--violet-200));
     --input-focus-border: hsl(var(--violet-500));
-    
+
     --button-background: hsl(var(--violet-600));
     --button-hover: hsl(var(--violet-700));
     --button-active: hsl(var(--violet-800));
-} 
+}

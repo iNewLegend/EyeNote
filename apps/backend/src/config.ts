@@ -1,7 +1,15 @@
 import { config as loadEnv } from "dotenv";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { z } from "zod";
 
-loadEnv();
+const rootEnvPath = path.resolve( __dirname, "../../..", ".env" );
+
+if ( existsSync( rootEnvPath ) ) {
+    loadEnv( { path: rootEnvPath } );
+} else {
+    loadEnv();
+}
 
 const envSchema = z.object( {
     NODE_ENV: z.string().optional(),

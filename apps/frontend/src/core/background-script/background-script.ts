@@ -1,3 +1,6 @@
+import { getAuthStatus, signInWithGoogle, signOutUser } from "../../modules/auth/background";
+import { pingHealth } from "../../lib/api-client";
+
 // Listen for extension installation or update
 chrome.runtime.onInstalled.addListener( ( details ) => {
     console.log( { details } );
@@ -19,6 +22,11 @@ chrome.runtime.onInstalled.addListener( ( details ) => {
     }
 
     startBuildInfoCheck();
+    startHealthCheck();
+} );
+
+chrome.runtime.onStartup?.addListener( () => {
+    startHealthCheck();
 } );
 
 // Function to check build info
@@ -95,6 +103,10 @@ async function checkBuildInfo () {
 
 // Keep track of the interval ID
 let buildInfoCheckInterval : NodeJS.Timeout | null = null;
+let currentHealthStatus : boolean | null = null;
+let healthCheckPromise : Promise<void> | null = null;
+let healthCheckInterval : ReturnType<typeof setInterval> | null = null;
+const healthPorts = new Set<chrome.runtime.Port>();
 
 // Function to start build info check interval
 function startBuildInfoCheck () {
@@ -109,109 +121,133 @@ function startBuildInfoCheck () {
     buildInfoCheckInterval = setInterval( checkBuildInfo, 1000 );
 }
 
-// Listen for messages from content script
-chrome.runtime.onMessage.addListener( ( message, _sender, sendResponse ) => {
-    console.log( "Message received:", message );
-
-    // Handle different message types
-    switch ( message.type ) {
-        case "SIGN_IN":
-            // Handle sign in
-            sendResponse( { success: true } );
-            break;
-        case "SIGN_OUT":
-            // Handle sign out
-            sendResponse( { success: true } );
-            break;
-        default:
-            console.warn( "Unknown message type:", message.type );
-            sendResponse( { success: false, error: "Unknown message type" } );
+async function checkBackendHealth ( force = false ) {
+    if ( healthCheckPromise && !force ) {
+        return healthCheckPromise;
     }
 
-    // Return true to indicate we will send a response asynchronously
+    healthCheckPromise = ( async () => {
+        try {
+            const healthy = await pingHealth();
+            updateHealthStatus( healthy );
+        } catch {
+            updateHealthStatus( false );
+        } finally {
+            healthCheckPromise = null;
+        }
+    } )();
+
+    await healthCheckPromise;
+}
+
+function updateHealthStatus ( healthy : boolean ) {
+    if ( currentHealthStatus === healthy ) {
+        return;
+    }
+
+    currentHealthStatus = healthy;
+
+    console.log( "Backend health status updated:", healthy );
+
+    chrome.runtime.sendMessage( {
+        type: "BACKEND_HEALTH_UPDATE",
+        healthy,
+    } ).catch( ( e ) => {
+        console.warn( "Failed to send backend health update", e );
+    } );
+
+    healthPorts.forEach( ( port ) => {
+        try {
+            port.postMessage( {
+                type: "BACKEND_HEALTH_UPDATE",
+                healthy,
+            } );
+        } catch ( error ) {
+            console.warn( "Failed to post health update to port", error );
+        }
+    } );
+}
+
+const DEFAULT_HEALTH_CHECK_INTERVAL = 1000;
+
+function startHealthCheck () {
+    if ( healthCheckInterval !== null ) {
+        clearInterval( healthCheckInterval );
+    }
+
+    void checkBackendHealth( true );
+    healthCheckInterval = setInterval( () => {
+        void checkBackendHealth();
+    }, DEFAULT_HEALTH_CHECK_INTERVAL );
+}
+
+chrome.runtime.onMessage.addListener( ( message, _sender, sendResponse ) => {
+    const handler = ( async () => {
+        switch ( message.type ) {
+            case "SIGN_IN":
+                return signInWithGoogle();
+            case "SIGN_OUT":
+                return signOutUser();
+            case "GET_AUTH_STATUS":
+                return getAuthStatus();
+            case "UPDATE_BADGE": {
+                const count = Number( message.count ?? 0 );
+                if ( count > 0 ) {
+                    chrome.action.setBadgeText( { text: count.toString() } );
+                    chrome.action.setBadgeBackgroundColor( { color: "#646cff" } );
+                } else {
+                    chrome.action.setBadgeText( { text: "" } );
+                }
+                return { success: true };
+            }
+            case "GET_BACKEND_STATUS": {
+                if ( currentHealthStatus === null ) {
+                    await checkBackendHealth( true );
+                }
+                return {
+                    healthy: currentHealthStatus ?? false,
+                };
+            }
+            default:
+                console.warn( "Unknown message type:", message.type );
+                return { success: false, error: "Unknown message type" };
+        }
+    } )();
+
+    handler.then( sendResponse ).catch( ( error ) => {
+        console.error( "Unhandled error in message handler", error );
+        sendResponse( {
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+        } );
+    } );
+
     return true;
 } );
 
-// Handle Google authentication
-async function handleGoogleAuth ( token : string ) {
-    try {
-        // Fetch user info using the access token
-        const response = await fetch( "https://www.googleapis.com/oauth2/v3/userinfo", {
-            headers: {
-                Authorization: `Bearer ${ token }`,
-            },
+startHealthCheck();
+
+chrome.runtime.onConnect.addListener( ( port ) => {
+    if ( port.name !== "eye-note-health" ) {
+        return;
+    }
+
+    healthPorts.add( port );
+
+    if ( currentHealthStatus !== null ) {
+        port.postMessage( {
+            type: "BACKEND_HEALTH_UPDATE",
+            healthy: currentHealthStatus,
         } );
+    }
 
-        if ( !response.ok ) {
-            console.error( "Failed to fetch user info:", await response.text() );
-            throw new Error( `Failed to fetch user info: ${ response.statusText }` );
+    port.onMessage.addListener( ( message ) => {
+        if ( message?.type === "PING_BACKEND_HEALTH" ) {
+            void checkBackendHealth( true );
         }
+    } );
 
-        const data = await response.json();
-        console.log( "User info received:", data );
-
-        if ( !data.sub || !data.email || !data.name ) {
-            throw new Error( "Invalid user info received" );
-        }
-
-        // Store the auth token and user info
-        await chrome.storage.local.set( {
-            authToken: token,
-            user: {
-                id: data.sub,
-                email: data.email,
-                name: data.name,
-                picture: data.picture || null,
-            },
-        } );
-
-        return { success: true };
-    } catch ( error ) {
-        console.error( "Google auth error:", error );
-        return {
-            success: false,
-            error: error instanceof Error ? error.message : "Authentication failed",
-        };
-    }
-}
-
-// Listen for messages from content script and popup
-chrome.runtime.onMessage.addListener( ( message, _sender, sendResponse ) => {
-    if ( message.type === "GET_AUTH_STATUS" ) {
-        chrome.storage.local.get( [ "authToken", "user" ], ( result ) => {
-            sendResponse( {
-                isAuthenticated: !!result.authToken,
-                user: result.user,
-            } );
-        } );
-        return true; // Will respond asynchronously
-    }
-
-    if ( message.type === "GOOGLE_AUTH" ) {
-        if ( !message.token ) {
-            sendResponse( { success: false, error: "No token provided" } );
-            return true;
-        }
-        handleGoogleAuth( message.token ).then( sendResponse );
-        return true; // Will respond asynchronously
-    }
-
-    if ( message.type === "SIGN_OUT" ) {
-        chrome.identity.clearAllCachedAuthTokens().then( () => {
-            chrome.storage.local.remove( [ "authToken", "user" ], () => {
-                sendResponse( { success: true } );
-            } );
-        } );
-        return true; // Will respond asynchronously
-    }
-
-    if ( message.type === "UPDATE_BADGE" ) {
-        const count = message.count;
-        if ( count > 0 ) {
-            chrome.action.setBadgeText( { text: count.toString() } );
-            chrome.action.setBadgeBackgroundColor( { color: "#646cff" } );
-        } else {
-            chrome.action.setBadgeText( { text: "" } );
-        }
-    }
+    port.onDisconnect.addListener( () => {
+        healthPorts.delete( port );
+    } );
 } );

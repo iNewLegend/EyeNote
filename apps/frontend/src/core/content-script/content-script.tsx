@@ -1,11 +1,15 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+
+import { getPageAnalyzer } from "../../lib/page-analyzer";
+
 import { ShadowDOM } from "../shadow-dom/shadow-dom";
 import { UserlandDOM } from "../userland-dom/userland-dom";
+import { useModeStore, AppMode } from "../../stores/use-mode-store";
+
 import shadowDOMStyles from "../shadow-dom/shadow-dom.css?inline";
 import userlandDOMStyles from "../userland-dom/userland-dom.css?inline";
 
-// Constants for DOM IDs
 const DOM_IDS = {
     SHADOW_CONTAINER: "eye-note-shadow-dom",
     SHADOW_CONTENT: "eye-note-shadow-content",
@@ -15,6 +19,94 @@ const DOM_IDS = {
     USERLAND_STYLES: "eye-note-userland-dom-styles",
     ROOT_CONTAINER: "eye-note-root-container",
 } as const;
+
+const connectionBridge = {
+    port: null as chrome.runtime.Port | null,
+    reconnectTimer: null as ReturnType<typeof setTimeout> | null,
+    heartbeatInterval: null as ReturnType<typeof setInterval> | null,
+    scheduleReconnect () {
+        if ( this.reconnectTimer !== null ) {
+            return;
+        }
+
+        this.reconnectTimer = setTimeout( () => {
+            this.reconnectTimer = null;
+            initializeConnectionBridge();
+        }, 1000 );
+    },
+    disconnect ( shouldReconnect = false ) {
+        if ( this.reconnectTimer !== null ) {
+            clearTimeout( this.reconnectTimer );
+            this.reconnectTimer = null;
+        }
+
+        if ( this.heartbeatInterval !== null ) {
+            clearInterval( this.heartbeatInterval );
+            this.heartbeatInterval = null;
+        }
+
+        if ( this.port ) {
+            try {
+                this.port.disconnect();
+            } catch {
+                // Ignore
+            }
+            this.port = null;
+        }
+
+        if ( shouldReconnect ) {
+            this.scheduleReconnect();
+        }
+    },
+};
+
+function applyBackendStatus ( healthy : boolean ) {
+    const store = useModeStore.getState();
+    const isConnected = store.isMode( AppMode.CONNECTED );
+
+    if ( healthy && !isConnected ) {
+        store.addMode( AppMode.CONNECTED );
+    } else if ( !healthy && isConnected ) {
+        store.removeMode( AppMode.CONNECTED );
+    }
+}
+
+function initializeConnectionBridge () {
+    if ( typeof chrome === "undefined" || !chrome.runtime?.connect ) {
+        return;
+    }
+
+    if ( connectionBridge.port ) {
+        return;
+    }
+
+    const port = chrome.runtime.connect( { name: "eye-note-health" } );
+    connectionBridge.port = port;
+
+    port.onMessage.addListener( ( message ) => {
+        if ( message?.type === "BACKEND_HEALTH_UPDATE" ) {
+            applyBackendStatus( Boolean( message.healthy ) );
+        }
+    } );
+
+    port.onDisconnect.addListener( () => {
+        connectionBridge.port = null;
+        connectionBridge.scheduleReconnect();
+    } );
+
+    try {
+        port.postMessage( { type: "PING_BACKEND_HEALTH" } );
+        connectionBridge.heartbeatInterval = setInterval( () => {
+            try {
+                port.postMessage( { type: "PING_BACKEND_HEALTH" } );
+            } catch ( error ) {
+                console.warn( "[EyeNote] Failed to send heartbeat to background script", error );
+            }
+        }, 5000 );
+    } catch ( error ) {
+        console.warn( "[EyeNote] Failed to request backend health status", error );
+    }
+}
 
 function initializeDOMContainers () {
     const shadowContainer = document.createElement( "div" );
@@ -42,16 +134,13 @@ function initializeShadowDOM ( container : HTMLElement ) {
 }
 
 function initializeUserlandDOM ( container : HTMLElement ) {
-    // Create a shadow DOM for the userland container too - this is the key change
     const userlandShadowRoot = container.attachShadow( { mode: "open" } );
 
-    // Add styles inside the shadow DOM
     const userlandStyles = document.createElement( "style" );
     userlandStyles.id = DOM_IDS.USERLAND_STYLES;
     userlandStyles.textContent = userlandDOMStyles;
     userlandShadowRoot.appendChild( userlandStyles );
 
-    // Create content container inside the shadow DOM
     const contentContainer = document.createElement( "div" );
     contentContainer.id = DOM_IDS.USERLAND_CONTENT;
     userlandShadowRoot.appendChild( contentContainer );
@@ -60,32 +149,24 @@ function initializeUserlandDOM ( container : HTMLElement ) {
 }
 
 function initializeApp () {
-    // Check if already initialized
+    initializeConnectionBridge();
+
     if ( document.getElementById( DOM_IDS.ROOT_CONTAINER ) ) {
         return;
     }
 
-    // Create root container
     const eyeNoteRootContainer = document.createElement( "div" );
     eyeNoteRootContainer.id = DOM_IDS.ROOT_CONTAINER;
 
-    // Initialize containers
     const { shadowContainer, userlandContainer } = initializeDOMContainers();
 
-    // Setup shadow DOM
     const { contentContainer: shadowContentContainer } = initializeShadowDOM( shadowContainer );
-
-    // Setup userland DOM with its own shadow root for isolation
     const { contentContainer: userlandContentContainer } = initializeUserlandDOM( userlandContainer );
 
-    // Add all containers to root
     eyeNoteRootContainer.appendChild( shadowContainer );
     eyeNoteRootContainer.appendChild( userlandContainer );
-
-    // Append root container to body
     document.body.appendChild( eyeNoteRootContainer );
 
-    // Render React components
     const root = createRoot( shadowContentContainer );
     const userlandRoot = createRoot( userlandContentContainer );
 
@@ -101,8 +182,19 @@ function initializeApp () {
         </React.StrictMode>
     );
 
+    try {
+        getPageAnalyzer().analyzePage();
+    } catch ( error ) {
+        console.error( "[EyeNote] Failed to analyze page", error );
+    }
+
     return { root, userlandRoot };
 }
 
-// Initialize the application
 initializeApp();
+
+if ( import.meta.hot ) {
+    import.meta.hot.dispose( () => {
+        connectionBridge.disconnect( false );
+    } );
+}

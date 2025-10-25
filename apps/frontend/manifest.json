@@ -3,6 +3,7 @@
     "name": "EyeNote",
     "version": "1.0.0",
     "description": "Create and share notes on any webpage element - see what others see!",
+    "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu9FNvhgjcJgdB7Ht6fg28OmRi7drMSU82u0uTVjwsPd6eb0WGPBovYDOUFGypmMQWCxRMrbGXjGdTzELPmZskOMgAIT0DJqtjHyINWpyjsbgoiB3yOXGoT9gfH+jCxTYBxnDfOao6vZ8dXhRQitIfeFILbcJNrexgJqLW9E4rF5300QzfkfeYwpr/JffXUApYVVkYnPAiYlgBqqbA9YPji6vY73SvjLOkNomUauyeWH2g8BAVBBqmC38sga9HS7zZFnBvYtNS3pX9TA+1+6U2xmilaVT62KOS8BmZg6FMut2c47EMQWcsR0nK4ZwS5P+5xY/FOKX6yuI3wuMyLcKIQIDAQAB",
     "permissions": ["activeTab", "storage", "scripting", "identity", "management"],
     "host_permissions": [
         "<all_urls>",
@@ -10,8 +11,9 @@
         "https://www.googleapis.com/*"
     ],
     "oauth2": {
-        "client_id": "655366359218-u22o0btbt68bhisgae68qsvisci1gdtg.apps.googleusercontent.com",
+        "client_id": "{{ENV:GOOGLE_CLIENT_ID}}",
         "scopes": [
+            "openid",
             "https://www.googleapis.com/auth/userinfo.email",
             "https://www.googleapis.com/auth/userinfo.profile"
         ]

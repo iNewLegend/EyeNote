@@ -1,14 +1,27 @@
 import React, { useEffect, useCallback, useState, useRef } from "react";
-import { useNotesStore } from "../../stores/notes-store";
-import { NoteComponent } from "../../features/notes/note-component";
+import { useNotesStore } from "../../features/notes/notes-store";
+import { useNotesController } from "../../features/notes/notes-controller";
+import { NotesComponent } from "../../features/notes/notes-component";
 import { useInspectorMode } from "../../hooks/use-inspector-mode";
 import { ThemeProvider } from "../theme/theme-provider";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
-import { useHighlightStore } from "../../stores/highlight-store";
 import { InteractionBlocker } from "../../components/interaction-blocker";
+import { useAuthStore } from "../../modules/auth";
+import { useUrlListener } from "../../hooks/use-url-listener";
+import { useBackendHealthBridge } from "../../hooks/use-backend-health-bridge";
+import { useAuthStatusEffects } from "../../modules/auth/hooks/use-auth-status-effects";
+import { useNotesLifecycle } from "../../features/notes/use-notes-lifecycle";
+import { useElementSelectionListener } from "../../hooks/use-element-selection-listener";
 
 export const ShadowDOM : React.FC = () => {
-    const { notes, createNote } = useNotesStore();
+    const notes = useNotesStore( ( state ) => state.notes );
+    const clearNotes = useNotesStore( ( state ) => state.clearNotes );
+    const rehydrateNotes = useNotesStore( ( state ) => state.rehydrateNotes );
+    const { createNote, loadNotes } = useNotesController();
+    const isAuthenticated = useAuthStore( ( state ) => state.isAuthenticated );
+    const refreshAuthStatus = useAuthStore( ( state ) => state.refreshStatus );
+    const modes = useModeStore( ( state ) => state.modes );
+    const isConnected = ( modes & AppMode.CONNECTED ) === AppMode.CONNECTED;
     const {
         hoveredElement,
         setHoveredElement,
@@ -18,40 +31,31 @@ export const ShadowDOM : React.FC = () => {
         isActive,
     } = useInspectorMode();
     const [ isProcessingNoteDismissal, setIsProcessingNoteDismissal ] = useState( false );
+    const [ currentUrl, setCurrentUrl ] = useState( () => window.location.href );
     const [ , setLocalSelectedElement ] = useState<HTMLElement | null>( null );
     const notesContainerRef = useRef<HTMLDivElement>( null );
 
-    // Handle note element selection
+    const lastKnownUrlRef = useUrlListener( setCurrentUrl );
+    useBackendHealthBridge();
+    useAuthStatusEffects( refreshAuthStatus );
+    useNotesLifecycle( {
+        isAuthenticated,
+        isConnected,
+        currentUrl,
+        clearNotes,
+        loadNotes,
+        notesLength: notes.length,
+        rehydrateNotes,
+    } );
+    useElementSelectionListener( setLocalSelectedElement );
+
     useEffect( () => {
-        const handleElementSelected = ( ( e : CustomEvent ) => {
-            const element = e.detail.element;
-            if ( element instanceof HTMLElement ) {
-                const scrollX = window.scrollX;
-                const scrollY = window.scrollY;
+        lastKnownUrlRef.current = currentUrl;
+    }, [ currentUrl, lastKnownUrlRef ] );
 
-                setLocalSelectedElement( element );
-
-                // Update store states for note mode
-                useModeStore.getState().addMode( AppMode.NOTES_MODE );
-                useHighlightStore.getState().setSelectedElement( element );
-
-                ( window as any ).updateOverlay( element );
-
-                requestAnimationFrame( () => {
-                    window.scrollTo( scrollX, scrollY );
-                } );
-            }
-        } ) as EventListener;
-
-        window.addEventListener( "eye-note:element-selected", handleElementSelected );
-
-        return () => {
-            window.removeEventListener( "eye-note:element-selected", handleElementSelected );
-        };
-    }, [] );
-
+    // Handle note element selection
     const handleClick = useCallback(
-        ( e : MouseEvent ) => {
+        async ( e : MouseEvent ) => {
             console.log( "Click event in shadow-dom.tsx", {
                 e,
                 target: e.target,
@@ -60,6 +64,8 @@ export const ShadowDOM : React.FC = () => {
                 isActive,
                 isInteractionBlocker: ( e.target as Element ).id === "eye-note-interaction-blocker",
                 isProcessingNoteDismissal,
+                isConnected,
+                isAuthenticated,
             } );
 
             // If we're processing a note dismissal, ignore the click
@@ -72,6 +78,16 @@ export const ShadowDOM : React.FC = () => {
 
             if ( !isActive || !hoveredElement ) {
                 console.log( "Not in inspector mode or no hovered element" );
+                return;
+            }
+
+            if ( !isConnected ) {
+                console.warn( "Cannot create note while disconnected from backend." );
+                return;
+            }
+
+            if ( !isAuthenticated ) {
+                console.warn( "Cannot create note while signed out." );
                 return;
             }
 
@@ -96,19 +112,27 @@ export const ShadowDOM : React.FC = () => {
             const scrollX = window.scrollX;
             const scrollY = window.scrollY;
 
-            // Create the note if we're in inspector mode and have a hovered element
-            createNote( hoveredElement );
-            setHoveredElement( null );
+            const pointerPosition = {
+                x: e.clientX,
+                y: e.clientY,
+            };
 
-            // Use our new selectElementForNote helper function
-            if ( hoveredElement instanceof HTMLElement ) {
-                selectElement( hoveredElement );
+            try {
+                await createNote( hoveredElement, pointerPosition );
+                setHoveredElement( null );
+
+                // Use our new selectElementForNote helper function
+                if ( hoveredElement instanceof HTMLElement ) {
+                    selectElement( hoveredElement );
+                }
+
+                // Use requestAnimationFrame to restore scroll position after the note is created
+                requestAnimationFrame( () => {
+                    window.scrollTo( scrollX, scrollY );
+                } );
+            } catch ( error ) {
+                console.error( "Failed to create note:", error );
             }
-
-            // Use requestAnimationFrame to restore scroll position after the note is created
-            requestAnimationFrame( () => {
-                window.scrollTo( scrollX, scrollY );
-            } );
         },
         [
             isActive,
@@ -117,6 +141,8 @@ export const ShadowDOM : React.FC = () => {
             createNote,
             selectElement,
             isProcessingNoteDismissal,
+            isConnected,
+            isAuthenticated,
         ]
     );
 
@@ -143,10 +169,14 @@ export const ShadowDOM : React.FC = () => {
 
     return (
         <ThemeProvider>
-            <div ref={notesContainerRef} className="notes-plugin">
+            <div
+                ref={notesContainerRef}
+                className="notes-plugin"
+                data-inspector-active={isActive ? "1" : "0"}
+            >
                 <InteractionBlocker isVisible={isActive} />
                 {notes.map( ( note ) => (
-                    <NoteComponent
+                    <NotesComponent
                         key={note.id}
                         note={note}
                         container={notesContainerRef.current!.parentElement}
