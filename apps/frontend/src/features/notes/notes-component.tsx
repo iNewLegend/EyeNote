@@ -12,6 +12,7 @@ import { useHighlightStore } from "../../stores/highlight-store";
 import { useNotesStore } from "./notes-store";
 import { useNotesController } from "./notes-controller";
 import { useGroupsStore } from "../../modules/groups";
+import { calculateMarkerPosition } from "./notes-utils";
 
 interface NoteComponentProps {
     note : Note;
@@ -32,10 +33,13 @@ export function NotesComponent ( {
     onNoteDismissed,
 } : NoteComponentProps ) {
     useEffect( () => {
+        const position = calculateMarkerPosition( note );
         console.debug( "[EyeNote] Rendering note marker", {
             id: note.id,
-            x: note.x,
-            y: note.y,
+            storedX: note.x,
+            storedY: note.y,
+            calculatedX: position.x,
+            calculatedY: position.y,
             hasElement: Boolean( note.highlightedElement ),
             elementPath: note.elementPath,
         } );
@@ -66,14 +70,16 @@ export function NotesComponent ( {
 
     const groupColor = currentGroup?.color ?? "#646cff";
 
+    const markerPosition = useMemo( () => calculateMarkerPosition( note ), [ note ] );
+
     const markerStyle = useMemo<CSSProperties>( () => ( {
-        left: `${ note.x ?? 0 }px`,
-        top: `${ note.y ?? 0 }px`,
+        left: `${ markerPosition.x }px`,
+        top: `${ markerPosition.y }px`,
         zIndex: 2147483647,
         transform: "translate(-50%, -50%)",
         backgroundColor: note.isPendingSync ? "#f97316" : groupColor,
         borderColor: note.isPendingSync ? "#f97316" : groupColor,
-    } ), [ groupColor, note.isPendingSync, note.x, note.y ] );
+    } ), [ groupColor, note.isPendingSync, markerPosition.x, markerPosition.y ] );
 
     const groupOptions = useMemo<GroupOption[]>( () => {
         if ( groups.length === 0 ) {
@@ -248,8 +254,8 @@ export function NotesComponent ( {
                     className="note-content"
                     style={{
                         position: "absolute",
-                        left: `${ note.x }px`,
-                        top: `${ note.y }px`,
+                        left: `${ markerPosition.x }px`,
+                        top: `${ markerPosition.y }px`,
                         transform: "none",
                         zIndex: 2147483647,
                     }}

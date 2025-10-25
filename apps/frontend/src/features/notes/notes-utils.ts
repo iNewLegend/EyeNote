@@ -94,6 +94,37 @@ export function resolveOffsetRatio ( note : Note ) {
     return { x: 0, y: 0 };
 }
 
+export function calculateMarkerPosition ( note : Note ) : { x : number; y : number } {
+    const element = note.highlightedElement || safeFindElement( note.elementPath );
+
+    if ( !element ) {
+        return {
+            x: note.x ?? 0,
+            y: note.y ?? 0,
+        };
+    }
+
+    const rect = element.getBoundingClientRect();
+    const ratio = resolveOffsetRatio( note );
+
+    const markerX = rect.left + rect.width * clamp( ratio.x );
+    const markerY = rect.top + rect.height * clamp( ratio.y );
+
+    const markerSize = 12;
+    const halfMarker = markerSize / 2;
+
+    const constrainedX = Math.max( 
+        rect.left + halfMarker, 
+        Math.min( rect.right - halfMarker, markerX ) 
+    );
+    const constrainedY = Math.max( 
+        rect.top + halfMarker, 
+        Math.min( rect.bottom - halfMarker, markerY ) 
+    );
+
+    return { x: constrainedX, y: constrainedY };
+}
+
 export function rehydrateNotePosition ( note : Note ) : Note {
     const element = safeFindElement( note.elementPath );
 
