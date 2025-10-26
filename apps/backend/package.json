@@ -4,7 +4,7 @@
   "description": "Backend for EyeNote application",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon --watch src --exec ts-node src/server.ts",
+    "dev": "nodemon --watch src --exec tsx src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "echo \"Linting not yet configured\" && exit 0",
