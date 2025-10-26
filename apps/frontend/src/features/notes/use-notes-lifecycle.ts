@@ -1,13 +1,16 @@
 import { useEffect } from "react";
+import type { PageIdentity } from "@eye-note/page-identity";
 
 type NotesLifecycleArgs = {
     isAuthenticated : boolean;
     isConnected : boolean;
     currentUrl : string;
+    pageIdentity ?: PageIdentity;
     clearNotes : () => void;
-    loadNotes : ( params : { url : string } ) => Promise<void>;
+    loadNotes : ( params : { url : string; groupIds ?: string[]; pageIdentity ?: PageIdentity } ) => Promise<void>;
     notesLength : number;
     rehydrateNotes : () => void;
+    activeGroupIds : string[];
 };
 
 export function useNotesLifecycle ( {
@@ -18,6 +21,8 @@ export function useNotesLifecycle ( {
     loadNotes,
     notesLength,
     rehydrateNotes,
+    activeGroupIds,
+    pageIdentity,
 }: NotesLifecycleArgs ) {
     useEffect( () => {
         if ( ! isAuthenticated || ! isConnected ) {
@@ -25,12 +30,26 @@ export function useNotesLifecycle ( {
             return;
         }
 
+        if ( ! pageIdentity ) {
+            return;
+        }
+
         clearNotes();
 
-        loadNotes( { url: currentUrl } ).catch( ( error: unknown ) => {
+        const groupIds = activeGroupIds.length > 0 ? activeGroupIds : undefined;
+
+        loadNotes( { url: currentUrl, groupIds, pageIdentity } ).catch( ( error: unknown ) => {
             console.error( "Failed to load notes:", error );
         } );
-    }, [ isAuthenticated, isConnected, clearNotes, loadNotes, currentUrl ] );
+    }, [
+        activeGroupIds,
+        clearNotes,
+        currentUrl,
+        isAuthenticated,
+        isConnected,
+        loadNotes,
+        pageIdentity,
+    ] );
 
     useEffect( () => {
         if ( ! isConnected || notesLength === 0 ) {

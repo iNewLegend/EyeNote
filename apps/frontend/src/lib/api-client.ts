@@ -25,7 +25,7 @@ async function buildAuthHeaders () : Promise<Record<string, string>> {
 
 export interface ApiRequestOptions extends RequestInit {
     bodyJson ?: unknown;
-    searchParams ?: Record<string, string | undefined>;
+    searchParams ?: Record<string, string | string[] | undefined>;
 }
 
 export async function apiRequest<T> ( path : string, options : ApiRequestOptions = {} ) : Promise<T> {
@@ -34,9 +34,20 @@ export async function apiRequest<T> ( path : string, options : ApiRequestOptions
 
     if ( options.searchParams ) {
         for ( const [ key, value ] of Object.entries( options.searchParams ) ) {
-            if ( value !== undefined ) {
-                url.searchParams.set( key, value );
+            if ( value === undefined ) {
+                continue;
             }
+
+            if ( Array.isArray( value ) ) {
+                value.forEach( ( entry ) => {
+                    if ( entry !== undefined ) {
+                        url.searchParams.append( key, entry );
+                    }
+                } );
+                continue;
+            }
+
+            url.searchParams.set( key, value );
         }
     }
 

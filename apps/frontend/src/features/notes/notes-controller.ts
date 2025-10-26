@@ -1,5 +1,10 @@
-import { useCallback } from "react";
-import type { ListNotesQuery, UpdateNotePayload } from "@eye-note/definitions";
+import { useCallback, useRef } from "react";
+import type {
+    ListNotesQuery,
+    PageIdentityPayload,
+    PageIdentityResolution,
+    UpdateNotePayload,
+} from "@eye-note/definitions";
 import type { Note } from "../../types";
 import { useNotesStore } from "./notes-store";
 import type { NotesStore } from "./notes-store";
@@ -20,6 +25,8 @@ type NotesController = {
 };
 
 export function useNotesController () : NotesController {
+    const lastCapturedIdentity = useRef<PageIdentityPayload>();
+    const lastResolvedIdentity = useRef<PageIdentityResolution>();
     const createNote = useNotesStore( ( state ) => state.createNote );
     const clearNotes = useNotesStore( ( state ) => state.clearNotes );
     const rehydrateNotes = useNotesStore( ( state ) => state.rehydrateNotes );
@@ -36,12 +43,42 @@ export function useNotesController () : NotesController {
 
             try {
                 const url = params.url ?? window.location.href;
-                const notes = await fetchNotesForPage( {
+                if ( params.pageIdentity ) {
+                    lastCapturedIdentity.current = params.pageIdentity;
+                }
+
+                const result = await fetchNotesForPage( {
                     url,
-                    groupId: params.groupId,
+                    groupIds: params.groupIds,
+                    pageIdentity: params.pageIdentity ?? lastCapturedIdentity.current,
+                    pageId: params.pageId ?? lastResolvedIdentity.current?.pageId,
+                    normalizedUrl:
+                        params.normalizedUrl ??
+                        params.pageIdentity?.normalizedUrl ??
+                        lastCapturedIdentity.current?.normalizedUrl,
                 } );
 
-                setNotes( notes );
+                setNotes( result.notes );
+
+                if ( result.identity ) {
+                    lastResolvedIdentity.current = result.identity;
+
+                    console.log( "[EyeNote] Page identity resolved", {
+                        requestedUrl: url,
+                        groupIds: params.groupIds,
+                        resolvedIdentity: result.identity,
+                        capturedIdentity: lastCapturedIdentity.current,
+                    } );
+
+                    window.dispatchEvent(
+                        new CustomEvent( "eye-note-page-identity-resolved", {
+                            detail: {
+                                identity: lastCapturedIdentity.current,
+                                resolution: result.identity,
+                            },
+                        } )
+                    );
+                }
 
                 requestAnimationFrame( () => {
                     rehydrateNotes();
@@ -75,7 +112,10 @@ export function useNotesController () : NotesController {
                 upsertNote( draftBeforeSave );
 
                 try {
-                    const syncedNote = await persistDraftNote( targetNote, updates );
+                    const syncedNote = await persistDraftNote( targetNote, updates, {
+                        pageId: lastResolvedIdentity.current?.pageId,
+                        pageIdentity: lastCapturedIdentity.current,
+                    } );
                     upsertNote( syncedNote );
                     return syncedNote;
                 } catch ( error ) {

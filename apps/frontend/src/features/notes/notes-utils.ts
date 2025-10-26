@@ -1,6 +1,7 @@
 import type {
     CreateNotePayload,
     NoteRecord,
+    PageIdentityPayload,
     UpdateNotePayload,
     ViewportPosition,
 } from "@eye-note/definitions";
@@ -29,7 +30,8 @@ export function mapRecordToNote ( record : NoteRecord, overrides : Partial<Note>
 
 export function createDraftFromElement (
     element : Element,
-    pointerPosition ?: ViewportPosition
+    pointerPosition ?: ViewportPosition,
+    initialGroupId ?: string | null
 ) : Note {
     const rect = element.getBoundingClientRect();
     const pointer : ViewportPosition = pointerPosition ?? {
@@ -46,7 +48,7 @@ export function createDraftFromElement (
         elementPath: snapshot.elementPath,
         content: "",
         url: window.location.href,
-        groupId: undefined,
+        groupId: initialGroupId ?? undefined,
         createdAt: timestamp,
         updatedAt: timestamp,
         x: snapshot.viewportPosition.x,
@@ -93,6 +95,37 @@ export function resolveOffsetRatio ( note : Note ) {
     return { x: 0, y: 0 };
 }
 
+export function calculateMarkerPosition ( note : Note ) : { x : number; y : number } {
+    const element = note.highlightedElement || safeFindElement( note.elementPath );
+
+    if ( !element ) {
+        return {
+            x: note.x ?? 0,
+            y: note.y ?? 0,
+        };
+    }
+
+    const rect = element.getBoundingClientRect();
+    const ratio = resolveOffsetRatio( note );
+
+    const markerX = rect.left + rect.width * clamp( ratio.x );
+    const markerY = rect.top + rect.height * clamp( ratio.y );
+
+    const markerSize = 12;
+    const halfMarker = markerSize / 2;
+
+    const constrainedX = Math.max( 
+        rect.left + halfMarker, 
+        Math.min( rect.right - halfMarker, markerX ) 
+    );
+    const constrainedY = Math.max( 
+        rect.top + halfMarker, 
+        Math.min( rect.bottom - halfMarker, markerY ) 
+    );
+
+    return { x: constrainedX, y: constrainedY };
+}
+
 export function rehydrateNotePosition ( note : Note ) : Note {
     const element = safeFindElement( note.elementPath );
 
@@ -126,13 +159,31 @@ export function rehydrateNotePosition ( note : Note ) : Note {
 
 export function createPayloadFromDraft (
     draft : Note,
-    updates : UpdateNotePayload
+    updates : UpdateNotePayload,
+    context : {
+        pageId ?: string;
+        pageIdentity ?: PageIdentityPayload;
+    } = {}
 ) : CreateNotePayload {
-    return {
+    const resolvedGroupId = updates.groupId !== undefined ? updates.groupId : draft.groupId;
+    const resolvedPageIdentity = updates.pageIdentity ?? context.pageIdentity;
+    const resolvedPageId = updates.pageId ?? context.pageId ?? draft.pageId ?? undefined;
+    const resolvedCanonicalUrl =
+        updates.canonicalUrl ??
+        resolvedPageIdentity?.canonicalUrl ??
+        draft.canonicalUrl ??
+        undefined;
+    const resolvedNormalizedUrl =
+        updates.normalizedUrl ??
+        resolvedPageIdentity?.normalizedUrl ??
+        draft.normalizedUrl ??
+        undefined;
+
+    const payload : CreateNotePayload = {
         elementPath: draft.elementPath,
         content: updates.content ?? draft.content ?? "",
         url: draft.url,
-        groupId: draft.groupId,
+        groupId: resolvedGroupId,
         x: draft.x,
         y: draft.y,
         elementRect: draft.elementRect,
@@ -140,5 +191,20 @@ export function createPayloadFromDraft (
         elementOffsetRatio: draft.elementOffsetRatio,
         scrollPosition: draft.scrollPosition,
         locationCapturedAt: draft.locationCapturedAt,
+        pageIdentity: resolvedPageIdentity,
     };
+
+    if ( resolvedPageId ) {
+        payload.pageId = resolvedPageId;
+    }
+
+    if ( resolvedCanonicalUrl ) {
+        payload.canonicalUrl = resolvedCanonicalUrl;
+    }
+
+    if ( resolvedNormalizedUrl ) {
+        payload.normalizedUrl = resolvedNormalizedUrl;
+    }
+
+    return payload;
 }

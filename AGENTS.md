@@ -47,3 +47,63 @@
 - Remember the workspace uses `pnpm` with a monorepo layout.
 - Name new TypeScript files with kebab-case filenames.
 - Reach for Zustand when a shared client-side store is warranted.
+
+## Cursor Rules for Commit Messages
+
+When generating commit messages, follow this exact format:
+
+### Format Template
+
+```
+Tag1(`Tag2`): Tag3
+```
+
+### Tag1 Categories (Required)
+
+Choose ONE from these options:
+
+- `feat` - New feature or functionality
+- `fix` - Bug fix or issue resolution
+- `chore` - Maintenance tasks, dependencies, or tooling
+- `infra` - Infrastructure changes, CI/CD, deployment
+- `tweak` - Minor improvements, refactoring, or adjustments
+
+### Tag2 - Package/Area (Required)
+
+Specify the relevant workspace, package, or directory using slash notation (e.g. `frontend/groups`, `backend/api`, `shared/utils`). Pick the narrowest scope that reflects the change.
+
+### Tag3 - Description (Required)
+
+Provide a clear, concise explanation of what was done:
+
+- Use present tense ("Add feature" not "Added feature")
+- Be specific about the changes
+- Focus on the "what" and "why"
+- Keep it under 50 characters when possible
+- Use lowercase (except for proper nouns)
+
+### Examples
+
+```
+feat(`frontend/app`): add resume section reordering functionality
+fix(`docs`): resolve broken internal links in api documentation
+chore(`shared/types`): update typescript dependencies to latest
+infra(`root`): configure automated deployment pipeline
+tweak(`frontend/groups`): centralize group bootstrap hook
+```
+
+### Instructions
+
+When generating commit messages:
+
+1. Analyze the changes - Review file modifications, additions, deletions
+2. Determine the primary change type - Choose the most appropriate Tag1
+3. Identify the affected area - Determine which package/area is primarily affected
+4. Summarize the change - Write a clear, concise description
+5. Follow the exact format - Ensure proper syntax and capitalization
+6. Be consistent - Use the same style and terminology across commits
+
+Always provide the commit message in this exact format:
+Tag1(`Tag2`): Tag3
+
+Do not include additional explanations, just the commit message itself.

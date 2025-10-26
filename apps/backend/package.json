@@ -4,7 +4,8 @@
   "description": "Backend for EyeNote application",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon --watch src --exec ts-node src/server.ts",
+    "dev": "nodemon --watch src --exec tsx src/server.ts",
+    "dev:lunch-chrome": "bash ../../scripts/launch-chrome-extension.sh",
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "echo \"Linting not yet configured\" && exit 0",
@@ -12,6 +13,7 @@
   },
   "dependencies": {
     "@eye-note/definitions": "workspace:*",
+    "@eye-note/page-identity": "workspace:*",
     "@fastify/cors": "^9.0.1",
     "dotenv": "^16.3.1",
     "fastify": "^4.24.3",

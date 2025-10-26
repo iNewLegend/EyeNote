@@ -1,3 +1,31 @@
+# 2025-10-25
+
+## Discord-like role system for groups
+- Implemented comprehensive role-based permission system with hierarchy (Owner > Admin > Moderator > Member) and granular permissions (manage group, manage roles, manage members, moderate content, create/edit/delete/view notes).
+- Added `GroupRole` and `GroupMemberRole` MongoDB models with position-based hierarchy, custom colors, and permission arrays.
+- Created `RoleService` with permission checking, role assignment/removal, and hierarchy enforcement utilities.
+- Extended `/api/groups` routes with role management endpoints: create/update/assign/remove roles, get group with roles data.
+- Built role management UI components: `RoleManagementPanel`, `RoleList`, `RoleForm` with permission selection and role hierarchy display.
+- Integrated role management into existing group manager with "Manage Roles" button for group owners.
+- Added permission checking utilities and role-based access control throughout the application.
+- Automatically creates default roles (Owner, Admin, Moderator, Member) when new groups are created.
+- Regenerated frontend/backend/definitions type checks with `pnpm --filter @eye-note/{definitions,backend,frontend} exec tsc --noEmit`.
+
+## Page identity shared package
+- Scaffolded `@eye-note/page-identity` with shared fingerprints, DOM capture utilities, and server-side ranking helpers so clients/backend can agree on document identity beyond raw URLs.
+- Added a frontend `usePageIdentity` hook that captures fingerprints on navigation and publishes them via a custom event for future integration.
+- Persist page identity metadata in Mongo, introduced `/api/notes/query` to resolve fingerprints server-side, and thread resolved `pageId` through note fetch/create flows.
+- Normalize identities against canonical URLs when available so harmless query params (`?das`) resolve to the same note document.
+- Await DOM readiness when fingerprinting, flush stale identity state on navigation, and cascade backend lookups across normalized URLs so the correct notes load on the first visit and after every route change.
+
+## Group collaboration foundation
+- Added shared group contracts, a Mongo-backed `GroupModel`, and `/api/groups` list/create/join/leave routes that validate membership before assigning notes; note queries now accept multi-group filters.
+- Shipped a popup group manager via a shared Zustand store that hydrates from Chrome storage, lets users create or join groups, toggle active sets, copy invite codes, and persists selections across contexts.
+- Updated the content script to initialize group data, filter note loading by the active groups, default new notes to the leading active group, and expose group selection inside the note dialog.
+- Refactored group management into a reusable panel, reusing it in the browser action popup and adding an in-page "Manage groups" dialog inside the content script overlay.
+- Let group owners pick custom hex colors for their note markers; persisted color metadata in the backend, exposed update APIs, and tinted markers and UI badges by group.
+- Regenerated frontend/backend/definitions type checks with `pnpm --filter @eye-note/{definitions,backend,frontend} exec tsc --noEmit`.
+
 # 2025-10-24
 
 ## Notes store modularization

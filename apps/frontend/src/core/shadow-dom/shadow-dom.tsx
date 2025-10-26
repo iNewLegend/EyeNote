@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useRef } from "react";
+import React, { useEffect, useCallback, useState, useRef, useMemo } from "react";
 import { useNotesStore } from "../../features/notes/notes-store";
 import { useNotesController } from "../../features/notes/notes-controller";
 import { NotesComponent } from "../../features/notes/notes-component";
@@ -12,12 +12,26 @@ import { useBackendHealthBridge } from "../../hooks/use-backend-health-bridge";
 import { useAuthStatusEffects } from "../../modules/auth/hooks/use-auth-status-effects";
 import { useNotesLifecycle } from "../../features/notes/use-notes-lifecycle";
 import { useElementSelectionListener } from "../../hooks/use-element-selection-listener";
+import { usePageIdentity } from "../../hooks/use-page-identity";
+import {
+    useGroupsBootstrap,
+    useGroupsStore,
+    GroupManagerPanel,
+} from "../../modules/groups";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "../../components/ui/dialog";
+import { Toaster } from "../../components/ui/sonner";
 
 export const ShadowDOM : React.FC = () => {
     const notes = useNotesStore( ( state ) => state.notes );
     const clearNotes = useNotesStore( ( state ) => state.clearNotes );
     const rehydrateNotes = useNotesStore( ( state ) => state.rehydrateNotes );
     const { createNote, loadNotes } = useNotesController();
+    const activeGroupIds = useGroupsStore( ( state ) => state.activeGroupIds );
     const isAuthenticated = useAuthStore( ( state ) => state.isAuthenticated );
     const refreshAuthStatus = useAuthStore( ( state ) => state.refreshStatus );
     const modes = useModeStore( ( state ) => state.modes );
@@ -32,22 +46,76 @@ export const ShadowDOM : React.FC = () => {
     } = useInspectorMode();
     const [ isProcessingNoteDismissal, setIsProcessingNoteDismissal ] = useState( false );
     const [ currentUrl, setCurrentUrl ] = useState( () => window.location.href );
+    const [ isGroupManagerOpen, setIsGroupManagerOpen ] = useState( false );
     const [ , setLocalSelectedElement ] = useState<HTMLElement | null>( null );
     const notesContainerRef = useRef<HTMLDivElement>( null );
+    const pageIdentityState = usePageIdentity( currentUrl );
 
     const lastKnownUrlRef = useUrlListener( setCurrentUrl );
+    useGroupsBootstrap( {
+        isAuthenticated,
+        canSync: isConnected,
+        shouldResetOnUnsync: false,
+        logContext: "content-script",
+    } );
+
     useBackendHealthBridge();
     useAuthStatusEffects( refreshAuthStatus );
     useNotesLifecycle( {
         isAuthenticated,
         isConnected,
         currentUrl,
+        pageIdentity: pageIdentityState.identity,
         clearNotes,
         loadNotes,
         notesLength: notes.length,
         rehydrateNotes,
+        activeGroupIds,
     } );
     useElementSelectionListener( setLocalSelectedElement );
+
+    useEffect( () => {
+        if ( typeof window === "undefined" ) {
+            return;
+        }
+
+        if ( pageIdentityState.identity ) {
+            console.log( "[EyeNote] Page identity captured", {
+                identity: pageIdentityState.identity,
+                previousIdentity: pageIdentityState.previousIdentity,
+                comparison: pageIdentityState.lastComparison,
+            } );
+
+            window.dispatchEvent(
+                new CustomEvent( "eye-note-page-identity", {
+                    detail: {
+                        identity: pageIdentityState.identity,
+                        previousIdentity: pageIdentityState.previousIdentity,
+                        comparison: pageIdentityState.lastComparison,
+                    },
+                } )
+            );
+        }
+    }, [ pageIdentityState.identity, pageIdentityState.lastComparison, pageIdentityState.previousIdentity ] );
+
+    const defaultGroupId = useMemo( () => {
+        const candidate = activeGroupIds.find( ( id ) => id && id.trim().length > 0 );
+        return candidate ?? null;
+    }, [ activeGroupIds ] );
+    const canManageGroups = isAuthenticated && isConnected;
+
+    useEffect( () => {
+        const handler = () => {
+            if ( canManageGroups ) {
+                setIsGroupManagerOpen( true );
+            }
+        };
+
+        window.addEventListener( "eye-note-open-group-manager", handler );
+        return () => {
+            window.removeEventListener( "eye-note-open-group-manager", handler );
+        };
+    }, [ canManageGroups ] );
 
     useEffect( () => {
         lastKnownUrlRef.current = currentUrl;
@@ -118,7 +186,7 @@ export const ShadowDOM : React.FC = () => {
             };
 
             try {
-                await createNote( hoveredElement, pointerPosition );
+                await createNote( hoveredElement, pointerPosition, defaultGroupId );
                 setHoveredElement( null );
 
                 // Use our new selectElementForNote helper function
@@ -135,14 +203,15 @@ export const ShadowDOM : React.FC = () => {
             }
         },
         [
-            isActive,
-            hoveredElement,
-            setHoveredElement,
             createNote,
-            selectElement,
-            isProcessingNoteDismissal,
-            isConnected,
+            defaultGroupId,
+            hoveredElement,
+            isActive,
             isAuthenticated,
+            isConnected,
+            isProcessingNoteDismissal,
+            selectElement,
+            setHoveredElement,
         ]
     );
 
@@ -169,12 +238,35 @@ export const ShadowDOM : React.FC = () => {
 
     return (
         <ThemeProvider>
+            <Toaster />
             <div
                 ref={notesContainerRef}
                 className="notes-plugin"
                 data-inspector-active={isActive ? "1" : "0"}
             >
                 <InteractionBlocker isVisible={isActive} />
+                <Dialog
+                    open={isGroupManagerOpen}
+                    onOpenChange={( next ) => {
+                        if ( next ) {
+                            if ( canManageGroups ) {
+                                setIsGroupManagerOpen( true );
+                            }
+                            return;
+                        }
+                        setIsGroupManagerOpen( false );
+                    }}
+                >
+                    <DialogContent
+                        container={notesContainerRef.current?.parentElement ?? undefined}
+                        className="max-h-[85vh] overflow-y-auto"
+                    >
+                        <DialogHeader>
+                            <DialogTitle>Manage groups</DialogTitle>
+                        </DialogHeader>
+                        <GroupManagerPanel onClose={() => setIsGroupManagerOpen( false )} />
+                    </DialogContent>
+                </Dialog>
                 {notes.map( ( note ) => (
                     <NotesComponent
                         key={note.id}

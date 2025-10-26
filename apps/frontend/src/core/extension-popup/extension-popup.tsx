@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import { AuthDialog } from "../../modules/auth";
 import { Button } from "../../components/ui/button.tsx";
@@ -18,6 +18,10 @@ import "./extension-popup.css";
 import { useAuthStore } from "../../modules/auth";
 import { useAuthStatusEffects } from "../../modules/auth/hooks/use-auth-status-effects";
 import { useBackendHealthBridge } from "../../hooks/use-backend-health-bridge";
+import {
+    useGroupsBootstrap,
+    useGroupsStore,
+} from "../../modules/groups";
 
 interface StorageSettings {
     enabled : boolean;
@@ -32,7 +36,6 @@ export function ExtensionPopup () {
         showUnreadBadge: true,
     } );
 
-    const [ activeGroups, setActiveGroups ] = useState<string[]>( [] );
     const [ isAuthOpen, setIsAuthOpen ] = useState( false );
     const [ isSigningIn, setIsSigningIn ] = useState( false );
     const authUser = useAuthStore( ( state ) => state.user );
@@ -41,6 +44,8 @@ export function ExtensionPopup () {
     const signOutUser = useAuthStore( ( state ) => state.signOut );
     const signInUser = useAuthStore( ( state ) => state.signIn );
     const [ isBackendHealthy, setIsBackendHealthy ] = useState<boolean | null>( null );
+    const groups = useGroupsStore( ( state ) => state.groups );
+    const activeGroupIds = useGroupsStore( ( state ) => state.activeGroupIds );
 
     useEffect( () => {
         if ( typeof chrome !== "undefined" && chrome.storage?.local ) {
@@ -50,15 +55,15 @@ export function ExtensionPopup () {
                     setSettings( storedSettings );
                 }
             } );
-
-            chrome.storage.local.get( "activeGroups", ( result ) => {
-                const storedActiveGroups = ( result as { activeGroups ?: string[] } ).activeGroups;
-                if ( storedActiveGroups ) {
-                    setActiveGroups( storedActiveGroups );
-                }
-            } );
         }
     }, [] );
+
+    useGroupsBootstrap( {
+        isAuthenticated,
+        canSync: isBackendHealthy === true,
+        shouldResetOnUnsync: isBackendHealthy === false,
+        logContext: "popup",
+    } );
 
     useAuthStatusEffects( refreshAuthStatus );
 
@@ -88,6 +93,69 @@ export function ExtensionPopup () {
         setSettings( newSettings );
         if ( typeof chrome !== "undefined" && chrome.storage?.local ) {
             chrome.storage.local.set( { settings: newSettings } );
+        }
+    };
+
+    const activeGroups = useMemo( () => {
+        const activeSet = new Set( activeGroupIds );
+        return groups.filter( ( group ) => activeSet.has( group.id ) );
+    }, [ activeGroupIds, groups ] );
+
+    const openGroupManagerInActiveTab = async () => {
+        if ( !isAuthenticated ) {
+            toast( "Sign in required", {
+                description: "Sign in to manage your groups.",
+            } );
+            return;
+        }
+
+        if ( isBackendHealthy !== true ) {
+            toast( "Backend unavailable", {
+                description: "Reconnect to the backend to manage groups.",
+            } );
+            return;
+        }
+
+        if ( typeof chrome === "undefined" || !chrome.tabs?.query ) {
+            toast( "Unsupported environment", {
+                description: "Cannot reach the active tab from this context.",
+            } );
+            return;
+        }
+
+        const getActiveTab = () => new Promise<chrome.tabs.Tab | undefined>( ( resolve, reject ) => {
+            chrome.tabs.query( { active: true, currentWindow: true }, ( tabs ) => {
+                const lastError = chrome.runtime?.lastError;
+                if ( lastError ) {
+                    reject( new Error( lastError.message ) );
+                    return;
+                }
+                resolve( tabs[ 0 ] );
+            } );
+        } );
+
+        const sendMessage = ( tabId : number ) => new Promise<void>( ( resolve, reject ) => {
+            chrome.tabs.sendMessage( tabId, { type: "OPEN_GROUP_MANAGER" }, () => {
+                const lastError = chrome.runtime?.lastError;
+                if ( lastError ) {
+                    reject( new Error( lastError.message ) );
+                    return;
+                }
+                resolve();
+            } );
+        } );
+
+        try {
+            const tab = await getActiveTab();
+            if ( !tab?.id ) {
+                throw new Error( "No active tab" );
+            }
+            await sendMessage( tab.id );
+        } catch ( error ) {
+            const message = error instanceof Error ? error.message : "Unable to reach content script";
+            toast( "Cannot open manager", {
+                description: `${ message }. Make sure EyeNote is active on this tab.`,
+            } );
         }
     };
 
@@ -210,27 +278,48 @@ export function ExtensionPopup () {
                             </div>
                         </div>
 
-                        <div className="space-y-4">
+                        <div className="space-y-5">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-sm font-semibold">Active Groups</h2>
+                                <h2 className="text-sm font-semibold">Groups</h2>
                             </div>
-                            {activeGroups.length === 0 ? (
-                                <div className="text-sm text-muted-foreground">
-                                    No active groups. Join a group to start collaborating!
-                                </div>
-                            ) : (
-                                <div className="space-y-2">
-                                    {activeGroups.map( ( group ) => (
-                                        <div
-                                            key={group}
-                                            className="flex items-center p-2 bg-secondary/50 rounded-md text-sm"
-                                        >
-                                            <span className="w-2 h-2 rounded-full bg-primary mr-2" />
-                                            {group}
-                                        </div>
-                                    ) )}
-                                </div>
-                            )}
+                            <p className="text-sm text-muted-foreground">
+                                Manage groups from any page using the in-page EyeNote controls. Open
+                                the manager below and look for the "Manage groups" button in the
+                                overlay.
+                            </p>
+                            <Button
+                                variant="secondary"
+                                onClick={openGroupManagerInActiveTab}
+                                disabled={isBackendDown || !isAuthenticated}
+                            >
+                                Open group manager in current tab
+                            </Button>
+                            <div className="space-y-2">
+                                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                    Active groups
+                                </h3>
+                                {activeGroups.length === 0 ? (
+                                    <div className="text-sm text-muted-foreground">
+                                        No active groups right now. Use the in-page manager to enable
+                                        groups for your session.
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-wrap gap-2">
+                                        {activeGroups.map( ( group ) => (
+                                            <span
+                                                key={group.id}
+                                                className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-secondary/40 px-3 py-1 text-xs"
+                                            >
+                                                <span
+                                                    className="h-2 w-2 rounded-full border border-border/60"
+                                                    style={{ backgroundColor: group.color }}
+                                                />
+                                                {group.name}
+                                            </span>
+                                        ) )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="rounded-lg bg-primary/10 border border-primary/20 p-4">

@@ -18,7 +18,11 @@ type NotesActions = {
     removeNoteById : ( id : string ) => void;
     setIsLoading : ( isLoading : boolean ) => void;
     setError : ( error ?: string ) => void;
-    createNote : ( element : Element, pointerPosition ?: ViewportPosition ) => Promise<Note>;
+    createNote : (
+        element : Element,
+        pointerPosition ?: ViewportPosition,
+        initialGroupId ?: string | null
+    ) => Promise<Note>;
     setNoteEditing : ( id : string, isEditing : boolean ) => void;
     hasNoteForElement : ( element : Element ) => boolean;
     clearNotes : () => void;
@@ -43,8 +47,8 @@ function createNotesActions ( api : NotesStoreApi ) : NotesActions {
         removeNoteById: ( id ) => removeNoteState( api, id ),
         setIsLoading: ( isLoading ) => setIsLoadingState( api, isLoading ),
         setError: ( error ) => setErrorState( api, error ),
-        createNote: ( element, pointerPosition ) =>
-            createDraftNoteEffect( api, element, pointerPosition ),
+        createNote: ( element, pointerPosition, initialGroupId ) =>
+            createDraftNoteEffect( api, element, pointerPosition, initialGroupId ),
         setNoteEditing: ( id, isEditing ) => setNoteEditingEffect( api, id, isEditing ),
         hasNoteForElement: ( element ) => hasNoteForElementSelector( api, element ),
         clearNotes: () => clearNotesEffect( api ),
@@ -60,9 +64,10 @@ export const useNotesStore = create<NotesStore>( ( set, get ) => ( {
 async function createDraftNoteEffect (
     api : NotesStoreApi,
     element : Element,
-    pointerPosition ?: ViewportPosition
+    pointerPosition ?: ViewportPosition,
+    initialGroupId ?: string | null
 ) : Promise<Note> {
-    const draft = createDraftFromElement( element, pointerPosition );
+    const draft = createDraftFromElement( element, pointerPosition, initialGroupId );
 
     upsertNoteState( api, draft );
 
