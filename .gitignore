@@ -42,3 +42,5 @@ apps/frontend/eye-note-extension.pem
 
 temp/
 scripts/.vscode/chrome-debug-profile/
+
+apps/backend/.vscode/chrome-debug-profile/
