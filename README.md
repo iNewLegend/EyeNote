@@ -148,6 +148,13 @@ Roles are organized by position (higher numbers = more permissions):
 7. **For Group Owners**: Click "Manage Roles" to create custom roles and assign permissions
 8. **Role Management**: Create roles like "Reviewer", "Editor", "Viewer" with specific permissions
 
+## Page Identity Detection
+
+- EyeNote fingerprints every page (canonical URL, text & layout hashes) on the initial load and after each navigation so that equivalent URLs share the same annotations.
+- The browser extension sends the fingerprint to the backend, which resolves a stable `pageId` and returns all associated notes—even when a legacy URL (e.g. tracking params) was used previously.
+- Legacy notes are migrated automatically the first time the new identity is resolved, so subsequent visits to any variant of the URL display a consistent set of notes.
+- You can inspect the resolved identity by listening for the `eye-note-page-identity` and `eye-note-page-identity-resolved` events in the page console while the extension is active.
+
 ## Development
 
 - `pnpm watch` - Start development with auto-reload

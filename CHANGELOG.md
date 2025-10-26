@@ -11,6 +11,13 @@
 - Automatically creates default roles (Owner, Admin, Moderator, Member) when new groups are created.
 - Regenerated frontend/backend/definitions type checks with `pnpm --filter @eye-note/{definitions,backend,frontend} exec tsc --noEmit`.
 
+## Page identity shared package
+- Scaffolded `@eye-note/page-identity` with shared fingerprints, DOM capture utilities, and server-side ranking helpers so clients/backend can agree on document identity beyond raw URLs.
+- Added a frontend `usePageIdentity` hook that captures fingerprints on navigation and publishes them via a custom event for future integration.
+- Persist page identity metadata in Mongo, introduced `/api/notes/query` to resolve fingerprints server-side, and thread resolved `pageId` through note fetch/create flows.
+- Normalize identities against canonical URLs when available so harmless query params (`?das`) resolve to the same note document.
+- Await DOM readiness when fingerprinting, flush stale identity state on navigation, and cascade backend lookups across normalized URLs so the correct notes load on the first visit and after every route change.
+
 ## Group collaboration foundation
 - Added shared group contracts, a Mongo-backed `GroupModel`, and `/api/groups` list/create/join/leave routes that validate membership before assigning notes; note queries now accept multi-group filters.
 - Shipped a popup group manager via a shared Zustand store that hydrates from Chrome storage, lets users create or join groups, toggle active sets, copy invite codes, and persists selections across contexts.

@@ -15,10 +15,7 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true,
-        "baseUrl": ".",
-        "paths": {
-            "@/*": ["src/*"]
-        }
+        "baseUrl": "."
     },
     "include": ["src/**/*.ts", "src/**/*.tsx"],
     "exclude": ["node_modules", "dist", "extension", "src/**/*.jsx"],

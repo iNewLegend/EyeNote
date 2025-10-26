@@ -1,7 +1,6 @@
-import React from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { GroupPermission, type GroupRoleRecord } from "@eye-note/definitions";
 
 interface RoleListProps {
@@ -32,7 +31,7 @@ export function RoleList ( { roles, onEditRole, onDeleteRole, canManageRoles = f
                     <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div 
+                                <div
                                     className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
                                     style={{ backgroundColor: role.color }}
                                 />

@@ -1,6 +1,7 @@
 import type {
     CreateNotePayload,
     NoteRecord,
+    PageIdentityPayload,
     UpdateNotePayload,
     ViewportPosition,
 } from "@eye-note/definitions";
@@ -158,11 +159,27 @@ export function rehydrateNotePosition ( note : Note ) : Note {
 
 export function createPayloadFromDraft (
     draft : Note,
-    updates : UpdateNotePayload
+    updates : UpdateNotePayload,
+    context : {
+        pageId ?: string;
+        pageIdentity ?: PageIdentityPayload;
+    } = {}
 ) : CreateNotePayload {
     const resolvedGroupId = updates.groupId !== undefined ? updates.groupId : draft.groupId;
+    const resolvedPageIdentity = updates.pageIdentity ?? context.pageIdentity;
+    const resolvedPageId = updates.pageId ?? context.pageId ?? draft.pageId ?? undefined;
+    const resolvedCanonicalUrl =
+        updates.canonicalUrl ??
+        resolvedPageIdentity?.canonicalUrl ??
+        draft.canonicalUrl ??
+        undefined;
+    const resolvedNormalizedUrl =
+        updates.normalizedUrl ??
+        resolvedPageIdentity?.normalizedUrl ??
+        draft.normalizedUrl ??
+        undefined;
 
-    return {
+    const payload : CreateNotePayload = {
         elementPath: draft.elementPath,
         content: updates.content ?? draft.content ?? "",
         url: draft.url,
@@ -174,5 +191,20 @@ export function createPayloadFromDraft (
         elementOffsetRatio: draft.elementOffsetRatio,
         scrollPosition: draft.scrollPosition,
         locationCapturedAt: draft.locationCapturedAt,
+        pageIdentity: resolvedPageIdentity,
     };
+
+    if ( resolvedPageId ) {
+        payload.pageId = resolvedPageId;
+    }
+
+    if ( resolvedCanonicalUrl ) {
+        payload.canonicalUrl = resolvedCanonicalUrl;
+    }
+
+    if ( resolvedNormalizedUrl ) {
+        payload.normalizedUrl = resolvedNormalizedUrl;
+    }
+
+    return payload;
 }

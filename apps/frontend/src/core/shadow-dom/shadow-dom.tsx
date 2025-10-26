@@ -12,6 +12,7 @@ import { useBackendHealthBridge } from "../../hooks/use-backend-health-bridge";
 import { useAuthStatusEffects } from "../../modules/auth/hooks/use-auth-status-effects";
 import { useNotesLifecycle } from "../../features/notes/use-notes-lifecycle";
 import { useElementSelectionListener } from "../../hooks/use-element-selection-listener";
+import { usePageIdentity } from "../../hooks/use-page-identity";
 import {
     useGroupsBootstrap,
     useGroupsStore,
@@ -48,6 +49,7 @@ export const ShadowDOM : React.FC = () => {
     const [ isGroupManagerOpen, setIsGroupManagerOpen ] = useState( false );
     const [ , setLocalSelectedElement ] = useState<HTMLElement | null>( null );
     const notesContainerRef = useRef<HTMLDivElement>( null );
+    const pageIdentityState = usePageIdentity( currentUrl );
 
     const lastKnownUrlRef = useUrlListener( setCurrentUrl );
     useGroupsBootstrap( {
@@ -63,6 +65,7 @@ export const ShadowDOM : React.FC = () => {
         isAuthenticated,
         isConnected,
         currentUrl,
+        pageIdentity: pageIdentityState.identity,
         clearNotes,
         loadNotes,
         notesLength: notes.length,
@@ -70,6 +73,30 @@ export const ShadowDOM : React.FC = () => {
         activeGroupIds,
     } );
     useElementSelectionListener( setLocalSelectedElement );
+
+    useEffect( () => {
+        if ( typeof window === "undefined" ) {
+            return;
+        }
+
+        if ( pageIdentityState.identity ) {
+            console.log( "[EyeNote] Page identity captured", {
+                identity: pageIdentityState.identity,
+                previousIdentity: pageIdentityState.previousIdentity,
+                comparison: pageIdentityState.lastComparison,
+            } );
+
+            window.dispatchEvent(
+                new CustomEvent( "eye-note-page-identity", {
+                    detail: {
+                        identity: pageIdentityState.identity,
+                        previousIdentity: pageIdentityState.previousIdentity,
+                        comparison: pageIdentityState.lastComparison,
+                    },
+                } )
+            );
+        }
+    }, [ pageIdentityState.identity, pageIdentityState.lastComparison, pageIdentityState.previousIdentity ] );
 
     const defaultGroupId = useMemo( () => {
         const candidate = activeGroupIds.find( ( id ) => id && id.trim().length > 0 );

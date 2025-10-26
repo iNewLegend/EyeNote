@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useGroupsStore } from "@/modules/groups/groups-store";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { useGroupsStore } from "../../modules/groups/groups-store";
 import { RoleList } from "./role-list";
 import { RoleForm } from "./role-form";
 import { GroupPermission, type GroupRoleRecord, type CreateGroupRolePayload, type UpdateGroupRolePayload } from "@eye-note/definitions";

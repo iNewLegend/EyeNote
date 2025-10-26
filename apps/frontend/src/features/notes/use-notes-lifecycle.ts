@@ -1,11 +1,13 @@
 import { useEffect } from "react";
+import type { PageIdentity } from "@eye-note/page-identity";
 
 type NotesLifecycleArgs = {
     isAuthenticated : boolean;
     isConnected : boolean;
     currentUrl : string;
+    pageIdentity ?: PageIdentity;
     clearNotes : () => void;
-    loadNotes : ( params : { url : string; groupIds ?: string[] } ) => Promise<void>;
+    loadNotes : ( params : { url : string; groupIds ?: string[]; pageIdentity ?: PageIdentity } ) => Promise<void>;
     notesLength : number;
     rehydrateNotes : () => void;
     activeGroupIds : string[];
@@ -20,6 +22,7 @@ export function useNotesLifecycle ( {
     notesLength,
     rehydrateNotes,
     activeGroupIds,
+    pageIdentity,
 }: NotesLifecycleArgs ) {
     useEffect( () => {
         if ( ! isAuthenticated || ! isConnected ) {
@@ -27,11 +30,15 @@ export function useNotesLifecycle ( {
             return;
         }
 
+        if ( ! pageIdentity ) {
+            return;
+        }
+
         clearNotes();
 
         const groupIds = activeGroupIds.length > 0 ? activeGroupIds : undefined;
 
-        loadNotes( { url: currentUrl, groupIds } ).catch( ( error: unknown ) => {
+        loadNotes( { url: currentUrl, groupIds, pageIdentity } ).catch( ( error: unknown ) => {
             console.error( "Failed to load notes:", error );
         } );
     }, [
@@ -41,6 +48,7 @@ export function useNotesLifecycle ( {
         isAuthenticated,
         isConnected,
         loadNotes,
+        pageIdentity,
     ] );
 
     useEffect( () => {

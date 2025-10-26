@@ -40,6 +40,9 @@ export interface NoteBase extends NoteLocationMetadata {
     content : string;
     url : string;
     groupId ?: string | null;
+    pageId ?: string | null;
+    canonicalUrl ?: string | null;
+    normalizedUrl ?: string | null;
 }
 
 export interface NoteRecord extends NoteBase {
@@ -48,9 +51,13 @@ export interface NoteRecord extends NoteBase {
     updatedAt : string;
 }
 
-export type CreateNotePayload = NoteBase;
+export type CreateNotePayload = NoteBase & {
+    pageIdentity ?: PageIdentityPayload;
+};
 
-export type UpdateNotePayload = Partial<NoteBase>;
+export type UpdateNotePayload = Partial<NoteBase> & {
+    pageIdentity ?: PageIdentityPayload;
+};
 
 export interface GroupBase {
     name : string;
@@ -98,6 +105,9 @@ export interface AuthSession {
 export interface ListNotesQuery {
     url ?: string;
     groupIds ?: string[];
+    pageId ?: string;
+    normalizedUrl ?: string;
+    pageIdentity ?: PageIdentityPayload;
 }
 
 export interface HealthResponse {
@@ -156,4 +166,28 @@ export interface AssignRolePayload {
 export interface RemoveRolePayload {
     userId : string;
     roleId : string;
+}
+
+export interface PageIdentityPayload {
+    canonicalUrl ?: string;
+    normalizedUrl : string;
+    sourceUrl ?: string;
+    contentSignature : string;
+    layoutSignature : string;
+    layoutTokens : string[];
+    textTokenSample : number;
+    generatedAt : string;
+}
+
+export interface PageIdentityResolution {
+    pageId : string;
+    matched : boolean;
+    confidence : number;
+    canonicalMatch : boolean;
+    reasons : string[];
+}
+
+export interface ListNotesResponse {
+    notes : NoteRecord[];
+    identity ?: PageIdentityResolution;
 }
