@@ -1,3 +1,11 @@
+# 2025-10-26
+
+## Settings experience overhaul
+- Introduced a shared settings store and shadcn-powered dialog inside the content script, giving users a Discord-style panel for toggling EyeNote behaviour.
+- Wired a global `CMD+SHIFT+,` (or `CTRL+SHIFT+,`) shortcut to open the dialog anywhere the overlay runs, persisting preferences back to Chrome storage.
+- Hardened runtime messaging with a 60s timeout so sign-in flows surface errors instead of hanging on "Signing In…".
+- Reworked Google sign-in to launch directly from extension surfaces (with background fallback) so the OAuth window reliably opens when users click "Sign In".
+
 # 2025-10-25
 
 ## Discord-like role system for groups

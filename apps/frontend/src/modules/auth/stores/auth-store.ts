@@ -1,5 +1,11 @@
 import { create } from "zustand";
 import type { AuthUser } from "@eye-note/definitions";
+import {
+    getAuthStatus,
+    signInWithGoogle,
+    signOutUser,
+} from "../shared/google-auth";
+import { sendRuntimeMessage } from "../../../lib/chrome/runtime-message";
 
 interface AuthStore {
     user : AuthUser | null;
@@ -14,7 +20,7 @@ export const useAuthStore = create<AuthStore>( ( set ) => ( {
     isAuthenticated: false,
     async refreshStatus () {
         try {
-            const response = await chrome.runtime.sendMessage( { type: "GET_AUTH_STATUS" } );
+            const response = await getAuthStatus();
             set( {
                 user: ( response.user as AuthUser | undefined ) ?? null,
                 isAuthenticated: Boolean( response.isAuthenticated ),
@@ -26,7 +32,29 @@ export const useAuthStore = create<AuthStore>( ( set ) => ( {
     },
     signIn: async () => {
         try {
-            const response = await chrome.runtime.sendMessage( { type: "SIGN_IN" } );
+            const canLaunchOAuth = Boolean( chrome.identity?.launchWebAuthFlow );
+            let response :
+                | Awaited<ReturnType<typeof signInWithGoogle>>
+                | { success ?: boolean; user ?: AuthUser; error ?: string };
+
+            if ( canLaunchOAuth ) {
+                response = await signInWithGoogle();
+
+                if ( !response.success && response.error?.includes( "not supported" ) ) {
+                    response = await sendRuntimeMessage<{
+                        success ?: boolean;
+                        user ?: AuthUser;
+                        error ?: string;
+                    }>( { type: "SIGN_IN" } );
+                }
+            } else {
+                response = await sendRuntimeMessage<{
+                    success ?: boolean;
+                    user ?: AuthUser;
+                    error ?: string;
+                }>( { type: "SIGN_IN" } );
+            }
+
             if ( response.success ) {
                 set( {
                     user: ( response.user as AuthUser | undefined ) ?? null,
@@ -46,7 +74,27 @@ export const useAuthStore = create<AuthStore>( ( set ) => ( {
     },
     signOut: async () => {
         try {
-            const response = await chrome.runtime.sendMessage( { type: "SIGN_OUT" } );
+            const canLaunchOAuth = Boolean( chrome.identity?.launchWebAuthFlow );
+            let response :
+                | Awaited<ReturnType<typeof signOutUser>>
+                | { success ?: boolean; error ?: string };
+
+            if ( canLaunchOAuth ) {
+                response = await signOutUser();
+
+                if ( !response.success && response.error?.includes( "not supported" ) ) {
+                    response = await sendRuntimeMessage<{
+                        success ?: boolean;
+                        error ?: string;
+                    }>( { type: "SIGN_OUT" } );
+                }
+            } else {
+                response = await sendRuntimeMessage<{
+                    success ?: boolean;
+                    error ?: string;
+                }>( { type: "SIGN_OUT" } );
+            }
+
             if ( response.success ) {
                 set( { user: null, isAuthenticated: false } );
                 return;

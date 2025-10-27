@@ -18,6 +18,7 @@ import {
     useGroupsStore,
     GroupManagerPanel,
 } from "../../modules/groups";
+import { SettingsDialog } from "../../modules/settings";
 import {
     Dialog,
     DialogContent,
@@ -47,6 +48,7 @@ export const ShadowDOM : React.FC = () => {
     const [ isProcessingNoteDismissal, setIsProcessingNoteDismissal ] = useState( false );
     const [ currentUrl, setCurrentUrl ] = useState( () => window.location.href );
     const [ isGroupManagerOpen, setIsGroupManagerOpen ] = useState( false );
+    const [ isSettingsOpen, setIsSettingsOpen ] = useState( false );
     const [ , setLocalSelectedElement ] = useState<HTMLElement | null>( null );
     const notesContainerRef = useRef<HTMLDivElement>( null );
     const pageIdentityState = usePageIdentity( currentUrl );
@@ -120,6 +122,40 @@ export const ShadowDOM : React.FC = () => {
     useEffect( () => {
         lastKnownUrlRef.current = currentUrl;
     }, [ currentUrl, lastKnownUrlRef ] );
+
+    useEffect( () => {
+        const handler = ( event : KeyboardEvent ) => {
+            if ( event.defaultPrevented || event.repeat ) {
+                return;
+            }
+
+            const target = event.target as HTMLElement | null;
+            if ( target ) {
+                const tagName = target.tagName;
+                const isEditableElement =
+                    target.isContentEditable ||
+                    tagName === "INPUT" ||
+                    tagName === "TEXTAREA" ||
+                    tagName === "SELECT";
+                if ( isEditableElement ) {
+                    return;
+                }
+            }
+
+            const usesModifier = event.metaKey || event.ctrlKey;
+            if ( !usesModifier || !event.shiftKey || event.code !== "Comma" ) {
+                return;
+            }
+
+            event.preventDefault();
+            setIsSettingsOpen( ( current ) => !current );
+        };
+
+        window.addEventListener( "keydown", handler );
+        return () => {
+            window.removeEventListener( "keydown", handler );
+        };
+    }, [ setIsSettingsOpen ] );
 
     // Handle note element selection
     const handleClick = useCallback(
@@ -245,6 +281,11 @@ export const ShadowDOM : React.FC = () => {
                 data-inspector-active={isActive ? "1" : "0"}
             >
                 <InteractionBlocker isVisible={isActive} />
+                <SettingsDialog
+                    open={isSettingsOpen}
+                    onOpenChange={setIsSettingsOpen}
+                    container={notesContainerRef.current?.parentElement ?? null}
+                />
                 <Dialog
                     open={isGroupManagerOpen}
                     onOpenChange={( next ) => {

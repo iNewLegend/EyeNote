@@ -1,8 +1,11 @@
 import type { AuthSession, AuthUser } from "@eye-note/definitions";
-import { BACKGROUND_AUTH_CONFIG } from "./auth-config";
+import { AUTH_CONFIG } from "../config";
 
-const manifest = chrome.runtime.getManifest();
-const oauthClientId = BACKGROUND_AUTH_CONFIG.googleClientId || manifest.oauth2?.client_id || "";
+const manifest = typeof chrome !== "undefined" && chrome.runtime?.getManifest
+    ? chrome.runtime.getManifest()
+    : { oauth2: { client_id: "", scopes: [] as string[] } };
+
+const oauthClientId = AUTH_CONFIG.googleClientId || manifest.oauth2?.client_id || "";
 const oauthScopes = manifest.oauth2?.scopes ?? [];
 
 function generateState () : string {
@@ -34,6 +37,10 @@ function parseFragmentParameters ( url : string ) : URLSearchParams {
 }
 
 function launchOAuthFlow ( url : string ) : Promise<string> {
+    if ( !chrome.identity?.launchWebAuthFlow ) {
+        return Promise.reject( new Error( "Google sign-in is not supported in this context." ) );
+    }
+
     return new Promise( ( resolve, reject ) => {
         chrome.identity.launchWebAuthFlow(
             {
@@ -145,7 +152,9 @@ export async function signInWithGoogle () : Promise<{ success : boolean; user ?:
 export async function signOutUser () : Promise<{ success : boolean; error ?: string }> {
     try {
         await clearAuthSession();
-        await chrome.identity.clearAllCachedAuthTokens();
+        if ( chrome.identity?.clearAllCachedAuthTokens ) {
+            await chrome.identity.clearAllCachedAuthTokens();
+        }
         return { success: true };
     } catch ( error ) {
         console.error( "Failed to sign out", error );

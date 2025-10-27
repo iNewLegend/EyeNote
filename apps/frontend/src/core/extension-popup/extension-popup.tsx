@@ -172,7 +172,7 @@ export function ExtensionPopup () {
             } );
         } catch ( error ) {
             toast( "Error", {
-                description: "Failed to sign in. Please try again.",
+                description: error instanceof Error ? error.message : "Failed to sign in. Please try again.",
             } );
         } finally {
             setIsSigningIn( false );
