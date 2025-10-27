@@ -23,8 +23,16 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
+    DialogFooter,
+    DialogClose,
 } from "../../components/ui/dialog";
 import { Toaster } from "../../components/ui/sonner";
+import { Button } from "../../components/ui/button.tsx";
+import { useExtensionSettings, type ExtensionSettings } from "../../hooks/use-extension-settings";
+import { Label } from "../../components/ui/label.tsx";
+import { Switch } from "../../components/ui/switch.tsx";
+import { QuickMenuDialog } from "../../components/quick-menu-dialog";
 
 export const ShadowDOM : React.FC = () => {
     const notes = useNotesStore( ( state ) => state.notes );
@@ -47,9 +55,18 @@ export const ShadowDOM : React.FC = () => {
     const [ isProcessingNoteDismissal, setIsProcessingNoteDismissal ] = useState( false );
     const [ currentUrl, setCurrentUrl ] = useState( () => window.location.href );
     const [ isGroupManagerOpen, setIsGroupManagerOpen ] = useState( false );
+    const [ isQuickMenuOpen, setIsQuickMenuOpen ] = useState( false );
+    const [ isSettingsDialogOpen, setIsSettingsDialogOpen ] = useState( false );
     const [ , setLocalSelectedElement ] = useState<HTMLElement | null>( null );
     const notesContainerRef = useRef<HTMLDivElement>( null );
     const pageIdentityState = usePageIdentity( currentUrl );
+    const { settings, setSetting } = useExtensionSettings();
+    const handleSettingChange = useCallback(
+        ( key : keyof ExtensionSettings ) => ( value : boolean ) => setSetting( key, value ),
+        [ setSetting ]
+    );
+    const dialogContainer = notesContainerRef.current?.parentElement ?? undefined;
+    const wideDialogClassName = "max-h-[85vh] overflow-y-auto w-[min(90vw,640px)] max-w-[640px] space-y-6";
 
     const lastKnownUrlRef = useUrlListener( setCurrentUrl );
     useGroupsBootstrap( {
@@ -116,6 +133,28 @@ export const ShadowDOM : React.FC = () => {
             window.removeEventListener( "eye-note-open-group-manager", handler );
         };
     }, [ canManageGroups ] );
+
+    useEffect( () => {
+        const handler = () => {
+            setIsQuickMenuOpen( true );
+        };
+
+        window.addEventListener( "eye-note-open-quick-menu", handler );
+        return () => {
+            window.removeEventListener( "eye-note-open-quick-menu", handler );
+        };
+    }, [] );
+
+    useEffect( () => {
+        const handler = () => {
+            setIsSettingsDialogOpen( true );
+        };
+
+        window.addEventListener( "eye-note-open-settings-dialog", handler );
+        return () => {
+            window.removeEventListener( "eye-note-open-settings-dialog", handler );
+        };
+    }, [] );
 
     useEffect( () => {
         lastKnownUrlRef.current = currentUrl;
@@ -245,6 +284,79 @@ export const ShadowDOM : React.FC = () => {
                 data-inspector-active={isActive ? "1" : "0"}
             >
                 <InteractionBlocker isVisible={isActive} />
+                <QuickMenuDialog
+                    open={isQuickMenuOpen}
+                    onOpenChange={setIsQuickMenuOpen}
+                    dialogContainer={dialogContainer}
+                    canManageGroups={canManageGroups}
+                    onSelect={ ( item ) => {
+                        setIsQuickMenuOpen( false );
+                        setIsGroupManagerOpen( true );
+                    }}
+                />
+                <Dialog
+                    open={isSettingsDialogOpen}
+                    onOpenChange={setIsSettingsDialogOpen}
+                >
+                    <DialogContent
+                        container={dialogContainer}
+                        className={wideDialogClassName}
+                    >
+                        <DialogHeader>
+                            <DialogTitle>Extension settings</DialogTitle>
+                            <DialogDescription>
+                                These preferences are stored locally in chrome.storage and sync
+                                across the popup and overlay.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between space-x-4">
+                                <Label
+                                    htmlFor="overlay-enable-notes"
+                                    className="flex-1 text-sm font-normal"
+                                >
+                                    Enable Notes
+                                </Label>
+                                <Switch
+                                    id="overlay-enable-notes"
+                                    checked={settings.enabled}
+                                    onCheckedChange={handleSettingChange( "enabled" )}
+                                />
+                            </div>
+                            <div className="flex items-center justify-between space-x-4">
+                                <Label
+                                    htmlFor="overlay-notification-sound"
+                                    className="flex-1 text-sm font-normal"
+                                >
+                                    Notification Sound
+                                </Label>
+                                <Switch
+                                    id="overlay-notification-sound"
+                                    checked={settings.notificationSound}
+                                    onCheckedChange={handleSettingChange( "notificationSound" )}
+                                />
+                            </div>
+                            <div className="flex items-center justify-between space-x-4">
+                                <Label
+                                    htmlFor="overlay-unread-badge"
+                                    className="flex-1 text-sm font-normal"
+                                >
+                                    Show Unread Badge
+                                </Label>
+                                <Switch
+                                    id="overlay-unread-badge"
+                                    checked={settings.showUnreadBadge}
+                                    onCheckedChange={handleSettingChange( "showUnreadBadge" )}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter className="justify-end">
+                            <DialogClose asChild>
+                                <Button variant="outline">Close</Button>
+                            </DialogClose>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
                 <Dialog
                     open={isGroupManagerOpen}
                     onOpenChange={( next ) => {

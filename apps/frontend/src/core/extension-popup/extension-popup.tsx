@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { createRoot } from "react-dom/client";
-import { AuthDialog } from "../../modules/auth";
 import { Button } from "../../components/ui/button.tsx";
 import { toast } from "sonner";
 import { Toaster } from "../../components/ui/sonner.tsx";
@@ -22,22 +21,12 @@ import {
     useGroupsBootstrap,
     useGroupsStore,
 } from "../../modules/groups";
-
-interface StorageSettings {
-    enabled : boolean;
-    notificationSound : boolean;
-    showUnreadBadge : boolean;
-}
+import { Menu, Settings } from "lucide-react";
+import { useExtensionSettings, type ExtensionSettings } from "../../hooks/use-extension-settings";
 
 export function ExtensionPopup () {
-    const [ settings, setSettings ] = useState<StorageSettings>( {
-        enabled: true,
-        notificationSound: true,
-        showUnreadBadge: true,
-    } );
-
-    const [ isAuthOpen, setIsAuthOpen ] = useState( false );
     const [ isSigningIn, setIsSigningIn ] = useState( false );
+    const { settings, setSetting } = useExtensionSettings();
     const authUser = useAuthStore( ( state ) => state.user );
     const isAuthenticated = useAuthStore( ( state ) => state.isAuthenticated );
     const refreshAuthStatus = useAuthStore( ( state ) => state.refreshStatus );
@@ -46,17 +35,6 @@ export function ExtensionPopup () {
     const [ isBackendHealthy, setIsBackendHealthy ] = useState<boolean | null>( null );
     const groups = useGroupsStore( ( state ) => state.groups );
     const activeGroupIds = useGroupsStore( ( state ) => state.activeGroupIds );
-
-    useEffect( () => {
-        if ( typeof chrome !== "undefined" && chrome.storage?.local ) {
-            chrome.storage.local.get( "settings", ( result ) => {
-                const storedSettings = ( result as { settings ?: StorageSettings } ).settings;
-                if ( storedSettings ) {
-                    setSettings( storedSettings );
-                }
-            } );
-        }
-    }, [] );
 
     useGroupsBootstrap( {
         isAuthenticated,
@@ -85,15 +63,8 @@ export function ExtensionPopup () {
         }
     };
 
-    const toggleSetting = ( key : keyof typeof settings ) => {
-        const newSettings = {
-            ...settings,
-            [ key ]: !settings[ key ],
-        };
-        setSettings( newSettings );
-        if ( typeof chrome !== "undefined" && chrome.storage?.local ) {
-            chrome.storage.local.set( { settings: newSettings } );
-        }
+    const handleSettingChange = ( key : keyof ExtensionSettings ) => ( value : boolean ) => {
+        setSetting( key, value );
     };
 
     const activeGroups = useMemo( () => {
@@ -101,26 +72,12 @@ export function ExtensionPopup () {
         return groups.filter( ( group ) => activeSet.has( group.id ) );
     }, [ activeGroupIds, groups ] );
 
-    const openGroupManagerInActiveTab = async () => {
-        if ( !isAuthenticated ) {
-            toast( "Sign in required", {
-                description: "Sign in to manage your groups.",
-            } );
-            return;
-        }
-
-        if ( isBackendHealthy !== true ) {
-            toast( "Backend unavailable", {
-                description: "Reconnect to the backend to manage groups.",
-            } );
-            return;
-        }
-
+    const sendMessageToActiveTab = async ( payload : { type : string } ) => {
         if ( typeof chrome === "undefined" || !chrome.tabs?.query ) {
-            toast( "Unsupported environment", {
-                description: "Cannot reach the active tab from this context.",
-            } );
-            return;
+            return {
+                success: false,
+                error: "Cannot reach the active tab from this context.",
+            } as const;
         }
 
         const getActiveTab = () => new Promise<chrome.tabs.Tab | undefined>( ( resolve, reject ) => {
@@ -134,14 +91,14 @@ export function ExtensionPopup () {
             } );
         } );
 
-        const sendMessage = ( tabId : number ) => new Promise<void>( ( resolve, reject ) => {
-            chrome.tabs.sendMessage( tabId, { type: "OPEN_GROUP_MANAGER" }, () => {
+        const sendMessage = ( tabId : number ) => new Promise<boolean>( ( resolve, reject ) => {
+            chrome.tabs.sendMessage( tabId, payload, ( response ) => {
                 const lastError = chrome.runtime?.lastError;
                 if ( lastError ) {
                     reject( new Error( lastError.message ) );
                     return;
                 }
-                resolve();
+                resolve( Boolean( response?.success ) );
             } );
         } );
 
@@ -150,11 +107,40 @@ export function ExtensionPopup () {
             if ( !tab?.id ) {
                 throw new Error( "No active tab" );
             }
-            await sendMessage( tab.id );
+            const wasAccepted = await sendMessage( tab.id );
+            if ( !wasAccepted ) {
+                return {
+                    success: false,
+                    error: "Content script rejected the request.",
+                } as const;
+            }
+            return { success: true } as const;
         } catch ( error ) {
             const message = error instanceof Error ? error.message : "Unable to reach content script";
-            toast( "Cannot open manager", {
-                description: `${ message }. Make sure EyeNote is active on this tab.`,
+            return {
+                success: false,
+                error: message,
+            } as const;
+        }
+    };
+
+    const buildMessageFailureDescription = ( error ?: string ) =>
+        error ? `${ error } Make sure EyeNote is active on this tab.` : "Make sure EyeNote is active on this tab.";
+
+    const handleOpenQuickMenuDialog = async () => {
+        const result = await sendMessageToActiveTab( { type: "OPEN_QUICK_MENU_DIALOG" } );
+        if ( !result.success ) {
+            toast( "Cannot open menu", {
+                description: buildMessageFailureDescription( result.error ),
+            } );
+        }
+    };
+
+    const handleOpenSettingsDialog = async () => {
+        const result = await sendMessageToActiveTab( { type: "OPEN_SETTINGS_DIALOG" } );
+        if ( !result.success ) {
+            toast( "Cannot open settings", {
+                description: buildMessageFailureDescription( result.error ),
             } );
         }
     };
@@ -195,25 +181,19 @@ export function ExtensionPopup () {
                                 <CardDescription className="text-sm">{authUser.name}</CardDescription>
                             )}
                         </div>
-                        {!isBackendDown && (
-                            isAuthenticated ? (
-                                <div className="flex items-center gap-2">
-                                    {authUser?.picture && (
-                                        <img
-                                            src={authUser.picture}
-                                            alt={authUser.name}
-                                            className="w-8 h-8 rounded-full ring-1 ring-border"
-                                        />
-                                    )}
-                                    <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                                        Sign Out
-                                    </Button>
-                                </div>
-                            ) : (
-                                <Button variant="default" size="sm" onClick={() => setIsAuthOpen( true )}>
-                                    Sign In
+                        {!isBackendDown && isAuthenticated && (
+                            <div className="flex items-center gap-2">
+                                {authUser?.picture && (
+                                    <img
+                                        src={authUser.picture}
+                                        alt={authUser.name}
+                                        className="w-8 h-8 rounded-full ring-1 ring-border"
+                                    />
+                                )}
+                                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                                    Sign Out
                                 </Button>
-                            )
+                            </div>
                         )}
                     </div>
                 </CardHeader>
@@ -233,7 +213,35 @@ export function ExtensionPopup () {
                     <CardContent className="p-6 space-y-8 flex-1 overflow-auto">
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-sm font-semibold">Settings</h2>
+                                <h2 className="text-sm font-semibold">Quick controls</h2>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                Launch in-page tools without leaving your current tab. Each button
+                                opens a content overlay inside the site you are viewing.
+                            </p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-between rounded-full"
+                                    onClick={handleOpenQuickMenuDialog}
+                                >
+                                    <span>Menu</span>
+                                    <Menu className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-between rounded-full"
+                                    onClick={handleOpenSettingsDialog}
+                                >
+                                    <span>Settings</span>
+                                    <Settings className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-sm font-semibold">Extension settings</h2>
                             </div>
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between space-x-4">
@@ -246,7 +254,7 @@ export function ExtensionPopup () {
                                     <Switch
                                         id="enable-notes"
                                         checked={settings.enabled}
-                                        onCheckedChange={() => toggleSetting( "enabled" )}
+                                        onCheckedChange={handleSettingChange( "enabled" )}
                                     />
                                 </div>
                                 <div className="flex items-center justify-between space-x-4">
@@ -259,7 +267,7 @@ export function ExtensionPopup () {
                                     <Switch
                                         id="notification-sound"
                                         checked={settings.notificationSound}
-                                        onCheckedChange={() => toggleSetting( "notificationSound" )}
+                                        onCheckedChange={handleSettingChange( "notificationSound" )}
                                     />
                                 </div>
                                 <div className="flex items-center justify-between space-x-4">
@@ -272,28 +280,20 @@ export function ExtensionPopup () {
                                     <Switch
                                         id="unread-badge"
                                         checked={settings.showUnreadBadge}
-                                        onCheckedChange={() => toggleSetting( "showUnreadBadge" )}
+                                        onCheckedChange={handleSettingChange( "showUnreadBadge" )}
                                     />
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-5">
-                            <div className="flex items-center justify-between">
+                            <div className="space-y-2">
                                 <h2 className="text-sm font-semibold">Groups</h2>
+                                <p className="text-sm text-muted-foreground">
+                                    Active groups sync automatically here. Use the menu dialog to open
+                                    the full manager inside your current tab.
+                                </p>
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                                Manage groups from any page using the in-page EyeNote controls. Open
-                                the manager below and look for the "Manage groups" button in the
-                                overlay.
-                            </p>
-                            <Button
-                                variant="secondary"
-                                onClick={openGroupManagerInActiveTab}
-                                disabled={isBackendDown || !isAuthenticated}
-                            >
-                                Open group manager in current tab
-                            </Button>
                             <div className="space-y-2">
                                 <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                     Active groups
@@ -381,9 +381,6 @@ export function ExtensionPopup () {
                 )}
             </Card>
 
-            {!isBackendDown && (
-                <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen( false )} />
-            )}
         </>
     );
 }

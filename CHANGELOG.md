@@ -1,3 +1,9 @@
+# 2025-10-27
+
+## Popup quick controls
+- Refined the popup header controls so the menu and settings buttons trigger wide content-script overlays instead of in-popup dialogs.
+- Synced extension preference toggles across the popup and overlay and added a quick menu action that opens the in-page group manager.
+
 # 2025-10-25
 
 ## Discord-like role system for groups
@@ -83,3 +89,8 @@
 
 ## Update policy
 - Established that all substantial work should be logged here with dated bullets, replacing `gpt-codex-history.txt`.
+
+# 2025-10-27
+
+## UI composition
+- Extracted the Quick Lunch dialog into `QuickMenuDialog` under `apps/frontend/src/components` and updated the shadow overlay to consume the shared component.

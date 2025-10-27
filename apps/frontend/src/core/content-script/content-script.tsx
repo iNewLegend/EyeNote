@@ -210,6 +210,18 @@ const runtimeMessageHandler : Parameters<typeof chrome.runtime.onMessage.addList
         return;
     }
 
+    if ( payload?.type === "OPEN_QUICK_MENU_DIALOG" ) {
+        window.dispatchEvent( new CustomEvent( "eye-note-open-quick-menu" ) );
+        sendResponse?.( { success: true } );
+        return;
+    }
+
+    if ( payload?.type === "OPEN_SETTINGS_DIALOG" ) {
+        window.dispatchEvent( new CustomEvent( "eye-note-open-settings-dialog" ) );
+        sendResponse?.( { success: true } );
+        return;
+    }
+
     sendResponse?.( { success: false } );
 };
 
