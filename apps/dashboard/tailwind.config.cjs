@@ -2,11 +2,10 @@ const { fontFamily } = require("tailwindcss/defaultTheme");
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-    important: ["#eye-note-shadow-dom", "#eye-note-userland-dom"],
-    safelist: ["animate-cursor"],
     darkMode: ["class"],
     content: [
-        "./src/**/*.{js,ts,jsx,tsx}",
+        "./index.html",
+        "./src/**/*.{ts,tsx}",
         "../../packages/ui/src/**/*.{ts,tsx}"
     ],
     theme: {
@@ -20,14 +19,6 @@ module.exports = {
         extend: {
             borderColor: {
                 DEFAULT: "hsl(var(--border))",
-            },
-            zIndex: {
-                "plugin-container": "9999",
-                "highlight-element": "99999",
-                "note-content": "100000",
-                "dialog-overlay": "100001",
-                "dialog-content": "100002",
-                toast: "100003",
             },
             colors: {
                 border: "hsl(var(--border))",
@@ -98,35 +89,17 @@ module.exports = {
                         height: 0,
                     },
                 },
-                ping: {
-                    "75%, 100%": {
-                        transform: "scale(2)",
-                        opacity: "0",
-                    },
-                },
-                "cursor-ping": {
-                    "0%": {
-                        transform: "translate(-50%, -50%) scale(1)",
-                        opacity: "1",
-                    },
-                    "75%, 100%": {
-                        transform: "translate(-50%, -50%) scale(2)",
-                        opacity: "0",
-                    },
-                },
             },
             animation: {
                 "accordion-down": "accordion-down 0.2s ease-out",
                 "accordion-up": "accordion-up 0.2s ease-out",
-                ping: "ping 1.3s cubic-bezier(0, 0, 0.2, 1) infinite",
-                cursor: "cursor-ping 1.3s cubic-bezier(0, 0, 0.2, 1) infinite",
             },
         },
     },
     plugins: [
         require("tailwindcss-animate"),
         function ({ addUtilities }) {
-            addUtilities({
+            addUtilities( {
                 ".backface-hidden": {
                     "backface-visibility": "hidden",
                     "-webkit-backface-visibility": "hidden",
@@ -138,7 +111,7 @@ module.exports = {
                     "-webkit-font-smoothing": "antialiased",
                     "-moz-osx-font-smoothing": "grayscale",
                 },
-            });
+            } );
         },
     ],
 };

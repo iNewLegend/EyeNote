@@ -1,10 +1,16 @@
 import React, { useState } from "react";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { Textarea } from "../ui/textarea";
-import { Checkbox } from "../ui/checkbox";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import type { CheckedState } from "@radix-ui/react-checkbox";
+import {
+    Button,
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    Checkbox,
+    Input,
+    Label,
+    Textarea,
+} from "@eye-note/ui";
 import { GroupPermission, type CreateGroupRolePayload, type UpdateGroupRolePayload } from "@eye-note/definitions";
 
 interface RoleFormProps {
@@ -81,7 +87,9 @@ export function RoleForm ( { initialData, onSubmit, onCancel, isLoading = false,
                         <Input
                             id="name"
                             value={formData.name}
-                            onChange={( e ) => setFormData( ( prev ) => ( { ...prev, name: e.target.value } ) )}
+                            onChange={( event : React.ChangeEvent<HTMLInputElement> ) =>
+                                setFormData( ( prev ) => ( { ...prev, name: event.target.value } ) )
+                            }
                             placeholder="Enter role name"
                             required
                         />
@@ -92,7 +100,9 @@ export function RoleForm ( { initialData, onSubmit, onCancel, isLoading = false,
                         <Textarea
                             id="description"
                             value={formData.description}
-                            onChange={( e ) => setFormData( ( prev ) => ( { ...prev, description: e.target.value } ) )}
+                            onChange={( event : React.ChangeEvent<HTMLTextAreaElement> ) =>
+                                setFormData( ( prev ) => ( { ...prev, description: event.target.value } ) )
+                            }
                             placeholder="Enter role description"
                             rows={3}
                         />
@@ -105,12 +115,16 @@ export function RoleForm ( { initialData, onSubmit, onCancel, isLoading = false,
                                 id="color"
                                 type="color"
                                 value={formData.color}
-                                onChange={( e ) => setFormData( ( prev ) => ( { ...prev, color: e.target.value } ) )}
+                                onChange={( event : React.ChangeEvent<HTMLInputElement> ) =>
+                                    setFormData( ( prev ) => ( { ...prev, color: event.target.value } ) )
+                                }
                                 className="w-16 h-10 p-1"
                             />
                             <Input
                                 value={formData.color}
-                                onChange={( e ) => setFormData( ( prev ) => ( { ...prev, color: e.target.value } ) )}
+                                onChange={( event : React.ChangeEvent<HTMLInputElement> ) =>
+                                    setFormData( ( prev ) => ( { ...prev, color: event.target.value } ) )
+                                }
                                 placeholder="#6366f1"
                                 className="flex-1"
                             />
@@ -130,8 +144,8 @@ export function RoleForm ( { initialData, onSubmit, onCancel, isLoading = false,
                                             <Checkbox
                                                 id={permission}
                                                 checked={formData.permissions.includes( permission )}
-                                                onCheckedChange={( checked ) => 
-                                                    handlePermissionChange( permission, checked as boolean )
+                                                onCheckedChange={( checkedValue : CheckedState ) =>
+                                                    handlePermissionChange( permission, checkedValue === true )
                                                 }
                                             />
                                             <Label htmlFor={permission} className="text-sm">

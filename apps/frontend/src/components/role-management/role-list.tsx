@@ -1,6 +1,11 @@
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import {
+    Badge,
+    Button,
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from "@eye-note/ui";
 import { GroupPermission, type GroupRoleRecord } from "@eye-note/definitions";
 
 interface RoleListProps {

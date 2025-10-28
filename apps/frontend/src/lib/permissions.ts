@@ -1,4 +1,4 @@
-import { GroupPermission, type GroupWithRoles, type GroupMemberRole } from "@eye-note/definitions";
+import { GroupPermission, type GroupWithRoles } from "@eye-note/definitions";
 
 export interface UserPermissions {
     permissions : GroupPermission[];

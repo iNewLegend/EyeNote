@@ -1,11 +1,11 @@
 import {
+    Button,
     Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from "../../../components/ui/dialog";
-import { Button } from "../../../components/ui/button";
+} from "@eye-note/ui";
 import { toast } from "sonner";
 import { useAuthStore } from "../stores";
 

@@ -1,4 +1,4 @@
-import { cn } from "../lib/utils";
+import { cn } from "@eye-note/ui";
 
 interface InteractionBlockerProps {
     isVisible : boolean;

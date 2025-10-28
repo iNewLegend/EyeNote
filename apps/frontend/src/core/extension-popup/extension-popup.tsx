@@ -1,17 +1,17 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Button } from "../../components/ui/button.tsx";
 import { toast } from "sonner";
-import { Toaster } from "../../components/ui/sonner.tsx";
 import {
+    Button,
     Card,
     CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
-} from "../../components/ui/card.tsx";
-import { Switch } from "../../components/ui/switch.tsx";
-import { Label } from "../../components/ui/label.tsx";
+    Input,
+    Label,
+    Toaster,
+} from "@eye-note/ui";
 import { ThemeProvider } from "../theme/theme-provider";
 import "./extension-popup.css";
 import { useAuthStore } from "../../modules/auth";
@@ -21,12 +21,10 @@ import {
     useGroupsBootstrap,
     useGroupsStore,
 } from "../../modules/groups";
-import { Menu, Settings } from "lucide-react";
-import { useExtensionSettings, type ExtensionSettings } from "../../hooks/use-extension-settings";
+import { Menu, Users } from "lucide-react";
 
 export function ExtensionPopup () {
     const [ isSigningIn, setIsSigningIn ] = useState( false );
-    const { settings, setSetting } = useExtensionSettings();
     const authUser = useAuthStore( ( state ) => state.user );
     const isAuthenticated = useAuthStore( ( state ) => state.isAuthenticated );
     const refreshAuthStatus = useAuthStore( ( state ) => state.refreshStatus );
@@ -35,6 +33,12 @@ export function ExtensionPopup () {
     const [ isBackendHealthy, setIsBackendHealthy ] = useState<boolean | null>( null );
     const groups = useGroupsStore( ( state ) => state.groups );
     const activeGroupIds = useGroupsStore( ( state ) => state.activeGroupIds );
+    const createGroup = useGroupsStore( ( state ) => state.createGroup );
+    const joinGroupByCode = useGroupsStore( ( state ) => state.joinGroupByCode );
+    const [ newGroupName, setNewGroupName ] = useState( "" );
+    const [ inviteCodeInput, setInviteCodeInput ] = useState( "" );
+    const [ isCreatingGroup, setIsCreatingGroup ] = useState( false );
+    const [ isJoiningGroup, setIsJoiningGroup ] = useState( false );
 
     useGroupsBootstrap( {
         isAuthenticated,
@@ -61,10 +65,6 @@ export function ExtensionPopup () {
                 description: "Failed to sign out. Please try again.",
             } );
         }
-    };
-
-    const handleSettingChange = ( key : keyof ExtensionSettings ) => ( value : boolean ) => {
-        setSetting( key, value );
     };
 
     const activeGroups = useMemo( () => {
@@ -127,19 +127,19 @@ export function ExtensionPopup () {
     const buildMessageFailureDescription = ( error ?: string ) =>
         error ? `${ error } Make sure EyeNote is active on this tab.` : "Make sure EyeNote is active on this tab.";
 
-    const handleOpenQuickMenuDialog = async () => {
-        const result = await sendMessageToActiveTab( { type: "OPEN_QUICK_MENU_DIALOG" } );
+    const handleOpenGroupManager = async () => {
+        const result = await sendMessageToActiveTab( { type: "OPEN_GROUP_MANAGER" } );
         if ( !result.success ) {
-            toast( "Cannot open menu", {
+            toast( "Cannot open groups", {
                 description: buildMessageFailureDescription( result.error ),
             } );
         }
     };
 
-    const handleOpenSettingsDialog = async () => {
-        const result = await sendMessageToActiveTab( { type: "OPEN_SETTINGS_DIALOG" } );
+    const handleOpenQuickMenuDialog = async () => {
+        const result = await sendMessageToActiveTab( { type: "OPEN_QUICK_MENU_DIALOG" } );
         if ( !result.success ) {
-            toast( "Cannot open settings", {
+            toast( "Cannot open menu", {
                 description: buildMessageFailureDescription( result.error ),
             } );
         }
@@ -166,6 +166,65 @@ export function ExtensionPopup () {
     };
 
     const isBackendDown = isBackendHealthy === false;
+    const defaultGroupColor = "#6366f1";
+
+    const handleCreateGroup = async ( event : React.FormEvent<HTMLFormElement> ) => {
+        event.preventDefault();
+        const name = newGroupName.trim();
+
+        if ( name.length === 0 ) {
+            toast( "Group name required", {
+                description: "Enter a team name before creating a group.",
+            } );
+            return;
+        }
+
+        try {
+            setIsCreatingGroup( true );
+            const group = await createGroup( { name, color: defaultGroupColor } );
+            setNewGroupName( "" );
+            toast( "Group created", {
+                description: `Share invite code ${ group.inviteCode } with teammates.`,
+            } );
+        } catch ( error ) {
+            const message = error instanceof Error ? error.message : "Failed to create group";
+            toast( "Error", {
+                description: message,
+            } );
+        } finally {
+            setIsCreatingGroup( false );
+        }
+    };
+
+    const handleJoinGroup = async ( event : React.FormEvent<HTMLFormElement> ) => {
+        event.preventDefault();
+        const inviteCode = inviteCodeInput.trim();
+
+        if ( inviteCode.length === 0 ) {
+            toast( "Invite code required", {
+                description: "Enter a group's invite code to join.",
+            } );
+            return;
+        }
+
+        try {
+            setIsJoiningGroup( true );
+            const { group, joined } = await joinGroupByCode( inviteCode );
+            setInviteCodeInput( "" );
+            toast( joined ? "Joined group" : "Already a member", {
+                description: joined
+                    ? `You're ready to collaborate in ${ group.name }.`
+                    : `You're already part of ${ group.name }.`,
+            } );
+        } catch ( error ) {
+            const message = error instanceof Error ? error.message : "Failed to join group";
+            toast( "Error", {
+                description: message,
+            } );
+        } finally {
+            setIsJoiningGroup( false );
+        }
+    };
 
     return (
         <>
@@ -231,59 +290,64 @@ export function ExtensionPopup () {
                                 <Button
                                     variant="outline"
                                     className="w-full justify-between rounded-full"
-                                    onClick={handleOpenSettingsDialog}
+                                    onClick={handleOpenGroupManager}
                                 >
-                                    <span>Settings</span>
-                                    <Settings className="h-4 w-4" />
+                                    <span>Manage Groups</span>
+                                    <Users className="h-4 w-4" />
                                 </Button>
                             </div>
                         </div>
 
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-sm font-semibold">Extension settings</h2>
+                            <div className="space-y-2">
+                                <h2 className="text-sm font-semibold">Manage groups</h2>
+                                <p className="text-sm text-muted-foreground">
+                                    Create a new collaboration group or join an existing team with an invite
+                                    code.
+                                </p>
                             </div>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between space-x-4">
-                                    <Label
-                                        htmlFor="enable-notes"
-                                        className="flex-1 text-sm font-normal"
-                                    >
-                                        Enable Notes
+                            <form
+                                className="space-y-3 rounded-lg border border-border/60 p-4"
+                                onSubmit={handleCreateGroup}
+                            >
+                                <div className="space-y-2">
+                                    <Label htmlFor="popup-create-group-name" className="text-sm font-medium">
+                                        Team name
                                     </Label>
-                                    <Switch
-                                        id="enable-notes"
-                                        checked={settings.enabled}
-                                        onCheckedChange={handleSettingChange( "enabled" )}
+                                    <Input
+                                        id="popup-create-group-name"
+                                        value={newGroupName}
+                                        onChange={( event ) => setNewGroupName( event.target.value )}
+                                        placeholder="Acme Product Team"
+                                        autoComplete="off"
+                                        maxLength={60}
                                     />
                                 </div>
-                                <div className="flex items-center justify-between space-x-4">
-                                    <Label
-                                        htmlFor="notification-sound"
-                                        className="flex-1 text-sm font-normal"
-                                    >
-                                        Notification Sound
+                                <Button type="submit" className="w-full" disabled={isCreatingGroup}>
+                                    {isCreatingGroup ? "Creating..." : "Create"}
+                                </Button>
+                            </form>
+                            <form
+                                className="space-y-3 rounded-lg border border-border/60 p-4"
+                                onSubmit={handleJoinGroup}
+                            >
+                                <div className="space-y-2">
+                                    <Label htmlFor="popup-join-group-code" className="text-sm font-medium">
+                                        Invite code
                                     </Label>
-                                    <Switch
-                                        id="notification-sound"
-                                        checked={settings.notificationSound}
-                                        onCheckedChange={handleSettingChange( "notificationSound" )}
+                                    <Input
+                                        id="popup-join-group-code"
+                                        value={inviteCodeInput}
+                                        onChange={( event ) => setInviteCodeInput( event.target.value )}
+                                        placeholder="EN-XXXXXX"
+                                        autoComplete="off"
+                                        maxLength={24}
                                     />
                                 </div>
-                                <div className="flex items-center justify-between space-x-4">
-                                    <Label
-                                        htmlFor="unread-badge"
-                                        className="flex-1 text-sm font-normal"
-                                    >
-                                        Show Unread Badge
-                                    </Label>
-                                    <Switch
-                                        id="unread-badge"
-                                        checked={settings.showUnreadBadge}
-                                        onCheckedChange={handleSettingChange( "showUnreadBadge" )}
-                                    />
-                                </div>
-                            </div>
+                                <Button type="submit" className="w-full" disabled={isJoiningGroup}>
+                                    {isJoiningGroup ? "Joining..." : "Join"}
+                                </Button>
+                            </form>
                         </div>
 
                         <div className="space-y-5">

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { cn } from "../lib/utils";
+import { cn } from "@eye-note/ui";
 import { useCursorStore } from "../stores/use-cursor-store";
 
 interface CursorDotProps {

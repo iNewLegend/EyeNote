@@ -2,12 +2,12 @@ import { useState, useEffect, useMemo, type CSSProperties } from "react";
 import type { Note } from "../../types";
 import type { UpdateNotePayload } from "@eye-note/definitions";
 import {
+    Button,
     Dialog,
     DialogContent,
-    DialogTitle,
     DialogDescription,
-} from "../../components/ui/dialog";
-import { Button } from "../../components/ui/button";
+    DialogTitle,
+} from "@eye-note/ui";
 import { useHighlightStore } from "../../stores/highlight-store";
 import { useNotesStore } from "./notes-store";
 import { useNotesController } from "./notes-controller";

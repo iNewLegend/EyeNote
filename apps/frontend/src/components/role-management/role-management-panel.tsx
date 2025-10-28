@@ -1,7 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { useEffect, useState } from "react";
+import {
+    Button,
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from "@eye-note/ui";
 import { useGroupsStore } from "../../modules/groups/groups-store";
 import { RoleList } from "./role-list";
 import { RoleForm } from "./role-form";
@@ -32,22 +40,34 @@ export function RoleManagementPanel ( { groupId, onClose } : RoleManagementPanel
         return () => clearSelectedGroup();
     }, [groupId, fetchGroupWithRoles, clearSelectedGroup] );
 
-    const handleCreateRole = async ( data : CreateGroupRolePayload ) => {
+    const handleCreateRole = async ( data : CreateGroupRolePayload | UpdateGroupRolePayload ) => {
         setIsSubmitting( true );
         try {
-            await createGroupRole( groupId, data );
+            const payload : CreateGroupRolePayload = {
+                name: data.name ?? "",
+                description: data.description,
+                color: data.color,
+                permissions: data.permissions ?? [],
+            };
+            await createGroupRole( groupId, payload );
             setActiveTab( "roles" );
         } finally {
             setIsSubmitting( false );
         }
     };
 
-    const handleUpdateRole = async ( data : UpdateGroupRolePayload ) => {
+    const handleUpdateRole = async ( data : CreateGroupRolePayload | UpdateGroupRolePayload ) => {
         if ( !editingRole ) return;
 
         setIsSubmitting( true );
         try {
-            await updateGroupRole( groupId, editingRole.id, data );
+            const payload : UpdateGroupRolePayload = {
+                name: data.name,
+                description: data.description,
+                color: data.color,
+                permissions: data.permissions,
+            };
+            await updateGroupRole( groupId, editingRole.id, payload );
             setEditingRole( null );
             setActiveTab( "roles" );
         } finally {

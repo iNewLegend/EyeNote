@@ -94,3 +94,19 @@
 
 ## UI composition
 - Extracted the Quick Lunch dialog into `QuickMenuDialog` under `apps/frontend/src/components` and updated the shadow overlay to consume the shared component.
+
+## Settings hub & shadcn refresh
+- Added a reusable two-pane `SettingsDialog` that drives general preferences and group management from a shared layout, wiring the shadow overlay and quick menu to target specific sections.
+- Realigned `QuickMenuDialog` controls and gating to the new settings flow, disabling group actions when collaboration isn’t available.
+- Upgraded checkbox and toast UI primitives to the shadcn patterns so shared components stay consistent across the extension.
+- Refreshed the Chrome popup to focus on collaboration: swapped the settings toggles for inline create/join group forms and retargeted quick controls to open the shared group manager.
+
+# 2025-10-28
+
+## Shared UI package
+- Promoted the shadcn-based primitives and `SettingsDialog` into a new `@eye-note/ui` workspace package with Radix dependencies, exposing a consolidated surface for Tailwind/React consumers.
+- Refactored the extension overlay, popup, and group manager to consume the shared exports and dropped the local `lib/utils.ts` helper.
+
+## Dashboard settings app
+- Scaffolded `apps/dashboard` (Vite + Tailwind) to render overlay preferences outside the extension, persisting toggles to `localStorage` and wiring the shared `@eye-note/ui` components.
+- Added a collaboration roadmap panel and reset affordances to clarify the future standalone experience while reuseing the shared toast/toaster abstractions.

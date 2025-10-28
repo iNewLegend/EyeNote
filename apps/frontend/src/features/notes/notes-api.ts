@@ -1,5 +1,4 @@
 import type {
-    ListNotesQuery,
     ListNotesResponse,
     NoteRecord,
     PageIdentityPayload,

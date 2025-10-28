@@ -18,21 +18,17 @@ import {
     useGroupsStore,
     GroupManagerPanel,
 } from "../../modules/groups";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter,
-    DialogClose,
-} from "../../components/ui/dialog";
-import { Toaster } from "../../components/ui/sonner";
-import { Button } from "../../components/ui/button.tsx";
 import { useExtensionSettings, type ExtensionSettings } from "../../hooks/use-extension-settings";
-import { Label } from "../../components/ui/label.tsx";
-import { Switch } from "../../components/ui/switch.tsx";
 import { QuickMenuDialog } from "../../components/quick-menu-dialog";
+import {
+    Label,
+    SettingsDialog,
+    Switch,
+    Toaster,
+    type SettingsDialogItem,
+} from "@eye-note/ui";
+
+type SettingsSectionId = "general" | "groups";
 
 export const ShadowDOM : React.FC = () => {
     const notes = useNotesStore( ( state ) => state.notes );
@@ -54,9 +50,9 @@ export const ShadowDOM : React.FC = () => {
     } = useInspectorMode();
     const [ isProcessingNoteDismissal, setIsProcessingNoteDismissal ] = useState( false );
     const [ currentUrl, setCurrentUrl ] = useState( () => window.location.href );
-    const [ isGroupManagerOpen, setIsGroupManagerOpen ] = useState( false );
     const [ isQuickMenuOpen, setIsQuickMenuOpen ] = useState( false );
     const [ isSettingsDialogOpen, setIsSettingsDialogOpen ] = useState( false );
+    const [ activeSettingsSection, setActiveSettingsSection ] = useState<SettingsSectionId>( "general" );
     const [ , setLocalSelectedElement ] = useState<HTMLElement | null>( null );
     const notesContainerRef = useRef<HTMLDivElement>( null );
     const pageIdentityState = usePageIdentity( currentUrl );
@@ -65,8 +61,7 @@ export const ShadowDOM : React.FC = () => {
         ( key : keyof ExtensionSettings ) => ( value : boolean ) => setSetting( key, value ),
         [ setSetting ]
     );
-    const dialogContainer = notesContainerRef.current?.parentElement ?? undefined;
-    const wideDialogClassName = "max-h-[85vh] overflow-y-auto w-[min(90vw,640px)] max-w-[640px] space-y-6";
+    const dialogContainer = notesContainerRef.current?.parentElement ?? null;
 
     const lastKnownUrlRef = useUrlListener( setCurrentUrl );
     useGroupsBootstrap( {
@@ -121,11 +116,118 @@ export const ShadowDOM : React.FC = () => {
     }, [ activeGroupIds ] );
     const canManageGroups = isAuthenticated && isConnected;
 
+    const generalSettingsSection = useMemo(
+        () => (
+            <div className="space-y-4">
+                <div className="flex items-center justify-between space-x-4">
+                    <Label
+                        htmlFor="overlay-enable-notes"
+                        className="flex-1 text-sm font-normal"
+                    >
+                        Enable Notes
+                    </Label>
+                    <Switch
+                        id="overlay-enable-notes"
+                        checked={settings.enabled}
+                        onCheckedChange={handleSettingChange( "enabled" )}
+                    />
+                </div>
+                <div className="flex items-center justify-between space-x-4">
+                    <Label
+                        htmlFor="overlay-notification-sound"
+                        className="flex-1 text-sm font-normal"
+                    >
+                        Notification Sound
+                    </Label>
+                    <Switch
+                        id="overlay-notification-sound"
+                        checked={settings.notificationSound}
+                        onCheckedChange={handleSettingChange( "notificationSound" )}
+                    />
+                </div>
+                <div className="flex items-center justify-between space-x-4">
+                    <Label
+                        htmlFor="overlay-unread-badge"
+                        className="flex-1 text-sm font-normal"
+                    >
+                        Show Unread Badge
+                    </Label>
+                    <Switch
+                        id="overlay-unread-badge"
+                        checked={settings.showUnreadBadge}
+                        onCheckedChange={handleSettingChange( "showUnreadBadge" )}
+                    />
+                </div>
+            </div>
+        ),
+        [
+            handleSettingChange,
+            settings.enabled,
+            settings.notificationSound,
+            settings.showUnreadBadge,
+        ]
+    );
+
+    const groupsSection = useMemo(
+        () =>
+            canManageGroups ? (
+                <GroupManagerPanel onClose={() => setIsSettingsDialogOpen( false )} />
+            ) : (
+                <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>Sign in and connect to manage groups.</p>
+                    <p>Once connected, you can create, join, and configure collaboration groups.</p>
+                </div>
+            ),
+        [ canManageGroups, setIsSettingsDialogOpen ]
+    );
+
+    const settingsItems = useMemo<SettingsDialogItem[]>(
+        () => [
+            {
+                id: "general",
+                label: "General",
+                description: "Configure overlay preferences and notifications.",
+                content: generalSettingsSection,
+            },
+            {
+                id: "groups",
+                label: "Groups",
+                description: canManageGroups
+                    ? "Manage collaboration groups and member roles."
+                    : "Connect first to manage groups.",
+                content: groupsSection,
+                disabled: !canManageGroups,
+            },
+        ],
+        [ canManageGroups, generalSettingsSection, groupsSection ]
+    );
+
+    const quickMenuItems = useMemo(
+        () => [
+            {
+                id: "groups" as const,
+                label: "Groups",
+                description: "Manage collaboration groups, invites, and roles.",
+                shortcut: "Shift + G",
+                disabled: !canManageGroups,
+            },
+            {
+                id: "settings" as const,
+                label: "Settings",
+                description: "Adjust overlay preferences without leaving the page.",
+                shortcut: "Shift + S",
+            },
+        ],
+        [ canManageGroups ]
+    );
+
     useEffect( () => {
         const handler = () => {
-            if ( canManageGroups ) {
-                setIsGroupManagerOpen( true );
+            if ( !canManageGroups ) {
+                return;
             }
+            setActiveSettingsSection( "groups" );
+            setIsSettingsDialogOpen( true );
         };
 
         window.addEventListener( "eye-note-open-group-manager", handler );
@@ -147,6 +249,7 @@ export const ShadowDOM : React.FC = () => {
 
     useEffect( () => {
         const handler = () => {
+            setActiveSettingsSection( "general" );
             setIsSettingsDialogOpen( true );
         };
 
@@ -288,97 +391,32 @@ export const ShadowDOM : React.FC = () => {
                     open={isQuickMenuOpen}
                     onOpenChange={setIsQuickMenuOpen}
                     dialogContainer={dialogContainer}
-                    canManageGroups={canManageGroups}
+                    items={quickMenuItems}
                     onSelect={ ( item ) => {
                         setIsQuickMenuOpen( false );
-                        setIsGroupManagerOpen( true );
-                    }}
-                />
-                <Dialog
-                    open={isSettingsDialogOpen}
-                    onOpenChange={setIsSettingsDialogOpen}
-                >
-                    <DialogContent
-                        container={dialogContainer}
-                        className={wideDialogClassName}
-                    >
-                        <DialogHeader>
-                            <DialogTitle>Extension settings</DialogTitle>
-                            <DialogDescription>
-                                These preferences are stored locally in chrome.storage and sync
-                                across the popup and overlay.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between space-x-4">
-                                <Label
-                                    htmlFor="overlay-enable-notes"
-                                    className="flex-1 text-sm font-normal"
-                                >
-                                    Enable Notes
-                                </Label>
-                                <Switch
-                                    id="overlay-enable-notes"
-                                    checked={settings.enabled}
-                                    onCheckedChange={handleSettingChange( "enabled" )}
-                                />
-                            </div>
-                            <div className="flex items-center justify-between space-x-4">
-                                <Label
-                                    htmlFor="overlay-notification-sound"
-                                    className="flex-1 text-sm font-normal"
-                                >
-                                    Notification Sound
-                                </Label>
-                                <Switch
-                                    id="overlay-notification-sound"
-                                    checked={settings.notificationSound}
-                                    onCheckedChange={handleSettingChange( "notificationSound" )}
-                                />
-                            </div>
-                            <div className="flex items-center justify-between space-x-4">
-                                <Label
-                                    htmlFor="overlay-unread-badge"
-                                    className="flex-1 text-sm font-normal"
-                                >
-                                    Show Unread Badge
-                                </Label>
-                                <Switch
-                                    id="overlay-unread-badge"
-                                    checked={settings.showUnreadBadge}
-                                    onCheckedChange={handleSettingChange( "showUnreadBadge" )}
-                                />
-                            </div>
-                        </div>
-                        <DialogFooter className="justify-end">
-                            <DialogClose asChild>
-                                <Button variant="outline">Close</Button>
-                            </DialogClose>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-                <Dialog
-                    open={isGroupManagerOpen}
-                    onOpenChange={( next ) => {
-                        if ( next ) {
+                        if ( item === "groups" ) {
                             if ( canManageGroups ) {
-                                setIsGroupManagerOpen( true );
+                                setActiveSettingsSection( "groups" );
+                                setIsSettingsDialogOpen( true );
                             }
                             return;
                         }
-                        setIsGroupManagerOpen( false );
+                        setActiveSettingsSection( "general" );
+                        setIsSettingsDialogOpen( true );
                     }}
-                >
-                    <DialogContent
-                        container={notesContainerRef.current?.parentElement ?? undefined}
-                        className="max-h-[85vh] overflow-y-auto"
-                    >
-                        <DialogHeader>
-                            <DialogTitle>Manage groups</DialogTitle>
-                        </DialogHeader>
-                        <GroupManagerPanel onClose={() => setIsGroupManagerOpen( false )} />
-                    </DialogContent>
-                </Dialog>
+                />
+                <SettingsDialog
+                    open={isSettingsDialogOpen}
+                    onOpenChange={setIsSettingsDialogOpen}
+                    dialogContainer={dialogContainer}
+                    title="Extension settings"
+                    description="These preferences are stored locally in chrome.storage and sync across the popup and overlay."
+                    selectedItemId={activeSettingsSection}
+                    onSelectedItemChange={( id ) =>
+                        setActiveSettingsSection( id as SettingsSectionId )
+                    }
+                    items={settingsItems}
+                />
                 {notes.map( ( note ) => (
                     <NotesComponent
                         key={note.id}

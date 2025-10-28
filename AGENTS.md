@@ -1,3 +1,4 @@
+## Read project .cursor/rules
 
 ## Project Structure & Module Organization
 - `apps/frontend`: Vite/React extension; code in `src`, builds in `dist`, Chrome load from `extension`.
