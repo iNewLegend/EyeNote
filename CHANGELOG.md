@@ -110,3 +110,4 @@
 ## Dashboard settings app
 - Scaffolded `apps/dashboard` (Vite + Tailwind) to render overlay preferences outside the extension, persisting toggles to `localStorage` and wiring the shared `@eye-note/ui` components.
 - Added a collaboration roadmap panel and reset affordances to clarify the future standalone experience while reuseing the shared toast/toaster abstractions.
+- Matched the dashboard layout to the extension settings two-pane surface so users get a consistent navigation and content structure across entry points.

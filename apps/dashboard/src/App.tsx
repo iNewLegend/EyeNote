@@ -1,20 +1,13 @@
 import { useMemo, useState } from "react";
-import { RefreshCw, Settings as SettingsIcon, Users } from "lucide-react";
+import { RefreshCw, Users } from "lucide-react";
 
 import {
     Badge,
     Button,
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
     Label,
     Switch,
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
+    SettingsSurface,
+    type SettingsDialogItem,
     Toaster,
     toast,
 } from "@eye-note/ui";
@@ -61,12 +54,14 @@ function SettingToggle ( {
     onChange : ( value : boolean ) => void;
 } ) {
     return (
-        <div className="flex items-start justify-between gap-4 rounded-lg border border-border/60 bg-card/40 p-4">
+        <div className="flex items-center justify-between space-x-4 rounded-lg border border-border/60 bg-background/60 px-4 py-3">
             <div className="space-y-1">
                 <Label htmlFor={`settings-${ descriptor.key }`} className="text-sm font-medium">
                     {descriptor.label}
                 </Label>
-                <p className="text-sm text-muted-foreground">{descriptor.description}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                    {descriptor.description}
+                </p>
             </div>
             <Switch
                 id={`settings-${ descriptor.key }`}
@@ -74,95 +69,6 @@ function SettingToggle ( {
                 onCheckedChange={onChange}
             />
         </div>
-    );
-}
-
-function CollaborationCard () {
-    return (
-        <Card>
-            <CardHeader className="flex flex-row items-start justify-between gap-4">
-                <div className="space-y-1">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                        <Users className="h-5 w-5" />
-                        Collaboration groups
-                    </CardTitle>
-                    <CardDescription>
-                        Manage invites, ownership, and workspace alignment without depending on the
-                        browser extension.
-                    </CardDescription>
-                </div>
-                <Badge variant="secondary">Coming soon</Badge>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <ul className="space-y-3 text-sm text-muted-foreground">
-                    {collaborationHighlights.map( ( item ) => (
-                        <li key={item} className="flex items-start gap-2">
-                            <span className="mt-[6px] h-1.5 w-1.5 rounded-full bg-primary" />
-                            <span>{item}</span>
-                        </li>
-                    ) )}
-                </ul>
-                <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                        type="button"
-                        onClick={() =>
-                            toast( {
-                                title: "Groups dashboard",
-                                description:
-                                    "We are bringing group management to the standalone dashboard—stay tuned!",
-                            } )
-                        }
-                    >
-                        Notify me
-                    </Button>
-                    <Button
-                        variant="outline"
-                        type="button"
-                        onClick={() =>
-                            toast( {
-                                title: "Switching to dashboard",
-                                description:
-                                    "Settings you configure here will sync once the dashboard connects to EyeNote Cloud.",
-                            } )
-                        }
-                    >
-                        Learn more
-                    </Button>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
-
-function GeneralSettingsCard ( {
-    settings,
-    setSetting,
-} : {
-    settings : DashboardSettings;
-    setSetting : ( key : keyof DashboardSettings, value : boolean ) => void;
-} ) {
-    return (
-        <Card>
-            <CardHeader className="space-y-2">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                    <SettingsIcon className="h-5 w-5" />
-                    Overlay preferences
-                </CardTitle>
-                <CardDescription>
-                    Control how EyeNote behaves in the browser, independent of the extension popup.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {settingDescriptors.map( ( descriptor ) => (
-                    <SettingToggle
-                        key={descriptor.key}
-                        descriptor={descriptor}
-                        value={settings[ descriptor.key ]}
-                        onChange={( next ) => setSetting( descriptor.key, next )}
-                    />
-                ) )}
-            </CardContent>
-        </Card>
     );
 }
 
@@ -215,32 +121,114 @@ const DashboardHeader = () => (
 
 function DashboardApp () {
     const { settings, setSetting, resetSettings } = useDashboardSettings();
-    const [ activeTab, setActiveTab ] = useState( "general" );
+    const [ activeSection, setActiveSection ] = useState( "general" );
 
-    const generalCard = useMemo(
+    const generalContent = useMemo(
         () => (
-            <GeneralSettingsCard settings={settings} setSetting={setSetting} />
+            <div className="space-y-4">
+                {settingDescriptors.map( ( descriptor ) => (
+                    <SettingToggle
+                        key={descriptor.key}
+                        descriptor={descriptor}
+                        value={settings[ descriptor.key ]}
+                        onChange={( next ) => setSetting( descriptor.key, next )}
+                    />
+                ) )}
+                <ResetBanner onReset={resetSettings} />
+            </div>
         ),
-        [ settings, setSetting ]
+        [ resetSettings, setSetting, settings ]
+    );
+
+    const collaborationContent = useMemo(
+        () => (
+            <div className="space-y-4 text-sm text-muted-foreground">
+                <div className="space-y-2 text-foreground">
+                    <div className="flex items-center gap-2 text-base font-semibold">
+                        <Users className="h-4 w-4" />
+                        Manage collaboration groups
+                    </div>
+                    <p>
+                        We&apos;re moving group management into the dashboard so you can configure
+                        invites and roles without the browser extension.
+                    </p>
+                </div>
+                <ul className="space-y-3">
+                    {collaborationHighlights.map( ( item ) => (
+                        <li key={item} className="flex items-start gap-2">
+                            <span className="mt-[6px] h-1.5 w-1.5 rounded-full bg-primary" />
+                            <span>{item}</span>
+                        </li>
+                    ) )}
+                </ul>
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <Button
+                        type="button"
+                        onClick={() =>
+                            toast( {
+                                title: "Groups dashboard",
+                                description:
+                                    "We are bringing group management to the standalone dashboard—stay tuned!",
+                            } )
+                        }
+                    >
+                        Notify me
+                    </Button>
+                    <Button
+                        variant="outline"
+                        type="button"
+                        onClick={() =>
+                            toast( {
+                                title: "Switching to dashboard",
+                                description:
+                                    "Settings you configure here will sync once the dashboard connects to EyeNote Cloud.",
+                            } )
+                        }
+                    >
+                        Learn more
+                    </Button>
+                </div>
+            </div>
+        ),
+        []
+    );
+
+    const settingsItems = useMemo<SettingsDialogItem[]>(
+        () => [
+            {
+                id: "general",
+                label: "General",
+                description: "Configure overlay preferences and notifications.",
+                content: generalContent,
+            },
+            {
+                id: "collaboration",
+                label: "Collaboration",
+                description: "Preview the upcoming shared group manager experience.",
+                content: (
+                    <div className="space-y-4">
+                        <Badge variant="secondary" className="bg-primary/10 text-primary">
+                            Coming soon
+                        </Badge>
+                        {collaborationContent}
+                    </div>
+                ),
+            },
+        ],
+        [ collaborationContent, generalContent ]
     );
 
     return (
         <div className="min-h-screen bg-background">
             <div className="container flex min-h-screen flex-col gap-10 py-12">
                 <DashboardHeader />
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                    <TabsList className="grid grid-cols-2 gap-2">
-                        <TabsTrigger value="general">General</TabsTrigger>
-                        <TabsTrigger value="collaboration">Collaboration</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="general" className="space-y-6">
-                        {generalCard}
-                        <ResetBanner onReset={resetSettings} />
-                    </TabsContent>
-                    <TabsContent value="collaboration" className="space-y-6">
-                        <CollaborationCard />
-                    </TabsContent>
-                </Tabs>
+                <SettingsSurface
+                    title="Extension settings"
+                    description="Manage overlay behavior and collaboration options without launching the extension."
+                    items={settingsItems}
+                    selectedItemId={activeSection}
+                    onSelectedItemChange={setActiveSection}
+                />
             </div>
             <Toaster position="top-right" />
         </div>

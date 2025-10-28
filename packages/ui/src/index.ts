@@ -37,3 +37,4 @@ export {
 export { dismiss as dismissToast, toast, useToast, type ToasterToast } from "./components/ui/toast-context";
 
 export { SettingsDialog, type SettingsDialogItem, type SettingsDialogProps } from "./components/settings-dialog";
+export { SettingsSurface, type SettingsSurfaceProps } from "./components/settings-surface";
