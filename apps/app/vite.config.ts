@@ -23,22 +23,17 @@ export default defineConfig( () => {
         );
     }
 
-    const appPort = Number.parseInt( process.env.APP_PORT ?? process.env.PORT ?? "5173", 10 );
+    const appPort = Number.parseInt( process.env.APP_PORT ?? "5173", 10 );
 
     return {
         plugins: [ react() ],
-        resolve: {
-            alias: {
-                "@": resolve( __dirname, "src" ),
-            },
-        },
         define: {
             "process.env.NODE_ENV": JSON.stringify( process.env.NODE_ENV ?? "development" ),
             "import.meta.env.VITE_GOOGLE_CLIENT_ID": JSON.stringify( googleClientId ),
             "import.meta.env.VITE_GOOGLE_REDIRECT_URI": JSON.stringify( googleRedirectUri ),
         },
         server: {
-            port: Number.isNaN( appPort ) ? 5173 : appPort,
+            port: Number( appPort )
         },
     };
 } );
