@@ -9,6 +9,9 @@
 - Consolidated the EyeNote sign-in prompt icon inside `@eye-note/ui`, bundling the SVG with the component so consuming apps no longer need to ship their own copy.
 - Updated the extension tooling to read the same shared SVG when generating Chrome icon assets so there is a single source of truth.
 
+## Auth
+- Let the dashboard Google OAuth flow read an explicit `VITE_GOOGLE_REDIRECT_URI` so the registered redirect can differ from `window.location.origin`, mirroring the extension’s working configuration.
+
 # 2025-10-27
 
 ## Popup quick controls

@@ -141,7 +141,9 @@ export async function appSignInWithGoogle () : Promise<{ success : boolean; user
     try {
         const state = generateRandomString();
         const nonce = generateRandomString();
-        const redirectUri = `${ window.location.origin }/auth/callback`;
+        const redirectUri =
+            import.meta.env.VITE_GOOGLE_REDIRECT_URI?.trim() ||
+            `${ window.location.origin }/auth/callback`;
         const authUrl = buildAuthUrl( state, nonce, redirectUri );
 
         const popup = window.open( authUrl, "eye-note-google-auth", POPUP_FEATURES );
