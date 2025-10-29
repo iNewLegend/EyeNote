@@ -5,6 +5,10 @@
 - Inlined `.cursor` automation rule descriptions inside `AGENTS.md` for quick reference.
 - Added a root `pnpm type-check` script that executes TypeScript checks across every workspace and documented it for agents.
 
+## UI
+- Consolidated the EyeNote sign-in prompt icon inside `@eye-note/ui`, bundling the SVG with the component so consuming apps no longer need to ship their own copy.
+- Updated the extension tooling to read the same shared SVG when generating Chrome icon assets so there is a single source of truth.
+
 # 2025-10-27
 
 ## Popup quick controls

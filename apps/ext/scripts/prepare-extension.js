@@ -135,8 +135,8 @@ async function prepareExtension() {
         await cleanDirectory(assetsDir);
         await cleanDirectory(chunksDir);
 
-        // Convert and copy icons from icon.svg
-        const sourceIcon = path.join(rootDir, "public", "icons", "icon.svg");
+        // Convert and copy icons from the shared UI icon source
+        const sourceIcon = path.join(workspaceRoot, "packages", "ui", "src", "assets", "icon.svg");
         const sizes = [16, 48, 128];
 
         try {

@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from "react";
 import {
     Button,
     SettingsSurface,
+    SignInPrompt,
     type SettingsDialogItem,
     Toaster,
     toast,
@@ -197,6 +198,24 @@ function AppApp () {
             {isLoading ? "Signing in..." : "Sign in with Google"}
         </Button>
     );
+
+    if ( !isAuthenticated ) {
+        return (
+            <div className="min-h-screen bg-background">
+                <div className="container flex min-h-screen flex-col gap-10 py-12">
+                    <div className="flex flex-1 items-center justify-center">
+                        <SignInPrompt
+                            onGetStarted={handleSignIn}
+                            isSigningIn={isLoading}
+                            getStartedLabel="Sign in with Google"
+                            signingInLabel="Signing in..."
+                        />
+                    </div>
+                </div>
+                <Toaster position="top-right" />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-background">

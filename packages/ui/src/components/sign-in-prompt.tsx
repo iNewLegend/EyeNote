@@ -1,17 +1,16 @@
-"use client";
-
 import * as React from "react";
 
 import { cn } from "../lib/utils";
 import { Button, type ButtonProps } from "./ui/button";
 import { CardContent } from "./ui/card";
 
+import defaultIcon from "../assets/icon.svg";
+
 type SignInPromptVariant = "card" | "callout";
 
 type SignInPromptProps = {
     onGetStarted : () => void;
     isSigningIn ?: boolean;
-    iconSrc ?: string;
     iconAlt ?: string;
     title ?: React.ReactNode;
     description ?: React.ReactNode;
@@ -27,7 +26,6 @@ type SignInPromptProps = {
 export function SignInPrompt ( {
     onGetStarted,
     isSigningIn = false,
-    iconSrc = "/icons/icon.svg",
     iconAlt = "EyeNote Logo",
     title = "Welcome to EyeNote",
     description = "Sign in to start creating and sharing notes across the web.",
@@ -55,7 +53,7 @@ export function SignInPrompt ( {
                     {showIcon ? (
                         <div className={iconWrapperClassName}>
                             <img
-                                src={iconSrc}
+                                src={defaultIcon}
                                 alt={iconAlt}
                                 className="w-24 h-24 animate-in zoom-in duration-500"
                                 loading="lazy"
