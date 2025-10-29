@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { Types } from "mongoose";
 import { z } from "zod";
-import type { NoteBase, NoteRecord } from "@eye-note/definitions";
+import type { NoteBase, NoteRecord, PageIdentityPayload } from "@eye-note/definitions";
 import { NoteModel } from "../models/note";
 import { GroupModel } from "../models/group";
 import { resolvePageIdentity } from "../services/page-identity-service";
@@ -77,6 +77,17 @@ const noteQueryBodySchema = noteQuerySchema.extend( {
     normalizedUrl: z.string().optional(),
     pageIdentity: pageIdentitySchema.optional(),
 } );
+
+type IncomingPageIdentityPayload = Omit<PageIdentityPayload, "generatedAt"> & {
+    generatedAt ?: string;
+};
+
+function normalizePageIdentityPayload ( payload : IncomingPageIdentityPayload ) : PageIdentityPayload {
+    return {
+        ...payload,
+        generatedAt: payload.generatedAt ?? new Date().toISOString(),
+    };
+}
 
 type NoteLean = NoteBase & {
     _id : Types.ObjectId;
@@ -203,26 +214,27 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
             let identityResolution = undefined;
 
             if ( pageIdentity ) {
+                const normalizedIdentity = normalizePageIdentityPayload( pageIdentity );
                 fastify.log.info( {
                     event: "notes.query.page-identity",
                     userId: request.user!.id,
-                    pageIdentity,
+                    pageIdentity: normalizedIdentity,
                 }, "Resolving page identity for query" );
-                const resolutionResult = await resolvePageIdentity( pageIdentity, { log: fastify.log } );
+                const resolutionResult = await resolvePageIdentity( normalizedIdentity, { log: fastify.log } );
                 identityResolution = resolutionResult.resolution;
                 resolvedPageId = resolutionResult.document._id.toHexString();
-                resolvedNormalizedUrl = resolutionResult.document.normalizedUrl ?? pageIdentity.normalizedUrl;
+                resolvedNormalizedUrl = resolutionResult.document.normalizedUrl ?? normalizedIdentity.normalizedUrl;
                 if ( resolvedNormalizedUrl ) {
                     resolvedNormalizedUrls.push( resolvedNormalizedUrl );
                 }
-                if ( pageIdentity.normalizedUrl && !resolvedNormalizedUrls.includes( pageIdentity.normalizedUrl ) ) {
-                    resolvedNormalizedUrls.push( pageIdentity.normalizedUrl );
+                if ( normalizedIdentity.normalizedUrl && !resolvedNormalizedUrls.includes( normalizedIdentity.normalizedUrl ) ) {
+                    resolvedNormalizedUrls.push( normalizedIdentity.normalizedUrl );
                 }
                 if ( url ) {
                     legacyUrls.push( url );
                 }
-                if ( pageIdentity.sourceUrl && !legacyUrls.includes( pageIdentity.sourceUrl ) ) {
-                    legacyUrls.push( pageIdentity.sourceUrl );
+                if ( normalizedIdentity.sourceUrl && !legacyUrls.includes( normalizedIdentity.sourceUrl ) ) {
+                    legacyUrls.push( normalizedIdentity.sourceUrl );
                 }
                 fastify.log.info( {
                     event: "notes.query.page-identity.resolved",
@@ -376,23 +388,24 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
             let identityResolution = undefined;
 
             if ( pageIdentity ) {
+                const normalizedIdentity = normalizePageIdentityPayload( pageIdentity );
                 fastify.log.info( {
                     event: "notes.create.page-identity",
                     userId: request.user!.id,
-                    pageIdentity,
+                    pageIdentity: normalizedIdentity,
                 }, "Resolving page identity for create" );
-                const resolutionResult = await resolvePageIdentity( pageIdentity, { log: fastify.log } );
+                const resolutionResult = await resolvePageIdentity( normalizedIdentity, { log: fastify.log } );
                 identityResolution = resolutionResult.resolution;
                 resolvedPageId = resolutionResult.document._id.toHexString();
                 resolvedCanonicalUrl =
                     resolvedCanonicalUrl ??
                     resolutionResult.document.canonicalUrl ??
-                    pageIdentity.canonicalUrl ??
+                    normalizedIdentity.canonicalUrl ??
                     null;
                 resolvedNormalizedUrl =
                     resolvedNormalizedUrl ??
                     resolutionResult.document.normalizedUrl ??
-                    pageIdentity.normalizedUrl ??
+                    normalizedIdentity.normalizedUrl ??
                     null;
                 fastify.log.info( {
                     event: "notes.create.page-identity.resolved",

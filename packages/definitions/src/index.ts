@@ -88,20 +88,6 @@ export interface ListGroupsResponse {
     groups : GroupRecord[];
 }
 
-export interface AuthUser {
-    id : string;
-    email ?: string;
-    name ?: string;
-    picture ?: string | null;
-}
-
-export interface AuthSession {
-    authToken : string;
-    authAccessToken : string;
-    authTokenExpiresAt : number;
-    user : AuthUser;
-}
-
 export interface ListNotesQuery {
     url ?: string;
     groupIds ?: string[];

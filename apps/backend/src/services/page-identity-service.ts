@@ -1,5 +1,6 @@
 import type { PageIdentityPayload, PageIdentityResolution } from "@eye-note/definitions";
-import { rankIdentityMatches } from "@eye-note/page-identity";
+import { rankIdentityMatches } from "@eye-note/page-identity/server";
+import type { FastifyBaseLogger } from "fastify";
 import { PageIdentityModel, type PageIdentityDocument } from "../models/page-identity";
 
 type ResolveResult = {

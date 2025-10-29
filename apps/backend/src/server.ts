@@ -1,3 +1,4 @@
+import { pathToFileURL } from "url";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { appConfig } from "./config";
@@ -51,6 +52,10 @@ async function start () {
     }
 }
 
-if ( require.main === module ) {
+const executedViaCli = process.argv[1]
+    ? pathToFileURL( process.argv[1] ).href === import.meta.url
+    : false;
+
+if ( executedViaCli ) {
     void start();
 }

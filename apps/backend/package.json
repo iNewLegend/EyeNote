@@ -12,6 +12,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "@eye-note/auth": "workspace:*",
     "@eye-note/definitions": "workspace:*",
     "@eye-note/page-identity": "workspace:*",
     "@fastify/cors": "^9.0.1",

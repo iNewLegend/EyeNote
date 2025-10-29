@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+        "target": "ES2021",
+        "module": "ES2020",
+        "moduleResolution": "Node",
+        "declaration": true,
+        "declarationMap": true,
+        "outDir": "dist",
+        "rootDir": "..",
+        "jsx": "react-jsx",
+        "strict": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true,
+        "resolveJsonModule": true,
+        "baseUrl": ".",
+        "paths": {
+            "@eye-note/definitions": ["../definitions/src/index.ts"],
+            "@eye-note/ui": ["../ui/src/index.ts"]
+        },
+        "types": ["vite/client", "chrome"]
+    },
+    "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

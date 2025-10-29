@@ -1,3 +1,10 @@
+# 2025-10-29
+
+## Documentation
+- Realigned `AGENTS.md` with the current workspace layout (`apps/app`, `apps/dashboard`, `apps/ext`) and developer commands.
+- Inlined `.cursor` automation rule descriptions inside `AGENTS.md` for quick reference.
+- Added a root `pnpm type-check` script that executes TypeScript checks across every workspace and documented it for agents.
+
 # 2025-10-27
 
 ## Popup quick controls
@@ -111,3 +118,4 @@
 - Scaffolded `apps/dashboard` (Vite + Tailwind) to render overlay preferences outside the extension, persisting toggles to `localStorage` and wiring the shared `@eye-note/ui` components.
 - Added a collaboration roadmap panel and reset affordances to clarify the future standalone experience while reuseing the shared toast/toaster abstractions.
 - Matched the dashboard layout to the extension settings two-pane surface so users get a consistent navigation and content structure across entry points.
+- Implemented Google OAuth sign-in for the dashboard using a popup flow, local session storage, and shared account header controls so standalone settings stay in sync with authenticated API calls.

@@ -38,3 +38,4 @@ export { dismiss as dismissToast, toast, useToast, type ToasterToast } from "./c
 
 export { SettingsDialog, type SettingsDialogItem, type SettingsDialogProps } from "./components/settings-dialog";
 export { SettingsSurface, type SettingsSurfaceProps } from "./components/settings-surface";
+export { SignInPrompt, type SignInPromptProps } from "./components/sign-in-prompt";

@@ -23,9 +23,11 @@ export type IdentityComparisonResult = {
     reason: string[];
 };
 
+type GlobalDocument = typeof globalThis extends { document: infer Doc } ? Doc : unknown;
+
 export type CapturePageIdentityOptions = {
     currentUrl?: string;
-    target?: Document;
+    target?: GlobalDocument;
     tokenLimit?: number;
     nodeSampleLimit?: number;
     ignoreQueryParams?: string[];
