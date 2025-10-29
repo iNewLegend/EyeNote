@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 
 import {
     Button,
+    DowntimeNotice,
     SettingsSurface,
     SignInPrompt,
     type SettingsDialogItem,
@@ -10,6 +11,7 @@ import {
 } from "@eye-note/ui";
 
 import { useAppAuth } from "@eye-note/auth/app";
+import { useBackendHealthPolling, useBackendHealthStore } from "@eye-note/backend-health";
 
 import { useAppSettings } from "./hooks/use-dashboard-settings";
 import { Header } from "./components/header";
@@ -52,10 +54,14 @@ function AppApp () {
         signIn,
         signOut,
     } = useAppAuth();
+    const backendHealthStatus = useBackendHealthStore( ( state ) => state.status );
+    const isBackendHealthy = backendHealthStatus === "healthy";
+
+    useBackendHealthPolling();
     const [ activeSection, setActiveSection ] = useState( "general" );
 
     const handleSignIn = useCallback( async () => {
-        if ( isLoading ) {
+        if ( isLoading || !isBackendHealthy ) {
             return;
         }
         try {
@@ -193,11 +199,29 @@ function AppApp () {
             type="button"
             size="sm"
             onClick={handleSignIn}
-            disabled={isLoading}
+            disabled={isLoading || !isBackendHealthy}
         >
-            {isLoading ? "Signing in..." : "Sign in with Google"}
+            {isLoading
+                ? "Signing in..."
+                : isBackendHealthy
+                    ? "Sign in with Google"
+                    : "Backend unavailable"}
         </Button>
     );
+
+    if ( backendHealthStatus === "unhealthy" ) {
+        return (
+            <div className="min-h-screen bg-background">
+                <div className="container flex min-h-screen flex-col gap-10 py-12">
+                    <Header />
+                    <div className="flex flex-1 items-center justify-center">
+                        <DowntimeNotice className="text-center md:text-left max-w-lg" />
+                    </div>
+                </div>
+                <Toaster position="top-right" />
+            </div>
+        );
+    }
 
     if ( !isAuthenticated ) {
         return (

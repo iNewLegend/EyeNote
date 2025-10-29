@@ -1,3 +1,4 @@
+import { getBaseConfig } from "@eye-note/workspace/vite/config";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
@@ -8,16 +9,9 @@ loadEnv( { path: resolve( __dirname, "..", "..", ".env" ) } );
 export default defineConfig( ( { mode } ) => {
     const isDev = mode === "development";
     const isContentScript = process.env.CONTENT_SCRIPT === "1";
-    const googleClientId =
-        process.env.GOOGLE_CLIENT_ID ?? process.env.VITE_GOOGLE_CLIENT_ID ?? "";
-
-    if ( !googleClientId ) {
-        console.warn(
-            "[EyeNote] GOOGLE_CLIENT_ID is not set. OAuth flows in the extension will fail until configured."
-        );
-    }
 
     const commonConfig = {
+        ... getBaseConfig( {} ),
         plugins: [ react() ],
         build: {
             minify: !isDev,
@@ -26,10 +20,6 @@ export default defineConfig( ( { mode } ) => {
             emptyOutDir: false,
             copyPublicDir: true,
             assetsDir: "assets",
-        },
-        define: {
-            "process.env.NODE_ENV": JSON.stringify( mode ),
-            "import.meta.env.VITE_GOOGLE_CLIENT_ID": JSON.stringify( googleClientId ),
         },
     };
 

@@ -10,12 +10,14 @@ import {
     CardTitle,
     Input,
     Label,
+    DowntimeNotice,
     SignInPrompt,
     Toaster,
 } from "@eye-note/ui";
 import { ThemeProvider } from "../theme/theme-provider";
 import "./extension-popup.css";
 import { useAuthStore, useAuthStatusEffects } from "@eye-note/auth/extension";
+import { useBackendHealthStore } from "@eye-note/backend-health";
 import { useBackendHealthBridge } from "../../hooks/use-backend-health-bridge";
 import {
     useGroupsBootstrap,
@@ -30,7 +32,8 @@ export function ExtensionPopup () {
     const refreshAuthStatus = useAuthStore( ( state ) => state.refreshStatus );
     const signOutUser = useAuthStore( ( state ) => state.signOut );
     const signInUser = useAuthStore( ( state ) => state.signIn );
-    const [ isBackendHealthy, setIsBackendHealthy ] = useState<boolean | null>( null );
+    const backendHealthStatus = useBackendHealthStore( ( state ) => state.status );
+    const isBackendHealthy = backendHealthStatus === "healthy";
     const groups = useGroupsStore( ( state ) => state.groups );
     const activeGroupIds = useGroupsStore( ( state ) => state.activeGroupIds );
     const createGroup = useGroupsStore( ( state ) => state.createGroup );
@@ -51,7 +54,6 @@ export function ExtensionPopup () {
 
     useBackendHealthBridge( {
         syncModeStore: false,
-        onUpdate: setIsBackendHealthy,
     } );
 
     const handleSignOut = async () => {
@@ -165,7 +167,7 @@ export function ExtensionPopup () {
         }
     };
 
-    const isBackendDown = isBackendHealthy === false;
+    const isBackendDown = backendHealthStatus === "unhealthy";
     const defaultGroupColor = "#6366f1";
 
     const handleCreateGroup = async ( event : React.FormEvent<HTMLFormElement> ) => {
@@ -259,14 +261,7 @@ export function ExtensionPopup () {
 
                 {isBackendDown ? (
                     <CardContent className="flex-1 flex items-center justify-center p-6 text-center">
-                        <div className="space-y-3">
-                            <h2 className="text-lg font-semibold text-destructive">
-                                Ops something went wrong, it’s not you, it’s us.
-                            </h2>
-                            <p className="text-sm text-muted-foreground">
-                                We’re having trouble reaching the servers. Try again in a moment.
-                            </p>
-                        </div>
+                        <DowntimeNotice className="text-center" />
                     </CardContent>
                 ) : isAuthenticated ? (
                     <CardContent className="p-6 space-y-8 flex-1 overflow-auto">

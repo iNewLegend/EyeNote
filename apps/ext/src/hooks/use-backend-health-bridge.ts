@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useBackendHealthStore } from "@eye-note/backend-health";
 import { useModeStore, AppMode } from "../stores/use-mode-store";
 
 type BackendHealthOptions = {
@@ -15,6 +16,13 @@ export function useBackendHealthBridge ( options : BackendHealthOptions = {} ) {
         }
 
         const applyHealthUpdate = ( healthy : boolean ) => {
+            const healthStore = useBackendHealthStore.getState();
+            if ( healthy ) {
+                healthStore.setHealthy();
+            } else {
+                healthStore.setUnhealthy();
+            }
+
             if ( syncModeStore ) {
                 const store = useModeStore.getState();
                 const connected = store.isMode( AppMode.CONNECTED );
@@ -37,11 +45,16 @@ export function useBackendHealthBridge ( options : BackendHealthOptions = {} ) {
 
         chrome.runtime.onMessage.addListener( listener );
 
+        const healthStore = useBackendHealthStore.getState();
+        healthStore.setPending();
+
         chrome.runtime
             .sendMessage( { type: "GET_BACKEND_STATUS" } )
             .then( ( response ) => {
                 if ( response && typeof response.healthy === "boolean" ) {
                     applyHealthUpdate( response.healthy );
+                } else {
+                    healthStore.setUnhealthy();
                 }
             } )
             .catch( () => {
