@@ -27,8 +27,8 @@ const envSchema = z.object( {
 
 const env = envSchema.parse( {
     NODE_ENV: process.env.NODE_ENV,
-    PORT: process.env.PORT,
-    HOST: process.env.HOST,
+    PORT: process.env.BACKEND_PORT,
+    HOST: process.env.BACKEND_HOST,
     MONGODB_URI: process.env.MONGODB_URI,
     MONGODB_DB_NAME: process.env.MONGODB_DB_NAME,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
