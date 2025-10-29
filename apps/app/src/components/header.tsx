@@ -1,15 +1,14 @@
-"use client";
+import defaultIcon from "@eye-note/ui/src/assets/icon.svg";
 
 export function Header () {
     return (
         <header className="space-y-3 text-center md:text-left">
-            <div className="space-y-2">
+            <div className="flex flex-row gap-3 space-y-2">
+                <img src={defaultIcon} width={64} height={64} alt="EyeNote" />
+
                 <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-                    EyeNote App
+                    EyeNote
                 </h1>
-                <p className="text-base text-muted-foreground">
-                    Configure collaboration and overlay preferences from a standalone web experience.
-                </p>
             </div>
         </header>
     );

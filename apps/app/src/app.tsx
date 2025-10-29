@@ -246,8 +246,8 @@ function AppApp () {
             <div className="container flex min-h-screen flex-col gap-10 py-12">
                 <Header />
                 <SettingsSurface
-                    title="Extension settings"
-                    description="Manage overlay behavior and collaboration options without launching the extension."
+                    title="Extension Managment"
+                    description="Manage overlay behavior and collaboration options from the extension managment panel without launching the extension."
                     items={settingsItems}
                     selectedItemId={activeSection}
                     onSelectedItemChange={setActiveSection}

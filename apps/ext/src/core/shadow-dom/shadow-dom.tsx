@@ -408,7 +408,7 @@ export const ShadowDOM : React.FC = () => {
                     open={isSettingsDialogOpen}
                     onOpenChange={setIsSettingsDialogOpen}
                     dialogContainer={dialogContainer}
-                    title="Extension settings"
+                    title="Extension Managment"
                     description="These preferences are stored locally in chrome.storage and sync across the popup and overlay."
                     selectedItemId={activeSettingsSection}
                     onSelectedItemChange={( id ) =>
