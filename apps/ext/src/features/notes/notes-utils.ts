@@ -2,6 +2,7 @@ import type {
     CreateNotePayload,
     NoteRecord,
     PageIdentityPayload,
+    SerializedDOMRect,
     UpdateNotePayload,
     ViewportPosition,
     Vector2D,
@@ -10,8 +11,20 @@ import type { Note } from "../../types";
 import { getPageAnalyzer } from "../../lib/page-analyzer";
 import { isElementVisible } from "../../utils/is-element-visible";
 import { ANCHOR_HINTS_DATA_ATTR_WHITELIST } from "@eye-note/definitions";
+import { getElementPath } from "../../utils/element-path";
 
 const draftIdPrefix = "temp";
+
+function serializeRect ( rect : DOMRect ) : SerializedDOMRect {
+    return {
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+    };
+}
 
 /**
  * Small, fast string hash (djb2) used to hint at text identity for anchor
@@ -271,9 +284,17 @@ export function rehydrateNotePosition ( note : Note ) : Note {
 
     const rect = element.getBoundingClientRect();
     const offset = resolveElementOffset( note, rect );
+    const updatedPath = getElementPath( element ) || note.elementPath;
+
     return {
         ...note,
+        elementPath: updatedPath,
+        elementRect: serializeRect( rect ),
         elementOffset: offset,
+        scrollPosition: {
+            x: window.scrollX,
+            y: window.scrollY,
+        },
         highlightedElement: element,
     };
 }

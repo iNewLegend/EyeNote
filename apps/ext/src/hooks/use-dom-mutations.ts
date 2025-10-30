@@ -61,29 +61,81 @@ export function useDomMutations ( options : DomMutationsOptions = {} ) {
     const rehydrateByPaths = useNotesStore( ( s ) => s.rehydrateNotesForPaths );
 
     useEffect( () => {
+        console.log( "[EyeNote][DOM Mutations] effect mount", {
+            debounceMs,
+            maxRootSamples,
+        } );
+
         // Collect a candidate element for incremental analysis
-        const enqueue = ( el : Element | null ) => {
+        const enqueue = ( el : Element | null, source ?: string ) => {
             if ( !el ) return;
             if ( isElementInsidePlugin( el ) ) return; // ignore our own DOM
+            const tag = el.tagName?.toLowerCase?.();
+            const ignoredTags = new Set([ "html", "body", "head", "link", "style", "meta", "script", "noscript" ]);
+            if ( tag && ignoredTags.has( tag ) ) {
+                return;
+            }
+            let elementPath : string | null = null;
+            try {
+                elementPath = getElementPath( el );
+            } catch { /* ignore */ }
+
+            const notes = useNotesStore.getState().notes;
+            const hasRelevantNote = notes.some( ( note ) => {
+                if ( !note.elementPath ) return false;
+                if ( elementPath ) {
+                    return note.elementPath.startsWith( elementPath ) || elementPath.startsWith( note.elementPath );
+                }
+                return true;
+            } );
+            if ( !hasRelevantNote ) {
+                return;
+            }
+
             pending.current.add( el );
+            console.log( "[EyeNote][DOM Mutations] pending size", pending.current.size );
+            console.log( "[EyeNote][DOM Mutations] enqueue", {
+                source,
+                tag: tag ?? "unknown",
+                id: el instanceof Element ? el.id || undefined : undefined,
+                elementPath,
+            } );
             if ( scheduled.current === null ) {
                 scheduled.current = window.setTimeout( flush, debounceMs );
+                console.log( "[EyeNote][DOM Mutations] scheduled flush", { debounceMs } );
             }
         };
 
         // Debounced flush: compact roots, analyze subtrees, rehydrate notes
         const flush = () => {
             scheduled.current = null;
-            if ( pending.current.size === 0 ) return;
+            if ( pending.current.size === 0 ) {
+                console.log( "[EyeNote][DOM Mutations] flush skipped - no pending" );
+                return;
+            }
 
             const elements = Array.from( pending.current );
             pending.current.clear();
 
             const roots = compactRoots( elements );
+            const rootSummaries = roots.map( ( el ) => ( {
+                tag: el.tagName.toLowerCase(),
+                id: el.id || undefined,
+                classList: el.className || undefined,
+            } ) );
+            console.log( "[EyeNote][DOM Mutations] flush start", {
+                pendingCount: elements.length,
+                rootCount: roots.length,
+                roots: rootSummaries,
+            } );
             // If too many roots or root is <body>, fallback to full rehydrate
             const includeFull = roots.length > maxRootSamples || roots.some( ( el ) => el === document.body || el === document.documentElement );
             if ( includeFull || !rehydrateByPaths ) {
                 try { getPageAnalyzer().analyzePage(); } catch { /* noop */ }
+                console.log( "[EyeNote][DOM Mutations] full rehydrate", {
+                    includeFull,
+                    hasRehydrateByPaths: Boolean( rehydrateByPaths ),
+                } );
                 rehydrateAll();
                 return;
             }
@@ -98,15 +150,29 @@ export function useDomMutations ( options : DomMutationsOptions = {} ) {
                 } else {
                     // empty path usually means we hit <body>; escalate
                     try { analyzer.analyzePage(); } catch { /* noop */ }
+                    console.warn( "[EyeNote][DOM Mutations] escalate to full rehydrate", {
+                        reason: "empty-root-path",
+                        rootSummary: {
+                            tag: root.tagName.toLowerCase(),
+                            id: root.id || undefined,
+                        },
+                    } );
                     rehydrateAll();
                     return;
                 }
             }
 
+            console.log( "[EyeNote][DOM Mutations] targeted rehydrate", {
+                rootPaths,
+            } );
+
             // Targeted rehydration by selector prefix
             try {
                 ( rehydrateByPaths as ( paths : string[] ) => void )( rootPaths );
             } catch {
+                console.warn( "[EyeNote][DOM Mutations] targeted rehydrate failed, falling back", {
+                    rootPaths,
+                } );
                 rehydrateAll();
             }
         };
@@ -114,20 +180,24 @@ export function useDomMutations ( options : DomMutationsOptions = {} ) {
         const observer = new MutationObserver( ( records ) => {
             for ( const rec of records ) {
                 if ( rec.type === "childList" ) {
-                    enqueue( rec.target as Element );
+                    enqueue( rec.target as Element, "childList:target" );
                     for ( const n of Array.from( rec.addedNodes ) ) {
-                        enqueue( n.nodeType === 1 ? ( n as Element ) : n.parentElement );
+                        const candidate = n.nodeType === 1 ? ( n as Element ) : n.parentElement;
+                        enqueue( candidate, "childList:added" );
                     }
                     for ( const n of Array.from( rec.removedNodes ) ) {
-                        enqueue( n.nodeType === 1 ? ( n as Element ) : ( rec.target as Element ) );
+                        const candidate = n.nodeType === 1 ? ( n as Element ) : ( rec.target as Element );
+                        enqueue( candidate, "childList:removed" );
                     }
                 } else if ( rec.type === "attributes" ) {
-                    enqueue( rec.target as Element );
+                    enqueue( rec.target as Element, "attributes" );
                 }
             }
         } );
 
-        observer.observe( document, {
+        console.log( "[EyeNote][DOM Mutations] observer install" );
+
+        observer.observe( document.documentElement ?? document, {
             childList: true,
             attributes: true,
             subtree: true,

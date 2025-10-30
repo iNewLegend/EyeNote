@@ -46,8 +46,8 @@ const updateDOMClasses = ( modes : number ) => {
 const logModeChange = ( oldModes : number, newModes : number ) => {
     if ( process.env.NODE_ENV === "development" ) {
         if ( newModes & AppMode.DEBUG_MODE ) {
-            const getActiveModesNames = ( modes: number ) => {
-                const activeNames: string[] = [];
+            const getActiveModesNames = ( modes : number ) => {
+                const activeNames : string[] = [];
                 if ( modes & AppMode.CONNECTED ) activeNames.push( "CONNECTED" );
                 if ( modes & AppMode.DEBUG_MODE ) activeNames.push( "DEBUG_MODE" );
                 if ( modes & AppMode.INSPECTOR_MODE ) activeNames.push( "INSPECTOR_MODE" );
@@ -56,7 +56,7 @@ const logModeChange = ( oldModes : number, newModes : number ) => {
             };
 
             console.log(
-                `Mode Change: ${ getActiveModesNames( oldModes ) } -> ${ getActiveModesNames( newModes ) }`
+                `[EyeNote][Mode] Mode Change: ${ getActiveModesNames( oldModes ) } -> ${ getActiveModesNames( newModes ) }`
             );
         }
     }

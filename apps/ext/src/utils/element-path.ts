@@ -1,26 +1,29 @@
 export function getElementPath ( element : Element ) : string {
-    const path : string[] = [];
-    let currentElement : Element | null = element;
+    const segments : string[] = [];
+    let current : Element | null = element;
 
-    while ( currentElement && currentElement !== document.body ) {
-        let selector = currentElement.tagName.toLowerCase();
+    while ( current && current !== document.documentElement ) {
+        const tagName = current.tagName.toLowerCase();
+        const parentElement : Element | null = current.parentElement;
 
-        if ( currentElement.id ) {
-            selector += `#${ currentElement.id }`;
-        } else {
-            const siblings = Array.from( currentElement.parentElement?.children || [] );
-            const sameTagSiblings = siblings.filter( ( el ) => el.tagName === currentElement?.tagName );
+        let segment = tagName;
+
+        if ( parentElement ) {
+            const siblings = Array.from( parentElement.children ) as Element[];
+            const sameTagSiblings = siblings.filter(
+                ( sibling ) => sibling.tagName === current!.tagName
+            );
             if ( sameTagSiblings.length > 1 ) {
-                const index = sameTagSiblings.indexOf( currentElement );
-                selector += `:nth-of-type(${ index + 1 })`;
+                const index = sameTagSiblings.indexOf( current );
+                segment += `:nth-of-type(${ index + 1 })`;
             }
         }
 
-        path.unshift( selector );
-        currentElement = currentElement.parentElement;
+        segments.unshift( segment );
+        current = parentElement;
     }
 
-    return path.join( " > " );
+    return segments.join( " > " );
 }
 
 export function findElementByPath ( path : string ) : Element | null {

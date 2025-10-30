@@ -7,20 +7,14 @@ export const EYE_NOTE_USERLAND_CONTAINER_ID = "eye-note-userland-dom";
 export const NOTES_PLUGIN_SELECTOR = ".notes-plugin";
 
 // Mutation observer tuning
-export const MUTATION_DEBOUNCE_MS_DEFAULT = 32;
+export const MUTATION_DEBOUNCE_MS_DEFAULT = 800;
 export const MUTATION_MAX_ROOT_SAMPLES_DEFAULT = 24;
 export const MUTATION_ATTRIBUTE_FILTER = [ "class", "style", "hidden" ] as const;
 
 // Marker rendering/virtualization
-export const MARKER_BASE_SIZE_PX = 12;
 export const MARKER_IO_ROOT_MARGIN = "200px";
 export const MARKER_IO_THRESHOLD = 0;
 export const MARKER_ELEMENT_ID_DATA_ATTR = "data-eye-note-element-id";
-
-// Identity wait strategy (client)
-export const IDENTITY_WAIT_TIMEOUT_MS = 2000;
-export const PAGE_ID_WAIT_TIMEOUT_MS = 1500;
-export const IDENTITY_POLL_INTERVAL_MS = 50;
 
 // Anchor hints
 export const ANCHOR_HINTS_DATA_ATTR_WHITELIST = [

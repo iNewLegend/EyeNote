@@ -148,7 +148,7 @@ async function prepareExtension () {
                     await sharp( svgBuffer )
                         .resize( size, size )
                         .png()
-                        .toFile( path.join( iconsDir, `icon${ size }.png ` ) );
+                        .toFile( path.join( iconsDir, `icon${ size }.png` ) );
                     console.log( `Created icon${ size }.png from icon.svg` );
                 } catch ( iconError ) {
                     console.error( `Error creating icon${ size }.png:`, iconError );

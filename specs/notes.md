@@ -16,6 +16,9 @@ EyeNote renders interactive markers anchored to DOM elements so teams can collab
 - Render gating: markers remain hidden until the page-identity handshake completes and the target element is located in the live DOM. No coordinates are surfaced or rendered before both conditions are satisfied.
 - Visibility gating: if the target element is not visible (detached, `display:none`, `visibility:hidden`, zero-size, or off-viewport threshold), no marker renders for that note.
 - Incremental rehydration: DOM mutations are observed. Only mutated subtrees are re-analyzed; notes whose anchors intersect changed subtrees are rehydrated and re-rendered. Full-page rehydration is the fallback when change volume exceeds thresholds.
+  - When a DOM subtree changes, the system rehydrates every note whose selector path includes the mutated branch. This clears stale markers, re-resolves element handles within that tree, and only re-renders markers after the live elements are found.
+  - Selector matching ignores positional pseudo-classes (`:nth-of-type()`, `:nth-child()`) when deciding which notes to refresh so markers recover even when sibling indexes shift.
+  - Notes that temporarily lose their live element reference are re-tried on every relevant mutation flush so markers reappear immediately once the DOM provides a matching anchor again.
 
 ## 4. Actors & Surfaces
 - **End user**: initiates inspector mode, creates/edits/deletes notes.
@@ -85,7 +88,7 @@ EyeNote renders interactive markers anchored to DOM elements so teams can collab
 3. **Rehydration**  
    - After loading and on scroll or resize, notes are rehydrated by rebuilding the analyzer cache and recomputing each note’s coordinates.  
    - Missing elements clear the stored live reference and purge stored coordinates so markers stay hidden until the anchor reappears.  
-   - Existing elements receive refreshed offsets and coordinates derived from the latest DOM geometry.
+   - Existing elements receive refreshed selectors, geometry snapshots, and offsets derived from the latest DOM.
 4. **Fallback Behaviour**  
    - If selector resolution fails or the target element no longer exists in the current DOM, the marker is not rendered. The note remains accessible through list views but stays hidden until the element reappears or the user applies a remediation flow.  
    - Deletion or group-filter changes remove the note from state, causing the marker to disappear on next render.
@@ -153,7 +156,7 @@ The backend stores this record and returns the authoritative representation, pre
 
 ### 11.1 DOM Change Detection & Incremental Rehydration (Required)
 - A single MutationObserver watches `document` for childList/attributes/subtree changes.
-- Mutations are batched (16–32ms); changed nodes are compacted to a minimal set of distinct subtrees.
+- Mutations are batched (≈800 ms) to coalesce rapid DOM churn; changed nodes are compacted to a minimal set of distinct subtrees.
 - The PageAnalyzer re-analyzes only affected subtrees, refreshing snapshots for elements within.
 - Notes mapped to mutated subtrees are rehydrated; a circuit breaker escalates to full-page rehydration when cost exceeds thresholds.
 

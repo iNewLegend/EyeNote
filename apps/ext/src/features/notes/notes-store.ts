@@ -207,11 +207,38 @@ function rehydrateNotesForPathsEffect ( api : NotesStoreApi, rootPaths : string[
         return;
     }
 
-    api.setState( ( state ) => ( {
-        ...state,
-        notes: state.notes.map( ( note ) => {
-            const should = rootPaths.some( ( p ) => note.elementPath.startsWith( p ) );
-            return should ? rehydrateNotePosition( note ) : note;
-        } ),
-    } ) );
+    const normalize = ( path : string ) =>
+        path
+            .replace( /:nth-of-type\(\d+\)/g, "" )
+            .replace( /:nth-child\(\d+\)/g, "" )
+            .replace( /\s+/g, " " )
+            .trim();
+    const normalizedRoots = rootPaths.map( normalize );
+
+    api.setState( ( state ) => {
+        const rehydratedIds : string[] = [];
+        const nextNotes = state.notes.map( ( note ) => {
+            const normalizedNotePath = normalize( note.elementPath );
+            const targetMutation = normalizedRoots.some( ( root ) => normalizedNotePath.startsWith( root ) );
+            const needsRecovery = note.highlightedElement == null;
+            if ( targetMutation || needsRecovery ) {
+                rehydratedIds.push( note.id );
+                return rehydrateNotePosition( note );
+            }
+            return note;
+        } );
+
+        if ( rehydratedIds.length > 0 ) {
+            console.log( "[EyeNote][Notes] rehydrateNotesForPaths", {
+                rootPaths,
+                normalizedRoots,
+                rehydratedIds,
+            } );
+        }
+
+        return {
+            ...state,
+            notes: nextNotes,
+        };
+    } );
 }

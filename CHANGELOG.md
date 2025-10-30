@@ -6,6 +6,10 @@
 - Reworked the extension capture/rehydration flow to recompute marker coordinates by adding stored cursor offsets to the live element frame once page identity resolves.
 - Prevented markers from rendering until page identity broadcasts and the target element is located, clearing stored coordinates whenever the anchor is missing so nothing appears at stale positions.
 - Removed persisted absolute marker coordinates (`x`/`y`) across definitions, backend models, and extension logic so rendering always derives positions from live element geometry plus stored cursor offsets.
+- Normalized incremental rehydration path matching (stripping positional pseudo-classes like `:nth-of-type()`/`:nth-child()`) so markers refresh whenever any ancestor in their selector tree re-renders.
+- Rehydration now refreshes selector strings, DOM rectangles, and scroll snapshots for recovered anchors so markers realign immediately after their subtree re-mounts.
+- Added automatic recovery for notes missing live elements: every mutation flush re-attempts rehydration so markers reappear the instant their anchors return to the DOM.
+- Increased the DOM mutation debounce window to 800 ms so rapid successive mutations are coalesced before forcing rehydrate passes.
 
 # 2025-10-29
 
