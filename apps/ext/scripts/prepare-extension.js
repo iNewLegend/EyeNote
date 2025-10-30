@@ -116,7 +116,7 @@ async function getBuildHash () {
             }
         }
 
-        return contentHash || Date.now().toString();
+        return contentHash || "no-files-found";
     } catch ( error ) {
         return Date.now().toString();
     }
@@ -273,11 +273,7 @@ async function prepareExtension () {
             }
         }
 
-        // Copy popup.html from src to extension
-        await copyFileWithRetry(
-            path.join( rootDir, "src", "popup.html" ),
-            path.join( extensionDir, "popup.html" )
-        );
+        // The popup HTML is generated from dist/index.html above; no additional copy required.
 
         console.log( "Extension files prepared successfully!" );
 

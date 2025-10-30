@@ -91,9 +91,12 @@ type IncomingPageIdentityPayload = Omit<PageIdentityPayload, "generatedAt"> & {
 };
 
 function normalizePageIdentityPayload ( payload : IncomingPageIdentityPayload ) : PageIdentityPayload {
+    const parsed = payload.generatedAt ? Date.parse( payload.generatedAt ) : NaN;
+    const safeTimestamp = Number.isFinite( parsed ) ? parsed : Date.now();
+    const generatedAtIso = new Date( safeTimestamp ).toISOString();
     return {
         ...payload,
-        generatedAt: payload.generatedAt ?? new Date().toISOString(),
+        generatedAt: generatedAtIso,
     };
 }
 
@@ -276,7 +279,7 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
 
             // Fallback: if pageId query returned no docs (e.g., newly-created notes without pageId yet),
             // try composite (hostname, normalizedUrl/normalizedUrls)
-            if ( docs.length === 0 ) {
+            if ( docs.length === 0 && resolvedPageId ) {
                 const fallbackHostname = hostname ?? ( () => {
                     try {
                         const raw = resolvedNormalizedUrl ?? url ?? pageIdentity?.normalizedUrl;

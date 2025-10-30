@@ -55,9 +55,12 @@ const noteSchema = new Schema<NoteDocument>(
     }
 );
 
-// Prefer pageId; otherwise composite on hostname + normalizedUrl
+// Prefer pageId; otherwise composite on hostname + normalizedUrl (only when both present)
 noteSchema.index( { userId: 1, pageId: 1, updatedAt: -1 } );
-noteSchema.index( { userId: 1, hostname: 1, normalizedUrl: 1, updatedAt: -1 } );
+noteSchema.index(
+    { userId: 1, hostname: 1, normalizedUrl: 1, updatedAt: -1 },
+    { partialFilterExpression: { hostname: { $type: "string" }, normalizedUrl: { $type: "string" } } }
+);
 
 export const NoteModel : Model<NoteDocument> =
     models.Note || model<NoteDocument>( "Note", noteSchema );

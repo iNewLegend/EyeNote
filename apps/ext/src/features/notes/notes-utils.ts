@@ -158,6 +158,13 @@ function findElementByHints ( note : Note ) : HTMLElement | null {
         if ( byId ) return byId;
     }
 
+    const cssEscape =
+        typeof window !== "undefined" &&
+        typeof ( window as unknown as { CSS ?: { escape ?: ( value : string ) => string } } ).CSS !== "undefined" &&
+        typeof ( window as unknown as { CSS ?: { escape ?: ( value : string ) => string } } ).CSS?.escape === "function"
+            ? ( ( window as unknown as { CSS : { escape : ( value : string ) => string } } ).CSS.escape )
+            : ( value : string ) => value.replace( /["\\]/g, "\\$&" );
+
     const candidates : string[] = [];
 
     // 2) data-* attributes
@@ -165,30 +172,40 @@ function findElementByHints ( note : Note ) : HTMLElement | null {
         const entries = Object.entries( hints.dataAttrs );
         for ( const [ k, v ] of entries ) {
             if ( v ) {
-                candidates.push( `${ hints.tagName || "*" }[${ k }="${ CSS.escape( v ) }"]` );
+                const tag = hints.tagName || "*";
+                candidates.push( `${ tag }[${ k }="${ cssEscape( v ) }"]` );
             }
         }
     }
 
     // 3) tag + classes
     if ( hints.classListSample && hints.classListSample.length ) {
-        const classSel = hints.classListSample.map( ( c ) => `.${ CSS.escape( c ) }` ).join( "" );
-        candidates.push( `${ hints.tagName || "*" }${ classSel }` );
+        const classSel = hints.classListSample.map( ( c ) => `.${ cssEscape( c ) }` ).join( "" );
+        const tag = hints.tagName || "*";
+        candidates.push( `${ tag }${ classSel }` );
     }
 
     for ( const sel of candidates ) {
         try {
             const el = document.querySelector( sel ) as HTMLElement | null;
             if ( el ) return el;
-        } catch { /* ignore */ }
+        } catch {
+            // ignore invalid selectors composed from hints
+        }
     }
 
-    // 4) fallback by text hash (linear scan, last resort, capped)
+    // 4) fallback by text hash (bounded scan near viewport)
     if ( hints.textHash ) {
-        const all = Array.from( document.querySelectorAll( hints.tagName || "*" ) ) as HTMLElement[];
-        const cap = Math.min( all.length, 500 );
-        for ( let i = 0; i < cap; i++ ) {
+        const tag = hints.tagName || "*";
+        const all = Array.from( document.querySelectorAll( tag ) ) as HTMLElement[];
+        const maxScan = Math.min( all.length, 200 );
+        for ( let i = 0, seen = 0; i < all.length && seen < maxScan; i++ ) {
             const el = all[ i ];
+            const rect = el.getBoundingClientRect();
+            if ( rect.bottom <= 0 || rect.right <= 0 || rect.top >= window.innerHeight || rect.left >= window.innerWidth ) {
+                continue;
+            }
+            seen++;
             const text = ( el.innerText || "" ).trim().slice( 0, 200 );
             if ( text && djb2( text ) === hints.textHash ) {
                 return el;

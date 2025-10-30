@@ -80,13 +80,14 @@ export function useDomMutations ( options : DomMutationsOptions = {} ) {
                 elementPath = getElementPath( el );
             } catch { /* ignore */ }
 
+            if ( !elementPath ) {
+                return;
+            }
+
             const notes = useNotesStore.getState().notes;
             const hasRelevantNote = notes.some( ( note ) => {
                 if ( !note.elementPath ) return false;
-                if ( elementPath ) {
-                    return note.elementPath.startsWith( elementPath ) || elementPath.startsWith( note.elementPath );
-                }
-                return true;
+                return note.elementPath.startsWith( elementPath ) || elementPath.startsWith( note.elementPath );
             } );
             if ( !hasRelevantNote ) {
                 return;

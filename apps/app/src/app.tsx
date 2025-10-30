@@ -80,7 +80,7 @@ function AppApp () {
                 description: message,
             } );
         }
-    }, [ isLoading, signIn ] );
+    }, [ isLoading, isBackendHealthy, signIn ] );
 
     const handleSignOut = useCallback( async () => {
         try {
