@@ -4,15 +4,21 @@ import type {
     ViewportPosition,
 } from "@eye-note/definitions";
 import { getElementPath, findElementByPath } from "../utils/element-path";
+import {
+    EYE_NOTE_ROOT_CONTAINER_ID,
+    EYE_NOTE_SHADOW_CONTAINER_ID,
+    EYE_NOTE_USERLAND_CONTAINER_ID,
+    NOTES_PLUGIN_SELECTOR,
+} from "@eye-note/definitions";
 
 export interface AnalyzeElementOptions {
     pointerPosition ?: ViewportPosition;
 }
 
-const PLUGIN_ROOT_SELECTOR = ".notes-plugin";
-const SHADOW_ROOT_ID = "#eye-note-shadow-dom";
-const USERLAND_ROOT_ID = "#eye-note-userland-dom";
-const ROOT_CONTAINER_ID = "eye-note-root-container";
+const PLUGIN_ROOT_SELECTOR = NOTES_PLUGIN_SELECTOR;
+const SHADOW_ROOT_ID = `#${ EYE_NOTE_SHADOW_CONTAINER_ID }`;
+const USERLAND_ROOT_ID = `#${ EYE_NOTE_USERLAND_CONTAINER_ID }`;
+const ROOT_CONTAINER_ID = EYE_NOTE_ROOT_CONTAINER_ID;
 
 function serializeDOMRect ( rect : DOMRect ) : SerializedDOMRect {
     return {

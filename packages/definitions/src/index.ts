@@ -39,10 +39,12 @@ export interface NoteBase extends NoteLocationMetadata {
     elementPath : string;
     content : string;
     url : string;
+    hostname ?: string | null;
     groupId ?: string | null;
     pageId ?: string | null;
     canonicalUrl ?: string | null;
     normalizedUrl ?: string | null;
+    anchorHints ?: AnchorHints;
 }
 
 export interface NoteRecord extends NoteBase {
@@ -58,6 +60,14 @@ export type CreateNotePayload = NoteBase & {
 export type UpdateNotePayload = Partial<NoteBase> & {
     pageIdentity ?: PageIdentityPayload;
 };
+
+export interface AnchorHints {
+    tagName ?: string;
+    id ?: string;
+    classListSample ?: string[];
+    dataAttrs ?: Record<string, string>;
+    textHash ?: string;
+}
 
 export interface GroupBase {
     name : string;
@@ -90,6 +100,7 @@ export interface ListGroupsResponse {
 
 export interface ListNotesQuery {
     url ?: string;
+    hostname ?: string;
     groupIds ?: string[];
     pageId ?: string;
     normalizedUrl ?: string;
@@ -177,3 +188,5 @@ export interface ListNotesResponse {
     notes : NoteRecord[];
     identity ?: PageIdentityResolution;
 }
+
+export * from "./constants";

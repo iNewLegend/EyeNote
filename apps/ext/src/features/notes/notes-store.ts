@@ -58,11 +58,24 @@ function createNotesActions ( api : NotesStoreApi ) : NotesActions {
     };
 }
 
+/**
+ * NotesStore (Zustand)
+ *
+ * Holds the client-side notes array and exposes actions for:
+ * - Creating a local draft from a selected element
+ * - Upserting/merging/removing notes
+ * - Rehydrating note positions (full or targeted by mutated roots)
+ * - Toggling editing state and handling loading/errors
+ */
 export const useNotesStore = create<NotesStore>( ( set, get ) => ( {
     ...initialState,
     ...createNotesActions( { setState: set, getState: get } ),
 } ) );
 
+/**
+ * Effect: create a local draft from a DOM element, capture analyzer snapshot,
+ * insert into the store immediately (optimistic), and return the draft.
+ */
 async function createDraftNoteEffect (
     api : NotesStoreApi,
     element : Element,
@@ -83,6 +96,7 @@ async function createDraftNoteEffect (
     return draft;
 }
 
+/** Replace the notes array with a new list. */
 function setNotesState ( api : NotesStoreApi, notes : Note[] ) {
     api.setState( ( state ) => ( {
         ...state,
@@ -90,6 +104,7 @@ function setNotesState ( api : NotesStoreApi, notes : Note[] ) {
     } ) );
 }
 
+/** Insert or replace a note by id, preserving array order for existing ids. */
 function upsertNoteState ( api : NotesStoreApi, updatedNote : Note ) {
     api.setState( ( state ) => {
         const index = state.notes.findIndex( ( note ) => note.id === updatedNote.id );
@@ -111,6 +126,7 @@ function upsertNoteState ( api : NotesStoreApi, updatedNote : Note ) {
     } );
 }
 
+/** Shallow-merge fields into a note by id. */
 function mergeNoteState ( api : NotesStoreApi, id : string, updates : Partial<Note> ) {
     api.setState( ( state ) => ( {
         ...state,
@@ -118,6 +134,7 @@ function mergeNoteState ( api : NotesStoreApi, id : string, updates : Partial<No
     } ) );
 }
 
+/** Remove a note by id. */
 function removeNoteState ( api : NotesStoreApi, id : string ) {
     api.setState( ( state ) => ( {
         ...state,
@@ -125,6 +142,7 @@ function removeNoteState ( api : NotesStoreApi, id : string ) {
     } ) );
 }
 
+/** Toggle the loading flag used by consumers to show fetching states. */
 function setIsLoadingState ( api : NotesStoreApi, isLoading : boolean ) {
     api.setState( ( state ) => ( {
         ...state,
@@ -132,6 +150,7 @@ function setIsLoadingState ( api : NotesStoreApi, isLoading : boolean ) {
     } ) );
 }
 
+/** Store a user-presentable error message; clears when undefined. */
 function setErrorState ( api : NotesStoreApi, error ?: string ) {
     api.setState( ( state ) => ( {
         ...state,
@@ -139,6 +158,7 @@ function setErrorState ( api : NotesStoreApi, error ?: string ) {
     } ) );
 }
 
+/** Effect: set the editing flag for a specific note id. */
 function setNoteEditingEffect ( api : NotesStoreApi, id : string, isEditing : boolean ) {
     api.setState( ( state ) => ( {
         ...state,
@@ -146,10 +166,12 @@ function setNoteEditingEffect ( api : NotesStoreApi, id : string, isEditing : bo
     } ) );
 }
 
+/** Selector: true if a note already targets the provided element reference. */
 function hasNoteForElementSelector ( api : NotesStoreApi, element : Element ) : boolean {
     return api.getState().notes.some( ( note ) => note.highlightedElement === element );
 }
 
+/** Effect: clear notes and reset loading/error flags. */
 function clearNotesEffect ( api : NotesStoreApi ) {
     api.setState( ( state ) => ( {
         ...state,
@@ -159,6 +181,10 @@ function clearNotesEffect ( api : NotesStoreApi ) {
     } ) );
 }
 
+/**
+ * Effect: full-page rehydration. Rebuild PageAnalyzer map and recompute
+ * positions for every note.
+ */
 function rehydrateNotesEffect ( api : NotesStoreApi ) {
     try {
         getPageAnalyzer().analyzePage();
@@ -172,6 +198,10 @@ function rehydrateNotesEffect ( api : NotesStoreApi ) {
     } ) );
 }
 
+/**
+ * Effect: targeted rehydration for mutated subtrees. Only notes whose
+ * `elementPath` begins with one of the provided root paths are recomputed.
+ */
 function rehydrateNotesForPathsEffect ( api : NotesStoreApi, rootPaths : string[] ) {
     if ( rootPaths.length === 0 ) {
         return;

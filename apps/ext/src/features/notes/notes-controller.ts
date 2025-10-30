@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type {
     ListNotesQuery,
     PageIdentityPayload,
@@ -49,6 +49,7 @@ export function useNotesController () : NotesController {
 
                 const result = await fetchNotesForPage( {
                     url,
+                    hostname: ( typeof window !== "undefined" ? window.location.hostname : undefined ),
                     groupIds: params.groupIds,
                     pageIdentity: params.pageIdentity ?? lastCapturedIdentity.current,
                     pageId: params.pageId ?? lastResolvedIdentity.current?.pageId,
@@ -92,6 +93,18 @@ export function useNotesController () : NotesController {
         [ rehydrateNotes, setError, setIsLoading, setNotes ]
     );
 
+    // Keep lastCapturedIdentity in sync with page identity broadcasts
+    useEffect( () => {
+        const handler = ( event : Event ) => {
+            const detail = ( event as CustomEvent ).detail as { identity?: PageIdentityPayload } | undefined;
+            if ( detail?.identity ) {
+                lastCapturedIdentity.current = detail.identity;
+            }
+        };
+        window.addEventListener( "eye-note-page-identity", handler );
+        return () => window.removeEventListener( "eye-note-page-identity", handler );
+    }, [] );
+
     const updateNote = useCallback(
         async ( id : string, updates : UpdateNotePayload ) : Promise<Note> => {
             const { notes } = useNotesStore.getState();
@@ -112,6 +125,34 @@ export function useNotesController () : NotesController {
                 upsertNote( draftBeforeSave );
 
                 try {
+                    // Ensure we have a fresh page identity and (if possible) a resolved pageId
+                    const waitForIdentity = async ( timeoutMs = 2000 ) => {
+                        const started = Date.now();
+                        while ( !lastCapturedIdentity.current ) {
+                            if ( Date.now() - started > timeoutMs ) break;
+                            await new Promise( ( r ) => setTimeout( r, 50 ) );
+                        }
+                        return lastCapturedIdentity.current;
+                    };
+                    await waitForIdentity( 2000 );
+
+                    const waitForPageId = async ( timeoutMs = 1500 ) => {
+                        const started = Date.now();
+                        while ( !lastResolvedIdentity.current?.pageId ) {
+                            if ( Date.now() - started > timeoutMs ) break;
+                            await new Promise( ( r ) => setTimeout( r, 50 ) );
+                        }
+                        return lastResolvedIdentity.current?.pageId;
+                    };
+                    await waitForPageId( 1500 );
+
+                    console.log( "[EyeNote] pre-persist draft", {
+                        draftId: targetNote.id,
+                        hasCapturedIdentity: Boolean( lastCapturedIdentity.current ),
+                        pageId: lastResolvedIdentity.current?.pageId,
+                        normalizedUrl: lastCapturedIdentity.current?.normalizedUrl,
+                    } );
+
                     const syncedNote = await persistDraftNote( targetNote, updates, {
                         pageId: lastResolvedIdentity.current?.pageId,
                         pageIdentity: lastCapturedIdentity.current,
