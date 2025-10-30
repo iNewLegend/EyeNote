@@ -3,6 +3,10 @@ import { useNotesStore } from "../../features/notes/notes-store";
 import { useNotesController } from "../../features/notes/notes-controller";
 import { NotesComponent } from "../../features/notes/notes-component";
 import { useInspectorMode } from "../../hooks/use-inspector-mode";
+import { isElementVisible } from "../../utils/is-element-visible";
+import { useDomMutations } from "../../hooks/use-dom-mutations";
+import { EVENT_OPEN_GROUP_MANAGER, EVENT_OPEN_QUICK_MENU, EVENT_OPEN_SETTINGS_DIALOG } from "@eye-note/definitions";
+import { useMarkerVirtualization } from "../../hooks/use-marker-virtualization";
 import { ThemeProvider } from "../theme/theme-provider";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { InteractionBlocker } from "../../components/interaction-blocker";
@@ -61,6 +65,7 @@ export const ShadowDOM : React.FC = () => {
         [ setSetting ]
     );
     const dialogContainer = notesContainerRef.current?.parentElement ?? null;
+    const visibleNoteIds = useMarkerVirtualization( notes, { rootMargin: "200px" } );
 
     const lastKnownUrlRef = useUrlListener( setCurrentUrl );
     useGroupsBootstrap( {
@@ -71,6 +76,7 @@ export const ShadowDOM : React.FC = () => {
     } );
 
     useBackendHealthBridge();
+    useDomMutations();
     useAuthStatusEffects( refreshAuthStatus );
     useNotesLifecycle( {
         isAuthenticated,
@@ -229,9 +235,9 @@ export const ShadowDOM : React.FC = () => {
             setIsSettingsDialogOpen( true );
         };
 
-        window.addEventListener( "eye-note-open-group-manager", handler );
+        window.addEventListener( EVENT_OPEN_GROUP_MANAGER, handler as EventListener );
         return () => {
-            window.removeEventListener( "eye-note-open-group-manager", handler );
+            window.removeEventListener( EVENT_OPEN_GROUP_MANAGER, handler as EventListener );
         };
     }, [ canManageGroups ] );
 
@@ -240,9 +246,9 @@ export const ShadowDOM : React.FC = () => {
             setIsQuickMenuOpen( true );
         };
 
-        window.addEventListener( "eye-note-open-quick-menu", handler );
+        window.addEventListener( EVENT_OPEN_QUICK_MENU, handler as EventListener );
         return () => {
-            window.removeEventListener( "eye-note-open-quick-menu", handler );
+            window.removeEventListener( EVENT_OPEN_QUICK_MENU, handler as EventListener );
         };
     }, [] );
 
@@ -252,9 +258,9 @@ export const ShadowDOM : React.FC = () => {
             setIsSettingsDialogOpen( true );
         };
 
-        window.addEventListener( "eye-note-open-settings-dialog", handler );
+        window.addEventListener( EVENT_OPEN_SETTINGS_DIALOG, handler as EventListener );
         return () => {
-            window.removeEventListener( "eye-note-open-settings-dialog", handler );
+            window.removeEventListener( EVENT_OPEN_SETTINGS_DIALOG, handler as EventListener );
         };
     }, [] );
 
@@ -297,6 +303,12 @@ export const ShadowDOM : React.FC = () => {
 
             if ( !isAuthenticated ) {
                 console.warn( "Cannot create note while signed out." );
+                return;
+            }
+
+            // Require page identity to avoid creating notes without pageId/normalizedUrl
+            if ( !pageIdentityState.identity ) {
+                console.warn( "Cannot create note until page identity is captured." );
                 return;
             }
 
@@ -416,7 +428,14 @@ export const ShadowDOM : React.FC = () => {
                     }
                     items={settingsItems}
                 />
-                {notes.map( ( note ) => (
+                {notes
+                    .filter( ( note ) => {
+                        const el = note.highlightedElement;
+                        if ( !el ) return false;
+                        // Prefer IO-based visibility set when available; fallback to computed check
+                        return visibleNoteIds ? visibleNoteIds.has( note.id ) : isElementVisible( el );
+                    } )
+                    .map( ( note ) => (
                     <NotesComponent
                         key={note.id}
                         note={note}

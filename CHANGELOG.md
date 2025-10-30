@@ -126,3 +126,34 @@
 - Added a collaboration roadmap panel and reset affordances to clarify the future standalone experience while reuseing the shared toast/toaster abstractions.
 - Matched the dashboard layout to the extension settings two-pane surface so users get a consistent navigation and content structure across entry points.
 - Implemented Google OAuth sign-in for the dashboard using a popup flow, local session storage, and shared account header controls so standalone settings stay in sync with authenticated API calls.
+# 2025-10-30
+
+## Extension overlay — Phase A visibility gating
+
+## Extension overlay — Phase C indexing & payloads
+
+## Extension overlay — Phase D robust rehydration
+
+## Extension overlay — Phase E virtualization
+- Added `useMarkerVirtualization` hook using `IntersectionObserver` with a configurable buffer to limit marker/dialog rendering to in-viewport anchors.
+- Overlay now prefers the IO visibility set; falls back to computed visibility when IO is unavailable.
+- Reduces layout work on long pages with many notes.
+- Added optional `anchorHints` to note contracts (tagName, id, sampled classes, selected `data-*` attributes, short text hash) to improve element recovery when selectors drift.
+- Capture `anchorHints` on draft creation; include in create/update payloads.
+- Extended rehydration to try recovery by `id`, whitelisted `data-*` attributes, class sample, then a capped text-hash scan before giving up.
+- Added `hostname` to note base contracts and query payloads in `@eye-note/definitions` to support composite indexing `(hostname, normalizedUrl, layoutSignature)` alongside resolved `pageId`.
+- Threaded `hostname` through draft creation, create/update payloads, and list queries in the extension without breaking existing flows.
+- Verified extension and definitions type checks with `tsc --noEmit`.
+- Added strict marker visibility rules: markers render only when the anchored element is connected, visible by style, has non-zero geometry, and intersects the viewport.
+- Introduced `isElementVisible` utility and wired it into rehydration and renderer filtering to suppress markers for hidden/offscreen elements.
+- Kept behavior minimal and testable; no backend/API changes in this phase.
+
+## Backend — page indexing and note model refresh
+- Added `hostname` and `anchorHints` to note model; created compound indexes `{userId,pageId,updatedAt}` and `{userId,hostname,normalizedUrl,updatedAt}`.
+- Updated zod schemas to accept `hostname` and `anchorHints` on create/update, and `hostname` on queries.
+- Simplified `/api/notes/query` to resolve `pageId` from identity and then query by `pageId`, or fall back to `(hostname, normalizedUrl)` when no `pageId` is available. Removed legacy URL fallback paths per new dataset policy.
+
+## Fixes
+- Accept note creates when `pageIdentity` is briefly unavailable by using provided `pageId` or safe `(hostname, normalizedUrl)` composite; add server-side composite query fallback when pageId lookup returns empty.
+- Quiet health endpoint logs to reduce noise while debugging.
+- Improve client robustness: wait for identity/pageId before saving, inline-capture identity on save if missing, and log payloads clearly for diagnosis.
