@@ -27,6 +27,7 @@ type NotesActions = {
     hasNoteForElement : ( element : Element ) => boolean;
     clearNotes : () => void;
     rehydrateNotes : () => void;
+    rehydrateNotesForPaths : ( rootPaths : string[] ) => void;
 };
 
 export type NotesStore = NotesState & NotesActions;
@@ -53,6 +54,7 @@ function createNotesActions ( api : NotesStoreApi ) : NotesActions {
         hasNoteForElement: ( element ) => hasNoteForElementSelector( api, element ),
         clearNotes: () => clearNotesEffect( api ),
         rehydrateNotes: () => rehydrateNotesEffect( api ),
+        rehydrateNotesForPaths: ( paths : string[] ) => rehydrateNotesForPathsEffect( api, paths ),
     };
 }
 
@@ -167,5 +169,19 @@ function rehydrateNotesEffect ( api : NotesStoreApi ) {
     api.setState( ( state ) => ( {
         ...state,
         notes: state.notes.map( ( note ) => rehydrateNotePosition( note ) ),
+    } ) );
+}
+
+function rehydrateNotesForPathsEffect ( api : NotesStoreApi, rootPaths : string[] ) {
+    if ( rootPaths.length === 0 ) {
+        return;
+    }
+
+    api.setState( ( state ) => ( {
+        ...state,
+        notes: state.notes.map( ( note ) => {
+            const should = rootPaths.some( ( p ) => note.elementPath.startsWith( p ) );
+            return should ? rehydrateNotePosition( note ) : note;
+        } ),
     } ) );
 }
