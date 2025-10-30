@@ -20,6 +20,18 @@ export { Input } from "./components/ui/input";
 export { Label } from "./components/ui/label";
 export { Toaster } from "./components/ui/sonner";
 export { Switch } from "./components/ui/switch";
+export {
+    Sheet,
+    SheetClose,
+    SheetContent,
+    SheetDescription,
+    SheetFooter,
+    SheetHeader,
+    SheetOverlay,
+    SheetPortal,
+    SheetTitle,
+    SheetTrigger,
+} from "./components/ui/sheet";
 export { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 export { Textarea } from "./components/ui/textarea";
 export {

@@ -3,10 +3,10 @@ import type { Note } from "../../types";
 import type { UpdateNotePayload } from "@eye-note/definitions";
 import {
     Button,
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogTitle,
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetTitle,
 } from "@eye-note/ui";
 import { useHighlightStore } from "../../stores/highlight-store";
 import { useNotesStore } from "./notes-store";
@@ -255,19 +255,13 @@ export function NotesComponent ( {
                     console.log( "[Debug] After setNoteEditing" );
                 }}
             />
-            <Dialog open={Boolean( note.isEditing )} onOpenChange={handleOpenChange}>
-                <DialogContent
+            <Sheet open={Boolean( note.isEditing )} onOpenChange={handleOpenChange}>
+                <SheetContent
                     {...( container ? { container } : {} )}
-                    className="note-content"
-                    style={{
-                        position: "absolute",
-                        left: `${ markerPosition.x }px`,
-                        top: `${ markerPosition.y }px`,
-                        transform: "none",
-                        zIndex: 2147483647,
-                    }}
+                    side="right"
+                    className="note-content w-full sm:max-w-md flex flex-col"
                     onPointerDownOutside={( e ) => {
-                        console.log( "[Debug] Dialog pointer down outside" );
+                        console.log( "[Debug] Sheet pointer down outside" );
                         if ( note.isLocalDraft ) {
                             e.preventDefault();
                             return;
@@ -280,49 +274,59 @@ export function NotesComponent ( {
                         }
                     }}
                 >
-                    <DialogTitle className="sr-only">Add Note</DialogTitle>
-                    <DialogDescription className="sr-only">
+                    <SheetTitle className="sr-only">Add Note</SheetTitle>
+                    <SheetDescription className="sr-only">
                         Add or edit your note for the selected element. Use the textarea below to
                         write your note, then click Save to confirm or Delete to remove the note.
-                    </DialogDescription>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span
-                            className="h-3 w-3 rounded-full border border-border"
-                            style={{ backgroundColor: groupColor }}
-                        />
-                        <span>{currentGroup?.name ?? ( note.groupId ? "Group" : "No group" )}</span>
-                    </div>
-                    <div className="space-y-1">
-                        <label
-                            htmlFor={`note-group-${ note.id }`}
-                            className="text-xs font-medium text-muted-foreground"
-                        >
-                            Group
-                        </label>
-                        <select
-                            id={`note-group-${ note.id }`}
-                            className="w-full rounded-md border border-border bg-background/80 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                            value={selectedGroupId}
-                            onChange={( event ) => setSelectedGroupId( event.target.value )}
-                            disabled={isActionLocked}
-                        >
-                            <option value="">No group</option>
-                            {selectOptions.map( ( option ) => (
-                                <option key={`${ note.id }-${ option.id }`} value={option.id}>
-                                    {option.name}
-                                </option>
-                            ) )}
-                        </select>
-                    </div>
-                    <textarea
-                        className="w-full min-h-[100px] p-2 border border-border rounded resize-y font-sans"
-                        value={draftContent}
-                        onChange={( event ) => setDraftContent( event.target.value )}
-                        placeholder="Enter your note..."
-                        autoFocus
-                        disabled={isActionLocked}
-                    />
-                    <div className="flex justify-end gap-2 mt-4">
+                    </SheetDescription>
+                    <div className="flex flex-col h-full gap-6">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground pb-2 border-b border-border/50">
+                            <span
+                                className="h-3 w-3 rounded-full border border-border"
+                                style={{ backgroundColor: groupColor }}
+                            />
+                            <span>{currentGroup?.name ?? ( note.groupId ? "Group" : "No group" )}</span>
+                        </div>
+                        <div className="space-y-2">
+                            <label
+                                htmlFor={`note-group-${ note.id }`}
+                                className="text-xs font-medium text-muted-foreground"
+                            >
+                                Group
+                            </label>
+                            <select
+                                id={`note-group-${ note.id }`}
+                                className="w-full rounded-md border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                value={selectedGroupId}
+                                onChange={( event ) => setSelectedGroupId( event.target.value )}
+                                disabled={isActionLocked}
+                            >
+                                <option value="">No group</option>
+                                {selectOptions.map( ( option ) => (
+                                    <option key={`${ note.id }-${ option.id }`} value={option.id}>
+                                        {option.name}
+                                    </option>
+                                ) )}
+                            </select>
+                        </div>
+                        <div className="space-y-2 flex-1 min-h-0">
+                            <label
+                                htmlFor={`note-content-${ note.id }`}
+                                className="text-xs font-medium text-muted-foreground"
+                            >
+                                Note
+                            </label>
+                            <textarea
+                                id={`note-content-${ note.id }`}
+                                className="w-full min-h-[150px] p-3 border border-border rounded resize-y font-sans bg-background/60 focus:bg-background/80 transition-colors"
+                                value={draftContent}
+                                onChange={( event ) => setDraftContent( event.target.value )}
+                                placeholder="Enter your note..."
+                                autoFocus
+                                disabled={isActionLocked}
+                            />
+                        </div>
+                        <div className="flex justify-end gap-2 pt-4 border-t border-border/50">
                         <Button variant="outline" onClick={handleCancel} disabled={isActionLocked}>
                             Cancel
                         </Button>
@@ -337,8 +341,8 @@ export function NotesComponent ( {
                             {isSaving ? "Saving..." : "Save"}
                         </Button>
                     </div>
-                </DialogContent>
-            </Dialog>
+                </SheetContent>
+            </Sheet>
         </div>
     );
 }
