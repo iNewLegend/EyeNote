@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Note } from "../types";
 import { isElementInsidePlugin } from "../utils/is-element-visible";
-import { MARKER_IO_ROOT_MARGIN, MARKER_IO_THRESHOLD, MARKER_ELEMENT_ID_DATA_ATTR } from "@eye-note/definitions";
+import { MARKER_IO_ROOT_MARGIN, MARKER_IO_THRESHOLD } from "@eye-note/definitions";
 
 type Options = {
     rootMargin ?: string;
@@ -16,17 +16,23 @@ type Options = {
  *
  * - Skips EyeNote-owned DOM (shadow/userland containers).
  * - Uses MARKER_IO_ROOT_MARGIN as the default prefetch buffer.
- * - Associates elements to note ids via MARKER_ELEMENT_ID_DATA_ATTR.
+ * - Associates each observed element to all of its note ids so IntersectionObserver updates every note sharing the anchor.
  */
 export function useMarkerVirtualization ( notes : Note[], options : Options = {} ) : Set<string> | undefined {
     const [ visibleIds, setVisibleIds ] = useState<Set<string>>();
     const observerRef = useRef<IntersectionObserver>();
-    const elementsMap = useMemo( () => {
-        const map = new Map<string, Element>();
-        for ( const n of notes ) {
-            const el = n.highlightedElement;
-            if ( el && !isElementInsidePlugin( el ) ) {
-                map.set( n.id, el );
+    const elementToIds = useMemo( () => {
+        const map = new Map<Element, string[]>();
+        for ( const note of notes ) {
+            const el = note.highlightedElement;
+            if ( !el || isElementInsidePlugin( el ) ) {
+                continue;
+            }
+            const existing = map.get( el );
+            if ( existing ) {
+                existing.push( note.id );
+            } else {
+                map.set( el, [ note.id ] );
             }
         }
         return map;
@@ -42,12 +48,21 @@ export function useMarkerVirtualization ( notes : Note[], options : Options = {}
         const observer = new IntersectionObserver( ( entries ) => {
             let changed = false;
             for ( const entry of entries ) {
-                const id = ( entry.target as HTMLElement ).getAttribute( MARKER_ELEMENT_ID_DATA_ATTR );
-                if ( !id ) continue;
+                const ids = elementToIds.get( entry.target as Element );
+                if ( !ids || ids.length === 0 ) continue;
                 if ( entry.isIntersecting ) {
-                    if ( !nextVisible.has( id ) ) { nextVisible.add( id ); changed = true; }
-                } else if ( nextVisible.delete( id ) ) {
-                    changed = true;
+                    for ( const id of ids ) {
+                        if ( !nextVisible.has( id ) ) {
+                            nextVisible.add( id );
+                            changed = true;
+                        }
+                    }
+                } else {
+                    for ( const id of ids ) {
+                        if ( nextVisible.delete( id ) ) {
+                            changed = true;
+                        }
+                    }
                 }
             }
             if ( changed ) {
@@ -62,22 +77,27 @@ export function useMarkerVirtualization ( notes : Note[], options : Options = {}
         observerRef.current = observer;
 
         // Observe all current elements
-        elementsMap.forEach( ( el, id ) => {
+        elementToIds.forEach( ( _ids, el ) => {
             try {
-                ( el as HTMLElement ).setAttribute( MARKER_ELEMENT_ID_DATA_ATTR, id );
                 observer.observe( el );
             } catch { /* ignore */ }
         } );
 
         // Initial snapshot: assume currently intersecting elements are visible
         // (Observer will update promptly afterwards.)
-        setVisibleIds( new Set( Array.from( elementsMap.keys() ) ) );
+        const initialVisible = new Set<string>();
+        elementToIds.forEach( ( ids ) => {
+            for ( const id of ids ) {
+                initialVisible.add( id );
+            }
+        } );
+        setVisibleIds( initialVisible.size > 0 ? initialVisible : new Set() );
 
         return () => {
             try { observer.disconnect(); } catch { /* ignore */ }
             observerRef.current = undefined;
         };
-    }, [ elementsMap, options.rootMargin ] );
+    }, [ elementToIds, options.rootMargin ] );
 
     return visibleIds;
 }
