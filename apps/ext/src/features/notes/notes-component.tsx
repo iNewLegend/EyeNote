@@ -12,6 +12,7 @@ import { useHighlightStore } from "../../stores/highlight-store";
 import { useNotesStore } from "./notes-store";
 import { useNotesController } from "./notes-controller";
 import { useGroupsStore } from "../../modules/groups";
+import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { calculateMarkerPosition } from "./notes-utils";
 
 interface NoteComponentProps {
@@ -53,6 +54,7 @@ export function NotesComponent ( {
     const { deleteNote, updateNote } = useNotesController();
     const setNoteEditing = useNotesStore( ( state ) => state.setNoteEditing );
     const { addHighlight, removeHighlight } = useHighlightStore();
+    const addMode = useModeStore( ( state ) => state.addMode );
     const groups = useGroupsStore( ( state ) => state.groups );
     const [ draftContent, setDraftContent ] = useState( note.content );
     const [ isSaving, setIsSaving ] = useState( false );
@@ -82,7 +84,7 @@ export function NotesComponent ( {
     const markerStyle : CSSProperties = {
         left: `${ markerPosition.x }px`,
         top: `${ markerPosition.y }px`,
-        zIndex: 2147483647,
+        zIndex: 2147483646,
         transform: "translate(-50%, -50%)",
         backgroundColor: note.isPendingSync ? "#f97316" : groupColor,
         borderColor: note.isPendingSync ? "#f97316" : groupColor,
@@ -153,6 +155,7 @@ export function NotesComponent ( {
             } );
         } else {
             console.log( "[Debug] Dialog opening" );
+            addMode( AppMode.NOTES_MODE );
             if ( note.highlightedElement ) {
                 addHighlight( note.highlightedElement );
                 setSelectedElement( note.highlightedElement );
@@ -259,7 +262,7 @@ export function NotesComponent ( {
                 <SheetContent
                     {...( container ? { container } : {} )}
                     side="right"
-                    className="note-content w-full sm:max-w-md flex flex-col outline-none"
+                    className="note-content w-full sm:max-w-md flex flex-col outline-none opacity-50 hover:opacity-100 transition-opacity duration-200"
                     onPointerDownOutside={( e : PointerEvent ) => {
                         console.log( "[Debug] Sheet pointer down outside" );
                         if ( note.isLocalDraft ) {
