@@ -95,18 +95,25 @@ async function createDraftNoteEffect (
     } );
 
     requestAnimationFrame( () => {
-        requestAnimationFrame( async () => {
-            try {
-                const screenshots = await captureElementScreenshots( {
-                    element,
-                    padding: 60,
-                    zoomLevels: [ 1, 1.5, 2 ],
-                } );
+        requestAnimationFrame( () => {
+            mergeNoteState( api, draft.id, { isCapturingScreenshots: true } );
 
-                mergeNoteState( api, draft.id, { screenshots } );
-            } catch ( error ) {
-                console.warn( "[EyeNote] Failed to capture screenshots:", error );
-            }
+            requestAnimationFrame( () => {
+                requestAnimationFrame( async () => {
+                    try {
+                        const screenshots = await captureElementScreenshots( {
+                            element,
+                            padding: 60,
+                            zoomLevels: [ 1, 1.5, 2 ],
+                        } );
+
+                        mergeNoteState( api, draft.id, { screenshots, isCapturingScreenshots: false } );
+                    } catch ( error ) {
+                        console.warn( "[EyeNote] Failed to capture screenshots:", error );
+                        mergeNoteState( api, draft.id, { isCapturingScreenshots: false } );
+                    }
+                } );
+            } );
         } );
     } );
 

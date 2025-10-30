@@ -85,6 +85,7 @@ export function mapRecordToNote ( record : NoteRecord, overrides : Partial<Note>
         isEditing: false,
         isPendingSync: false,
         isLocalDraft: false,
+        isCapturingScreenshots: false,
         highlightedElement: null,
         ...overrides,
     };

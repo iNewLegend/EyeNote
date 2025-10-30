@@ -5,4 +5,5 @@ export interface Note extends NoteRecord {
     highlightedElement ?: Element | null;
     isPendingSync ?: boolean;
     isLocalDraft ?: boolean;
+    isCapturingScreenshots ?: boolean;
 }
