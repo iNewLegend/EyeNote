@@ -20,17 +20,13 @@ export interface ElementLocationSnapshot {
     rect : SerializedDOMRect;
     viewportPosition : ViewportPosition;
     elementOffset : Vector2D;
-    elementOffsetRatio : Vector2D;
     scrollPosition : Vector2D;
     timestamp : number;
 }
 
 export interface NoteLocationMetadata {
-    x ?: number;
-    y ?: number;
     elementRect ?: SerializedDOMRect;
     elementOffset ?: Vector2D;
-    elementOffsetRatio ?: Vector2D;
     scrollPosition ?: Vector2D;
     locationCapturedAt ?: number;
 }

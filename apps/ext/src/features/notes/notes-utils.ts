@@ -4,14 +4,12 @@ import type {
     PageIdentityPayload,
     UpdateNotePayload,
     ViewportPosition,
+    Vector2D,
 } from "@eye-note/definitions";
 import type { Note } from "../../types";
 import { getPageAnalyzer } from "../../lib/page-analyzer";
 import { isElementVisible } from "../../utils/is-element-visible";
-import {
-    ANCHOR_HINTS_DATA_ATTR_WHITELIST,
-    MARKER_BASE_SIZE_PX,
-} from "@eye-note/definitions";
+import { ANCHOR_HINTS_DATA_ATTR_WHITELIST } from "@eye-note/definitions";
 
 const draftIdPrefix = "temp";
 
@@ -81,7 +79,7 @@ export function mapRecordToNote ( record : NoteRecord, overrides : Partial<Note>
 
 /**
  * Creates a local draft Note from a user-selected DOM element.
- * Captures element path, geometry, normalized offsets, scroll position, and
+ * Captures element path, geometry, cursor offsets, scroll position, and
  * page/time metadata. The draft is marked as editing + pending sync.
  */
 export function createDraftFromElement (
@@ -109,11 +107,8 @@ export function createDraftFromElement (
         groupId: initialGroupId ?? undefined,
         createdAt: timestamp,
         updatedAt: timestamp,
-        x: snapshot.viewportPosition.x,
-        y: snapshot.viewportPosition.y,
         elementRect: snapshot.rect,
         elementOffset: snapshot.elementOffset,
-        elementOffsetRatio: snapshot.elementOffsetRatio,
         scrollPosition: snapshot.scrollPosition,
         locationCapturedAt: snapshot.timestamp,
         isEditing: true,
@@ -121,14 +116,6 @@ export function createDraftFromElement (
         isPendingSync: true,
         isLocalDraft: true,
     };
-}
-
-/** Ensures a numeric value is within [0,1], returning 0 for NaN. */
-function clamp ( value : number ) : number {
-    if ( Number.isNaN( value ) ) {
-        return 0;
-    }
-    return Math.max( 0, Math.min( 1, value ) );
 }
 
 /**
@@ -199,65 +186,71 @@ function findElementByHints ( note : Note ) : HTMLElement | null {
     return null;
 }
 
-/**
- * Resolves normalized offset ratios (0–1) within the element from either the
- * stored ratios or by deriving from absolute offsets + current rect.
- */
-export function resolveOffsetRatio ( note : Note ) {
-    if ( note.elementOffsetRatio ) {
-        return note.elementOffsetRatio;
-    }
+const MIN_OFFSET_VALUE = 1;
 
-    if ( note.elementOffset && note.elementRect && note.elementRect.width && note.elementRect.height ) {
+function clampOffsetValue ( value : number, max ?: number ) : number {
+    if ( Number.isNaN( value ) || !Number.isFinite( value ) ) {
+        return MIN_OFFSET_VALUE;
+    }
+    if ( max === undefined || max <= 0 ) {
+        return Math.max( MIN_OFFSET_VALUE, value );
+    }
+    return Math.max( MIN_OFFSET_VALUE, Math.min( max, value ) );
+}
+
+function resolveElementOffset (
+    note : Note,
+    rect ?: DOMRect | null
+) : Vector2D {
+    const bounds = rect
+        ? { width: rect.width, height: rect.height }
+        : note.elementRect
+            ? { width: note.elementRect.width, height: note.elementRect.height }
+            : undefined;
+
+    if ( note.elementOffset ) {
         return {
-            x: clamp( note.elementOffset.x / note.elementRect.width ),
-            y: clamp( note.elementOffset.y / note.elementRect.height ),
+            x: clampOffsetValue( note.elementOffset.x, bounds?.width ),
+            y: clampOffsetValue( note.elementOffset.y, bounds?.height ),
         };
     }
 
-    return { x: 0, y: 0 };
+    if ( bounds ) {
+        return {
+            x: clampOffsetValue( ( bounds.width / 2 ) + MIN_OFFSET_VALUE, bounds.width ),
+            y: clampOffsetValue( ( bounds.height / 2 ) + MIN_OFFSET_VALUE, bounds.height ),
+        };
+    }
+
+    return { x: MIN_OFFSET_VALUE, y: MIN_OFFSET_VALUE };
 }
 
 /**
  * Computes the on-screen marker position by combining the current element
- * bounding rect with normalized offset ratios. Constrains the position to the
- * element bounds, accounting for marker size.
+ * bounding rect with stored cursor offsets. Returns null when the element
+ * cannot be resolved or is not visible.
  */
-export function calculateMarkerPosition ( note : Note ) : { x : number; y : number } {
+export function calculateMarkerPosition ( note : Note ) : Vector2D | null {
     const element = note.highlightedElement || safeFindElement( note.elementPath );
 
-    if ( !element ) {
-        return {
-            x: note.x ?? 0,
-            y: note.y ?? 0,
-        };
+    if ( !element || !isElementVisible( element ) ) {
+        return null;
     }
 
     const rect = element.getBoundingClientRect();
-    const ratio = resolveOffsetRatio( note );
+    const offset = resolveElementOffset( note, rect );
 
-    const markerX = rect.left + rect.width * clamp( ratio.x );
-    const markerY = rect.top + rect.height * clamp( ratio.y );
-
-    const markerSize = MARKER_BASE_SIZE_PX;
-    const halfMarker = markerSize / 2;
-
-    const constrainedX = Math.max( 
-        rect.left + halfMarker, 
-        Math.min( rect.right - halfMarker, markerX ) 
-    );
-    const constrainedY = Math.max( 
-        rect.top + halfMarker, 
-        Math.min( rect.bottom - halfMarker, markerY ) 
-    );
-
-    return { x: constrainedX, y: constrainedY };
+    return {
+        x: rect.left + offset.x - MIN_OFFSET_VALUE,
+        y: rect.top + offset.y - MIN_OFFSET_VALUE,
+    };
 }
 
 /**
  * Recomputes a note's screen position and live element reference. Uses the
  * CSS path first, then anchor hints for recovery. If the element is missing or
- * not visible, clears the live reference and preserves prior coordinates.
+ * not visible, clears the live reference and clears stored coordinates so the
+ * marker stays hidden until the anchor reappears.
  */
 export function rehydrateNotePosition ( note : Note ) : Note {
     let element = safeFindElement( note.elementPath );
@@ -268,28 +261,19 @@ export function rehydrateNotePosition ( note : Note ) : Note {
     // Treat missing or invisible elements the same: drop the live reference
     if ( !element || !isElementVisible( element ) ) {
         if ( note.highlightedElement ) {
-            return { ...note, highlightedElement: null };
+            return {
+                ...note,
+                highlightedElement: null,
+            };
         }
         return note;
     }
 
     const rect = element.getBoundingClientRect();
-    const ratio = resolveOffsetRatio( note );
-    const computedX = rect.left + rect.width * clamp( ratio.x );
-    const computedY = rect.top + rect.height * clamp( ratio.y );
-
-    const shouldUpdatePosition =
-        Math.abs( ( note.x ?? 0 ) - computedX ) > 0.5 ||
-        Math.abs( ( note.y ?? 0 ) - computedY ) > 0.5;
-
-    if ( !shouldUpdatePosition && note.highlightedElement === element ) {
-        return note;
-    }
-
+    const offset = resolveElementOffset( note, rect );
     return {
         ...note,
-        x: computedX,
-        y: computedY,
+        elementOffset: offset,
         highlightedElement: element,
     };
 }
@@ -328,11 +312,8 @@ export function createPayloadFromDraft (
         hostname: draft.hostname ?? window.location.hostname,
         anchorHints: draft.anchorHints,
         groupId: resolvedGroupId,
-        x: draft.x,
-        y: draft.y,
         elementRect: draft.elementRect,
         elementOffset: draft.elementOffset,
-        elementOffsetRatio: draft.elementOffsetRatio,
         scrollPosition: draft.scrollPosition,
         locationCapturedAt: draft.locationCapturedAt,
         pageIdentity: resolvedPageIdentity,

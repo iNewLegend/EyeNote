@@ -31,11 +31,14 @@ function serializeDOMRect ( rect : DOMRect ) : SerializedDOMRect {
     };
 }
 
-function clamp ( value : number ) : number {
+function clampToRange ( value : number, min : number, max : number ) : number {
     if ( Number.isNaN( value ) ) {
-        return 0;
+        return min;
     }
-    return Math.max( 0, Math.min( 1, value ) );
+    if ( !Number.isFinite( value ) ) {
+        return value > 0 ? max : min;
+    }
+    return Math.max( min, Math.min( max, value ) );
 }
 
 function shouldIgnoreElement ( element : Element ) : boolean {
@@ -156,6 +159,12 @@ export class PageAnalyzer {
 
         const offsetX = viewportPosition.x - rect.left;
         const offsetY = viewportPosition.y - rect.top;
+        const maxOffsetX = rect.width > 0 ? rect.width : 0;
+        const maxOffsetY = rect.height > 0 ? rect.height : 0;
+        const boundedOffsetX = clampToRange( offsetX, 0, maxOffsetX );
+        const boundedOffsetY = clampToRange( offsetY, 0, maxOffsetY );
+        const storedOffsetX = clampToRange( boundedOffsetX + 1, 1, Math.max( 1, maxOffsetX ) );
+        const storedOffsetY = clampToRange( boundedOffsetY + 1, 1, Math.max( 1, maxOffsetY ) );
 
         const snapshot : ElementLocationSnapshot = {
             elementPath: getElementPath( element ),
@@ -163,12 +172,8 @@ export class PageAnalyzer {
             rect: serializeDOMRect( rect ),
             viewportPosition,
             elementOffset: {
-                x: offsetX,
-                y: offsetY,
-            },
-            elementOffsetRatio: {
-                x: rect.width > 0 ? clamp( offsetX / rect.width ) : 0,
-                y: rect.height > 0 ? clamp( offsetY / rect.height ) : 0,
+                x: storedOffsetX,
+                y: storedOffsetY,
             },
             scrollPosition: {
                 x: window.scrollX,

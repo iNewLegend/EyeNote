@@ -32,18 +32,23 @@ export function NotesComponent ( {
     setSelectedElement,
     onNoteDismissed,
 } : NoteComponentProps ) {
+    const markerPosition = useMemo( () => calculateMarkerPosition( note ), [ note ] );
+
     useEffect( () => {
-        const position = calculateMarkerPosition( note );
         console.debug( "[EyeNote] Rendering note marker", {
             id: note.id,
-            storedX: note.x,
-            storedY: note.y,
-            calculatedX: position.x,
-            calculatedY: position.y,
+            calculatedX: markerPosition?.x,
+            calculatedY: markerPosition?.y,
             hasElement: Boolean( note.highlightedElement ),
             elementPath: note.elementPath,
         } );
-    }, [ note.id, note.x, note.y, note.highlightedElement, note.elementPath ] );
+    }, [
+        markerPosition?.x,
+        markerPosition?.y,
+        note.elementPath,
+        note.highlightedElement,
+        note.id,
+    ] );
 
     const { deleteNote, updateNote } = useNotesController();
     const setNoteEditing = useNotesStore( ( state ) => state.setNoteEditing );
@@ -70,16 +75,18 @@ export function NotesComponent ( {
 
     const groupColor = currentGroup?.color ?? "#646cff";
 
-    const markerPosition = useMemo( () => calculateMarkerPosition( note ), [ note ] );
+    if ( !markerPosition ) {
+        return null;
+    }
 
-    const markerStyle = useMemo<CSSProperties>( () => ( {
+    const markerStyle : CSSProperties = {
         left: `${ markerPosition.x }px`,
         top: `${ markerPosition.y }px`,
         zIndex: 2147483647,
         transform: "translate(-50%, -50%)",
         backgroundColor: note.isPendingSync ? "#f97316" : groupColor,
         borderColor: note.isPendingSync ? "#f97316" : groupColor,
-    } ), [ groupColor, note.isPendingSync, markerPosition.x, markerPosition.y ] );
+    };
 
     const groupOptions = useMemo<GroupOption[]>( () => {
         if ( groups.length === 0 ) {

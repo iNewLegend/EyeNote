@@ -1,3 +1,12 @@
+# 2025-10-30
+
+## Overlay capture & rendering
+- Updated `specs/notes.md` so note anchoring assumes 1-indexed cursor offsets and removed normalized ratio fallback language.
+- Refined shared definitions plus backend validation/models to drop `elementOffsetRatio`, keeping only 1-indexed offsets captured by the analyzer.
+- Reworked the extension capture/rehydration flow to recompute marker coordinates by adding stored cursor offsets to the live element frame once page identity resolves.
+- Prevented markers from rendering until page identity broadcasts and the target element is located, clearing stored coordinates whenever the anchor is missing so nothing appears at stale positions.
+- Removed persisted absolute marker coordinates (`x`/`y`) across definitions, backend models, and extension logic so rendering always derives positions from live element geometry plus stored cursor offsets.
+
 # 2025-10-29
 
 ## Documentation

@@ -12,7 +12,8 @@ EyeNote renders interactive markers anchored to DOM elements so teams can collab
 
 ## 3.1 Key Guarantees (Authoritative)
 - Storage keying: each note is stored and retrieved under a composite index: `hostname` + `normalizedUrl` + `domTokenization` (layout/content fingerprint). The fingerprint comes from the page-identity module. When the backend resolves aliases to a canonical `pageId`, that `pageId` becomes the primary key and the composite remains as query attributes.
-- Element anchoring: every note is anchored to the element it was captured from via `elementPath` plus offset ratios. Optional anchor hints (stable attributes) may be persisted to improve rehydration.
+- Element anchoring: every note is anchored to the element it was captured from via `elementPath` plus the cursor offset measured inside that element. Offsets are stored 1-indexed in CSS pixels (top-left == `{ x:1, y:1 }`) so the original click point can be recomposed exactly. Optional anchor hints (stable attributes) may be persisted to improve rehydration.
+- Render gating: markers remain hidden until the page-identity handshake completes and the target element is located in the live DOM. No coordinates are surfaced or rendered before both conditions are satisfied.
 - Visibility gating: if the target element is not visible (detached, `display:none`, `visibility:hidden`, zero-size, or off-viewport threshold), no marker renders for that note.
 - Incremental rehydration: DOM mutations are observed. Only mutated subtrees are re-analyzed; notes whose anchors intersect changed subtrees are rehydrated and re-rendered. Full-page rehydration is the fallback when change volume exceeds thresholds.
 
@@ -43,7 +44,8 @@ EyeNote renders interactive markers anchored to DOM elements so teams can collab
    - Guardrails: abort if inspector inactive, no hovered element, user disconnected, or click targets overlay UI (except the interaction blocker).  
    - Captures pointer coordinates, records scroll offsets, then invokes the note-creation orchestration with the hovered element and default active group.
 4. **Draft Data Capture**  
-   - The notes subsystem captures the selected element reference and computes its positioning metadata (CSS path, bounding rectangle, raw offsets, normalized offset ratios, viewport position, and scroll snapshot).  
+   - The notes subsystem captures the selected element reference and computes its positioning metadata (CSS path, bounding rectangle, cursor-relative offsets, viewport position, and scroll snapshot).  
+   - Cursor offsets are stored relative to the element’s top-left corner and are incremented by one pixel to keep them positive (top-left == `{ x:1, y:1 }`).  
    - The subsystem also computes the page identity fingerprint (normalized URL, content signature, layout signature, layout tokens, token sample) and records the `hostname`. Optionally, it serializes the element `outerHTML` and a minimal DOM snapshot for audit/remediation.  
    - A draft is inserted with a temporary id, pending-sync flag, local-draft flag, live element reference, captured positioning metadata, and the page-identity block; render is still subject to visibility gating.  
    - Captured notes are always anchored to the selected element; downstream render logic must compute marker placement relative to that element’s geometry.
@@ -56,18 +58,19 @@ EyeNote renders interactive markers anchored to DOM elements so teams can collab
    - A runtime flag flips when inspector or notes mode is active, temporarily allowing pointer events on markers.
 2. **Marker Placement**  
    - Each marker computes its position from note metadata.  
-   - Marker coordinates are always resolved relative to the targeted element by combining the current bounding rectangle with the stored offset ratios; they never free-float independent of the element.  
+   - Marker coordinates are always resolved relative to the targeted element by combining the current bounding rectangle with the stored cursor offsets. Adding `{ offset.x - 1, offset.y - 1 }` to the element’s `left/top` yields the precise click point.  
    - If the targeted element cannot be resolved, the marker is withheld from rendering until the element returns.
+   - Notes fetched before the `eye-note-page-identity` event or without a resolved anchor remain unrendered; rehydration retries once identity broadcasting and DOM reconciliation complete.
 3. **Visual State Management**  
    - Color palette: group color for synced notes, a distinct warning color from the design token set for pending persistence.  
    - Absolute positioning combined with a center translation keeps the marker anchored precisely over the saved point.  
    - Z-index priority ensures markers render above host content but below system UI; dialogs are positioned at the same anchor point to preserve spatial context.
 
 ## 9. Data Model & Indexing
-- Client draft note: `{ id, elementPath, content, url, groupId?, x,y, elementRect, elementOffset, elementOffsetRatio, scrollPosition, locationCapturedAt, isLocalDraft, isPendingSync, highlightedElement }` plus `pageIdentity` block and derived `hostname`.
+- Client draft note: `{ id, elementPath, content, url, groupId?, elementRect, elementOffset, scrollPosition, locationCapturedAt, isLocalDraft, isPendingSync, highlightedElement }` plus `pageIdentity` block and derived `hostname`.
 - Persisted record: server-assigned `id`, `createdAt`, `updatedAt`, and the above fields (without `highlightedElement`, `isLocalDraft`, `isPendingSync`).
 - Storage indexing (backend): primary key `pageId` when resolved; otherwise composite key `(hostname, normalizedUrl, layoutSignature)`; secondary indexes permit listing by `groupId` and recent activity.
-- Element anchoring: `elementPath` + `elementOffsetRatio` is authoritative; optional `anchorHints` may include `id`, sampled `classList`, selected `data-*` attributes, and a short text hash to improve recovery when nth-of-type shifts.
+- Element anchoring: `elementPath` + `elementOffset` (1-indexed cursor offsets in CSS pixels) is authoritative; optional `anchorHints` may include `id`, sampled `classList`, selected `data-*` attributes, and a short text hash to improve recovery when nth-of-type shifts.
 4. **Marker Interaction**  
    - Clicking a marker toggles the note into editing state, highlights the underlying element, and opens a dialog anchored to the marker coordinates.  
    - The dialog intercepts outside clicks for drafts to avoid accidental dismissal.
@@ -81,7 +84,8 @@ EyeNote renders interactive markers anchored to DOM elements so teams can collab
    - Responses hydrate the notes store after mapping records to client shape.
 3. **Rehydration**  
    - After loading and on scroll or resize, notes are rehydrated by rebuilding the analyzer cache and recomputing each note’s coordinates.  
-   - Missing elements clear the stored live reference; existing elements receive refreshed coordinates.
+   - Missing elements clear the stored live reference and purge stored coordinates so markers stay hidden until the anchor reappears.  
+   - Existing elements receive refreshed offsets and coordinates derived from the latest DOM geometry.
 4. **Fallback Behaviour**  
    - If selector resolution fails or the target element no longer exists in the current DOM, the marker is not rendered. The note remains accessible through list views but stays hidden until the element reappears or the user applies a remediation flow.  
    - Deletion or group-filter changes remove the note from state, causing the marker to disappear on next render.
@@ -122,7 +126,7 @@ When a draft transitions to a stored note, the payload sent to the backend inclu
 - **Identifiers**: globally unique note id, author id, group id (nullable), and optionally a resolved page id.
 - **Grouping & visibility**: group id or null (public to the author only until shared), and the workspace or team context inferred from authentication.
 - **Page linkage**: raw URL, canonical URL, normalized URL, and page identity fingerprint so the backend can associate the note with equivalent pages.
-- **Element targeting**: CSS selector path, element rectangle (top/right/bottom/left/width/height), absolute click offsets within the element, normalized offset ratios (0–1 in both axes), and the scroll position at capture time.
+- **Element targeting**: CSS selector path, element rectangle (top/right/bottom/left/width/height), 1-indexed cursor offsets within the element (top-left == `{ x:1, y:1 }`), and the scroll position at capture time.
 - **DOM snapshots**: serialized outer HTML of the targeted element and serialized HTML of the entire document at capture time. These snapshots are used for auditing, offline inspection, and potential remediation when the original element disappears.
 - **Content**: note body, optional metadata such as reactions or attachments (reserved for future use).
 - **Timestamps**: creation, last update, and `locationCapturedAt` (epoch milliseconds corresponding to the analyzer snapshot).
@@ -165,7 +169,7 @@ An element is considered visible when all are true:
 - Render dialog portals only for markers within viewport ± buffer.
 
 ## 12. Edge Cases
-- Elements with zero height/width: normalize relative offsets into the 0–1 range and fallback to positioning at the element’s origin point.  
+- Elements with zero height/width: clamp cursor offsets to `{ x:1, y:1 }` and fallback to positioning at the element’s origin point.  
 - Detached DOM nodes: hide the marker until the element reappears; maintain stored selector, coordinates, and DOM snapshots for remediation.  
 - Rapid successive clicks: inspector listener must ignore input while a note dialog is being dismissed.  
 - Mixed zoom levels: rely on the browser’s layout metrics to maintain visual accuracy.
