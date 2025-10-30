@@ -259,7 +259,7 @@ export function NotesComponent ( {
                 <SheetContent
                     {...( container ? { container } : {} )}
                     side="right"
-                    className="note-content w-full sm:max-w-md flex flex-col"
+                    className="note-content w-full sm:max-w-md flex flex-col outline-none"
                     onPointerDownOutside={( e : PointerEvent ) => {
                         console.log( "[Debug] Sheet pointer down outside" );
                         if ( note.isLocalDraft ) {
@@ -287,29 +287,45 @@ export function NotesComponent ( {
                             />
                             <span>{currentGroup?.name ?? ( note.groupId ? "Group" : "No group" )}</span>
                         </div>
-                        {note.screenshots && note.screenshots.length > 0 ? (
+                        {( note.screenshots && note.screenshots.length > 0 ) || note.isCapturingScreenshots ? (
                             <div className="space-y-2">
                                 <label className="text-xs font-medium text-muted-foreground">
                                     Element Capture
                                 </label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {note.screenshots.map( ( screenshot, index ) => (
-                                        <div
-                                            key={index}
-                                            className="relative rounded-md overflow-hidden border border-border/50 bg-background/40"
-                                        >
-                                            <img
-                                                src={screenshot.dataUrl}
-                                                alt={ `Element capture at ${ screenshot.zoom }x zoom` }
-                                                className="w-full h-auto object-contain"
-                                                style={{ maxHeight: "300px", minHeight: "150px" }}
-                                            />
-                                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-1 py-0.5 text-center">
-                                                { `${ screenshot.zoom }x` }
+                                {note.isCapturingScreenshots ? (
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {[ 1, 1.5, 2 ].map( ( zoom ) => (
+                                            <div
+                                                key={zoom}
+                                                className="relative rounded-md overflow-hidden border border-border/50 bg-background/40 flex items-center justify-center"
+                                                style={{ minHeight: "150px", maxHeight: "300px" }}
+                                            >
+                                                <div className="text-xs text-muted-foreground">
+                                                    Loading...
+                                                </div>
                                             </div>
-                                        </div>
-                                    ) )}
-                                </div>
+                                        ) )}
+                                    </div>
+                                ) : note.screenshots && note.screenshots.length > 0 ? (
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {note.screenshots.map( ( screenshot, index ) => (
+                                            <div
+                                                key={index}
+                                                className="relative rounded-md overflow-hidden border border-border/50 bg-background/40"
+                                            >
+                                                <img
+                                                    src={screenshot.dataUrl}
+                                                    alt={ `Element capture at ${ screenshot.zoom }x zoom` }
+                                                    className="w-full h-auto object-contain"
+                                                    style={{ maxHeight: "300px", minHeight: "150px" }}
+                                                />
+                                                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-1 py-0.5 text-center">
+                                                    { `${ screenshot.zoom }x` }
+                                                </div>
+                                            </div>
+                                        ) )}
+                                    </div>
+                                ) : null}
                             </div>
                         ) : null}
                         <div className="space-y-2">
