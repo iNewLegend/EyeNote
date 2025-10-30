@@ -1,0 +1,29 @@
+{
+    "name": "@eye-note/auth",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "main": "./src/shared/index.ts",
+    "types": "./src/shared/index.ts",
+    "exports": {
+        ".": "./src/shared/index.ts",
+        "./shared": "./src/shared/index.ts",
+        "./app": "./src/app/index.ts",
+        "./backend": "./src/backend/index.ts",
+        "./extension": "./src/extension/index.ts"
+    },
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "clean": "rm -rf dist"
+    },
+    "dependencies": {
+        "zustand": "^5.0.3"
+    },
+    "peerDependencies": {
+        "fastify": "^4.0.0",
+        "fastify-plugin": "^5.0.0",
+        "google-auth-library": "^9.0.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0"
+    }
+}

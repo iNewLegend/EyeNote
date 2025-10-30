@@ -7,18 +7,26 @@
         "packages/*"
     ],
     "scripts": {
+        "app:dev": "pnpm --filter @eye-note/app dev",
+        "ext:dev": "pnpm --filter @eye-note/ext dev",
+        "backend:dev": "pnpm --filter @eye-note/backend dev",
         "lint": "eslint ./apps --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-        "lint:fix": "eslint ./apps --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix"
+        "lint:fix": "eslint ./apps --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix",
+        "type-check": "pnpm -r exec tsc --noEmit"
     },
     "packageManager": "pnpm@8.15.1",
+    "dependencies": {
+        "@eye-note/workspace": "workspace:*"
+    },
     "devDependencies": {
         "@typescript-eslint/eslint-plugin": "^6.21.0",
         "@typescript-eslint/parser": "^6.21.0",
         "eslint": "^8.56.0",
-        "eslint-config-next": "^15.2.1"
-    },
-    "dependencies": {
-        "concurrently": "^8.2.2",
-        "tsx": "^4.20.6"
+        "eslint-config-next": "^15.2.1",
+        "typescript": "latest",
+        "ts-node": "latest",
+        "@types/node": "^20.10.0",
+        "tsx": "^4.20.6",
+        "concurrently": "^8.2.2"
     }
 }

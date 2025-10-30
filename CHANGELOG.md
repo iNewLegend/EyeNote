@@ -1,3 +1,36 @@
+# 2025-10-30
+
+## Overlay capture & rendering
+- Updated `specs/notes.md` so note anchoring assumes 1-indexed cursor offsets and removed normalized ratio fallback language.
+- Refined shared definitions plus backend validation/models to drop `elementOffsetRatio`, keeping only 1-indexed offsets captured by the analyzer.
+- Reworked the extension capture/rehydration flow to recompute marker coordinates by adding stored cursor offsets to the live element frame once page identity resolves.
+- Prevented markers from rendering until page identity broadcasts and the target element is located, clearing stored coordinates whenever the anchor is missing so nothing appears at stale positions.
+- Removed persisted absolute marker coordinates (`x`/`y`) across definitions, backend models, and extension logic so rendering always derives positions from live element geometry plus stored cursor offsets.
+- Normalized incremental rehydration path matching (stripping positional pseudo-classes like `:nth-of-type()`/`:nth-child()`) so markers refresh whenever any ancestor in their selector tree re-renders.
+- Rehydration now refreshes selector strings, DOM rectangles, and scroll snapshots for recovered anchors so markers realign immediately after their subtree re-mounts.
+- Added automatic recovery for notes missing live elements: every mutation flush re-attempts rehydration so markers reappear the instant their anchors return to the DOM.
+- Increased the DOM mutation debounce window to 800 ms so rapid successive mutations are coalesced before forcing rehydrate passes.
+
+# 2025-10-29
+
+## Documentation
+- Realigned `AGENTS.md` with the current workspace layout (`apps/app`, `apps/dashboard`, `apps/ext`) and developer commands.
+- Inlined `.cursor` automation rule descriptions inside `AGENTS.md` for quick reference.
+- Added a root `pnpm type-check` script that executes TypeScript checks across every workspace and documented it for agents.
+
+## UI
+- Consolidated the EyeNote sign-in prompt icon inside `@eye-note/ui`, bundling the SVG with the component so consuming apps no longer need to ship their own copy.
+- Updated the extension tooling to read the same shared SVG when generating Chrome icon assets so there is a single source of truth.
+
+## Auth
+- Let the dashboard Google OAuth flow read an explicit `VITE_GOOGLE_REDIRECT_URI` so the registered redirect can differ from `window.location.origin`, mirroring the extension’s working configuration.
+
+# 2025-10-27
+
+## Popup quick controls
+- Refined the popup header controls so the menu and settings buttons trigger wide content-script overlays instead of in-popup dialogs.
+- Synced extension preference toggles across the popup and overlay and added a quick menu action that opens the in-page group manager.
+
 # 2025-10-25
 
 ## Discord-like role system for groups
@@ -83,3 +116,57 @@
 
 ## Update policy
 - Established that all substantial work should be logged here with dated bullets, replacing `gpt-codex-history.txt`.
+
+# 2025-10-27
+
+## UI composition
+- Extracted the Quick Lunch dialog into `QuickMenuDialog` under `apps/frontend/src/components` and updated the shadow overlay to consume the shared component.
+
+## Settings hub & shadcn refresh
+- Added a reusable two-pane `SettingsDialog` that drives general preferences and group management from a shared layout, wiring the shadow overlay and quick menu to target specific sections.
+- Realigned `QuickMenuDialog` controls and gating to the new settings flow, disabling group actions when collaboration isn’t available.
+- Upgraded checkbox and toast UI primitives to the shadcn patterns so shared components stay consistent across the extension.
+- Refreshed the Chrome popup to focus on collaboration: swapped the settings toggles for inline create/join group forms and retargeted quick controls to open the shared group manager.
+
+# 2025-10-28
+
+## Shared UI package
+- Promoted the shadcn-based primitives and `SettingsDialog` into a new `@eye-note/ui` workspace package with Radix dependencies, exposing a consolidated surface for Tailwind/React consumers.
+- Refactored the extension overlay, popup, and group manager to consume the shared exports and dropped the local `lib/utils.ts` helper.
+
+## Dashboard settings app
+- Scaffolded `apps/dashboard` (Vite + Tailwind) to render overlay preferences outside the extension, persisting toggles to `localStorage` and wiring the shared `@eye-note/ui` components.
+- Added a collaboration roadmap panel and reset affordances to clarify the future standalone experience while reuseing the shared toast/toaster abstractions.
+- Matched the dashboard layout to the extension settings two-pane surface so users get a consistent navigation and content structure across entry points.
+- Implemented Google OAuth sign-in for the dashboard using a popup flow, local session storage, and shared account header controls so standalone settings stay in sync with authenticated API calls.
+# 2025-10-30
+
+## Extension overlay — Phase A visibility gating
+
+## Extension overlay — Phase C indexing & payloads
+
+## Extension overlay — Phase D robust rehydration
+
+## Extension overlay — Phase E virtualization
+- Added `useMarkerVirtualization` hook using `IntersectionObserver` with a configurable buffer to limit marker/dialog rendering to in-viewport anchors.
+- Overlay now prefers the IO visibility set; falls back to computed visibility when IO is unavailable.
+- Reduces layout work on long pages with many notes.
+- Added optional `anchorHints` to note contracts (tagName, id, sampled classes, selected `data-*` attributes, short text hash) to improve element recovery when selectors drift.
+- Capture `anchorHints` on draft creation; include in create/update payloads.
+- Extended rehydration to try recovery by `id`, whitelisted `data-*` attributes, class sample, then a capped text-hash scan before giving up.
+- Added `hostname` to note base contracts and query payloads in `@eye-note/definitions` to support composite indexing `(hostname, normalizedUrl, layoutSignature)` alongside resolved `pageId`.
+- Threaded `hostname` through draft creation, create/update payloads, and list queries in the extension without breaking existing flows.
+- Verified extension and definitions type checks with `tsc --noEmit`.
+- Added strict marker visibility rules: markers render only when the anchored element is connected, visible by style, has non-zero geometry, and intersects the viewport.
+- Introduced `isElementVisible` utility and wired it into rehydration and renderer filtering to suppress markers for hidden/offscreen elements.
+- Kept behavior minimal and testable; no backend/API changes in this phase.
+
+## Backend — page indexing and note model refresh
+- Added `hostname` and `anchorHints` to note model; created compound indexes `{userId,pageId,updatedAt}` and `{userId,hostname,normalizedUrl,updatedAt}`.
+- Updated zod schemas to accept `hostname` and `anchorHints` on create/update, and `hostname` on queries.
+- Simplified `/api/notes/query` to resolve `pageId` from identity and then query by `pageId`, or fall back to `(hostname, normalizedUrl)` when no `pageId` is available. Removed legacy URL fallback paths per new dataset policy.
+
+## Fixes
+- Accept note creates when `pageIdentity` is briefly unavailable by using provided `pageId` or safe `(hostname, normalizedUrl)` composite; add server-side composite query fallback when pageId lookup returns empty.
+- Quiet health endpoint logs to reduce noise while debugging.
+- Improve client robustness: wait for identity/pageId before saving, inline-capture identity on save if missing, and log payloads clearly for diagnosis.

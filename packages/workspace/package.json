@@ -1,0 +1,14 @@
+{
+    "name": "@eye-note/workspace",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        "./vite/config": "./src/vite/config.ts"
+    },
+    "dependencies": {
+        "vite": "^5.1.0"
+    }
+}

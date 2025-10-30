@@ -1,5 +1,6 @@
 import type { PageIdentityPayload, PageIdentityResolution } from "@eye-note/definitions";
-import { rankIdentityMatches } from "@eye-note/page-identity";
+import { rankIdentityMatches } from "@eye-note/page-identity/server";
+import type { FastifyBaseLogger } from "fastify";
 import { PageIdentityModel, type PageIdentityDocument } from "../models/page-identity";
 
 type ResolveResult = {
@@ -113,6 +114,17 @@ export async function resolvePageIdentity (
                 reasons = topMatch.comparison.reason;
             }
         }
+    }
+
+    if ( !bestMatchDocument && candidates.length > 0 ) {
+        // Fallback: reuse the most recently updated document with matching normalizedUrl
+        const fallback = candidates[ 0 ];
+        bestMatchDocument = fallback;
+        bestMatchScore = 0;
+        canonicalMatch =
+            Boolean( payload.canonicalUrl ) &&
+            payload.canonicalUrl === fallback.canonicalUrl;
+        reasons = [ "normalized-url-match" ];
     }
 
     if ( bestMatchDocument ) {

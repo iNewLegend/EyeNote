@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { Types } from "mongoose";
 import { z } from "zod";
-import type { NoteBase, NoteRecord } from "@eye-note/definitions";
+import type { NoteBase, NoteRecord, PageIdentityPayload } from "@eye-note/definitions";
 import { NoteModel } from "../models/note";
 import { GroupModel } from "../models/group";
 import { resolvePageIdentity } from "../services/page-identity-service";
@@ -35,20 +35,27 @@ const pageIdentitySchema = z.object( {
     generatedAt: z.string().optional(),
 } );
 
+const anchorHintsSchema = z.object( {
+    tagName: z.string().optional(),
+    id: z.string().optional(),
+    classListSample: z.array( z.string() ).optional(),
+    dataAttrs: z.record( z.string() ).optional(),
+    textHash: z.string().optional(),
+} );
+
 const notePayloadSchema = z.object( {
     elementPath: z.string().min( 1 ),
     content: z.string().default( "" ),
     url: z.string().url(),
+    hostname: z.string().optional(),
     groupId: groupIdSchema,
     pageId: z.string().optional(),
     canonicalUrl: z.string().optional(),
     normalizedUrl: z.string().optional(),
+    anchorHints: anchorHintsSchema.optional(),
     pageIdentity: pageIdentitySchema.optional(),
-    x: z.number().optional(),
-    y: z.number().optional(),
     elementRect: rectSchema.optional(),
     elementOffset: vectorSchema.optional(),
-    elementOffsetRatio: vectorSchema.optional(),
     scrollPosition: vectorSchema.optional(),
     locationCapturedAt: z.number().optional(),
 } );
@@ -57,6 +64,7 @@ const noteUpdateSchema = notePayloadSchema.partial();
 
 const noteQuerySchema = z.object( {
     url: z.string().url().optional(),
+    hostname: z.string().optional(),
     pageId: z.string().optional(),
     normalizedUrl: z.string().optional(),
     groupIds: z
@@ -78,6 +86,20 @@ const noteQueryBodySchema = noteQuerySchema.extend( {
     pageIdentity: pageIdentitySchema.optional(),
 } );
 
+type IncomingPageIdentityPayload = Omit<PageIdentityPayload, "generatedAt"> & {
+    generatedAt ?: string;
+};
+
+function normalizePageIdentityPayload ( payload : IncomingPageIdentityPayload ) : PageIdentityPayload {
+    const parsed = payload.generatedAt ? Date.parse( payload.generatedAt ) : NaN;
+    const safeTimestamp = Number.isFinite( parsed ) ? parsed : Date.now();
+    const generatedAtIso = new Date( safeTimestamp ).toISOString();
+    return {
+        ...payload,
+        generatedAt: generatedAtIso,
+    };
+}
+
 type NoteLean = NoteBase & {
     _id : Types.ObjectId;
     userId : string;
@@ -91,15 +113,14 @@ function serializeNote ( doc : NoteLean ) : NoteRecord {
         elementPath: doc.elementPath,
         content: doc.content,
         url: doc.url,
+        hostname: doc.hostname ?? null,
         pageId: doc.pageId ?? null,
         canonicalUrl: doc.canonicalUrl ?? null,
         normalizedUrl: doc.normalizedUrl ?? null,
+        anchorHints: doc.anchorHints ?? undefined,
         groupId: doc.groupId ?? null,
-        x: doc.x ?? undefined,
-        y: doc.y ?? undefined,
         elementRect: doc.elementRect ?? undefined,
         elementOffset: doc.elementOffset ?? undefined,
-        elementOffsetRatio: doc.elementOffsetRatio ?? undefined,
         scrollPosition: doc.scrollPosition ?? undefined,
         locationCapturedAt: doc.locationCapturedAt ?? undefined,
         createdAt: doc.createdAt.toISOString(),
@@ -124,6 +145,7 @@ function normalizeGroupId ( value : unknown ) : string | null | undefined {
 function buildFilter ( params : {
     id ?: string;
     userId : string;
+    hostname ?: string;
     url ?: string;
     urls ?: string[];
     normalizedUrl ?: string;
@@ -142,16 +164,20 @@ function buildFilter ( params : {
         filter.pageId = params.pageId;
     }
     if ( params.normalizedUrl && !params.pageId ) {
+        if ( params.hostname ) {
+            filter.hostname = params.hostname;
+        }
         filter.normalizedUrl = params.normalizedUrl;
     }
     if ( params.normalizedUrls && params.normalizedUrls.length > 0 && !params.pageId ) {
+        if ( params.hostname ) {
+            filter.hostname = params.hostname;
+        }
         filter.normalizedUrl = { $in: params.normalizedUrls };
     }
+    // drop legacy url-only matching when we have normalized identity
     if ( params.url && !params.pageId && !params.normalizedUrl && !params.normalizedUrls ) {
         filter.url = params.url;
-    }
-    if ( params.urls && params.urls.length > 0 && !params.pageId && !params.normalizedUrl && !params.normalizedUrls ) {
-        filter.url = { $in: params.urls };
     }
     if ( params.groupIds ) {
         const trimmed = params.groupIds.map( ( id ) => id.trim() );
@@ -194,35 +220,29 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
                 return;
             }
 
-            const { url, groupIds, pageId, normalizedUrl, pageIdentity } = bodyParseResult.data;
+            const { url, hostname, groupIds, pageId, normalizedUrl, pageIdentity } = bodyParseResult.data;
 
             let resolvedPageId = pageId;
             let resolvedNormalizedUrl = normalizedUrl;
             const resolvedNormalizedUrls : string[] = [];
-            const legacyUrls : string[] = [];
             let identityResolution = undefined;
 
             if ( pageIdentity ) {
+                const normalizedIdentity = normalizePageIdentityPayload( pageIdentity );
                 fastify.log.info( {
                     event: "notes.query.page-identity",
                     userId: request.user!.id,
-                    pageIdentity,
+                    pageIdentity: normalizedIdentity,
                 }, "Resolving page identity for query" );
-                const resolutionResult = await resolvePageIdentity( pageIdentity, { log: fastify.log } );
+                const resolutionResult = await resolvePageIdentity( normalizedIdentity, { log: fastify.log } );
                 identityResolution = resolutionResult.resolution;
                 resolvedPageId = resolutionResult.document._id.toHexString();
-                resolvedNormalizedUrl = resolutionResult.document.normalizedUrl ?? pageIdentity.normalizedUrl;
+                resolvedNormalizedUrl = resolutionResult.document.normalizedUrl ?? normalizedIdentity.normalizedUrl;
                 if ( resolvedNormalizedUrl ) {
                     resolvedNormalizedUrls.push( resolvedNormalizedUrl );
                 }
-                if ( pageIdentity.normalizedUrl && !resolvedNormalizedUrls.includes( pageIdentity.normalizedUrl ) ) {
-                    resolvedNormalizedUrls.push( pageIdentity.normalizedUrl );
-                }
-                if ( url ) {
-                    legacyUrls.push( url );
-                }
-                if ( pageIdentity.sourceUrl && !legacyUrls.includes( pageIdentity.sourceUrl ) ) {
-                    legacyUrls.push( pageIdentity.sourceUrl );
+                if ( normalizedIdentity.normalizedUrl && !resolvedNormalizedUrls.includes( normalizedIdentity.normalizedUrl ) ) {
+                    resolvedNormalizedUrls.push( normalizedIdentity.normalizedUrl );
                 }
                 fastify.log.info( {
                     event: "notes.query.page-identity.resolved",
@@ -233,70 +253,65 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
                 }, "Resolved page identity for query" );
             }
 
-            let docs = await NoteModel.find(
-                buildFilter( {
-                    userId: request.user!.id,
-                    url: url ?? pageIdentity?.sourceUrl,
-                    urls: legacyUrls,
-                    groupIds,
-                    pageId: resolvedPageId,
-                    normalizedUrl: resolvedNormalizedUrl,
-                    normalizedUrls: resolvedNormalizedUrls,
-                } )
-            )
+            const filter = buildFilter( {
+                userId: request.user!.id,
+                hostname,
+                groupIds,
+                pageId: resolvedPageId,
+                normalizedUrl: resolvedNormalizedUrl,
+                normalizedUrls: resolvedNormalizedUrls,
+            } );
+
+            fastify.log.info( {
+                event: "notes.query.filter",
+                userId: request.user!.id,
+                pageId: resolvedPageId,
+                hostname,
+                normalizedUrl: resolvedNormalizedUrl,
+                normalizedUrls: resolvedNormalizedUrls,
+                groupIds,
+            }, "Querying notes with resolved filter" );
+
+            let docs = await NoteModel.find( filter )
                 .sort( { updatedAt: -1 } )
                 .lean()
                 .exec();
 
-            if ( docs.length === 0 && resolvedNormalizedUrls.length > 0 ) {
-                docs = await NoteModel.find(
-                    buildFilter( {
+            // Fallback: if pageId query returned no docs (e.g., newly-created notes without pageId yet),
+            // try composite (hostname, normalizedUrl/normalizedUrls)
+            if ( docs.length === 0 && resolvedPageId ) {
+                const fallbackHostname = hostname ?? ( () => {
+                    try {
+                        const raw = resolvedNormalizedUrl ?? url ?? pageIdentity?.normalizedUrl;
+                        return raw ? new URL( raw ).hostname : undefined;
+                    } catch { return undefined; }
+                } )();
+
+                if ( fallbackHostname && ( resolvedNormalizedUrl || resolvedNormalizedUrls.length > 0 ) ) {
+                    const compositeFilter = buildFilter( {
                         userId: request.user!.id,
+                        hostname: fallbackHostname,
+                        normalizedUrl: resolvedNormalizedUrl,
                         normalizedUrls: resolvedNormalizedUrls,
                         groupIds,
-                    } )
-                )
-                    .sort( { updatedAt: -1 } )
-                    .lean()
-                    .exec();
-            }
+                    } );
 
-            if ( docs.length === 0 && resolvedPageId ) {
-                docs = await NoteModel.find(
-                    buildFilter( {
+                    fastify.log.info( {
+                        event: "notes.query.fallback-composite",
                         userId: request.user!.id,
-                        url,
-                        urls: legacyUrls,
-                        groupIds,
-                    } )
-                )
-                    .sort( { updatedAt: -1 } )
-                    .lean()
-                    .exec();
+                        hostname: fallbackHostname,
+                        normalizedUrl: resolvedNormalizedUrl,
+                        normalizedUrls: resolvedNormalizedUrls,
+                    }, "Querying notes with composite key fallback" );
+
+                    docs = await NoteModel.find( compositeFilter )
+                        .sort( { updatedAt: -1 } )
+                        .lean()
+                        .exec();
+                }
             }
 
-            if ( docs.length > 0 && resolvedPageId ) {
-                const update : Record<string, unknown> = {
-                    pageId: resolvedPageId,
-                    updatedAt: new Date(),
-                };
-
-                if ( resolvedNormalizedUrl ) {
-                    update.normalizedUrl = resolvedNormalizedUrl;
-                } else if ( resolvedNormalizedUrls.length > 0 ) {
-                    update.normalizedUrl = resolvedNormalizedUrls[ 0 ];
-                }
-
-                if ( pageIdentity?.canonicalUrl ) {
-                    update.canonicalUrl = pageIdentity.canonicalUrl;
-                }
-
-                await NoteModel.updateMany( {
-                    _id: { $in: docs.map( ( doc ) => doc._id ) },
-                }, {
-                    $set: update,
-                } ).exec();
-            }
+            // No legacy backfill path by design (fresh dataset only)
 
             reply.send( {
                 notes: docs.map( ( doc ) => serializeNote( doc as NoteLean ) ),
@@ -376,23 +391,24 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
             let identityResolution = undefined;
 
             if ( pageIdentity ) {
+                const normalizedIdentity = normalizePageIdentityPayload( pageIdentity );
                 fastify.log.info( {
                     event: "notes.create.page-identity",
                     userId: request.user!.id,
-                    pageIdentity,
+                    pageIdentity: normalizedIdentity,
                 }, "Resolving page identity for create" );
-                const resolutionResult = await resolvePageIdentity( pageIdentity, { log: fastify.log } );
+                const resolutionResult = await resolvePageIdentity( normalizedIdentity, { log: fastify.log } );
                 identityResolution = resolutionResult.resolution;
                 resolvedPageId = resolutionResult.document._id.toHexString();
                 resolvedCanonicalUrl =
                     resolvedCanonicalUrl ??
                     resolutionResult.document.canonicalUrl ??
-                    pageIdentity.canonicalUrl ??
+                    normalizedIdentity.canonicalUrl ??
                     null;
                 resolvedNormalizedUrl =
                     resolvedNormalizedUrl ??
                     resolutionResult.document.normalizedUrl ??
-                    pageIdentity.normalizedUrl ??
+                    normalizedIdentity.normalizedUrl ??
                     null;
                 fastify.log.info( {
                     event: "notes.create.page-identity.resolved",
@@ -402,11 +418,52 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
                     normalizedUrl: resolvedNormalizedUrl,
                     identityResolution,
                 }, "Resolved page identity for create" );
+            } else if ( pageId ) {
+                // Accept creates that include an already-resolved pageId
+                fastify.log.info( {
+                    event: "notes.create.using-page-id",
+                    userId: request.user!.id,
+                    pageId,
+                    url: rest.url,
+                }, "Creating note using provided pageId" );
+                resolvedPageId = pageId;
+                resolvedNormalizedUrl = normalizedUrl ?? null;
+                resolvedCanonicalUrl = canonicalUrl ?? null;
+            } else {
+                // Fallback: accept create using composite key when identity/pageId are absent
+                const { hostname: incomingHostname } = rest as typeof rest & { hostname?: string | null };
+                const parsed = ( () => { try { return new URL( rest.url ); } catch { return null; } } )();
+                const fallbackHostname = incomingHostname ?? ( parsed ? parsed.hostname : null );
+                // Normalize URL by dropping search/hash so it matches identity normalizedUrl
+                const fallbackNormalizedUrl = ( () => {
+                    if ( normalizedUrl ) return normalizedUrl;
+                    if ( parsed ) return `${ parsed.origin }${ parsed.pathname }`;
+                    return rest.url;
+                } )();
+
+                fastify.log.info( {
+                    event: "notes.create.fallback-composite",
+                    userId: request.user!.id,
+                    url: rest.url,
+                    hostname: fallbackHostname,
+                    normalizedUrl: fallbackNormalizedUrl,
+                }, "Creating note using (hostname, normalizedUrl) composite" );
+
+                resolvedPageId = null;
+                resolvedCanonicalUrl = canonicalUrl ?? null;
+                resolvedNormalizedUrl = fallbackNormalizedUrl;
+
+                // Attach hostname into rest-like payload below via explicit field
+                ( rest as any ).hostname = fallbackHostname; // attached explicitly at creation
             }
+
+            const { hostname: incomingHostname, ...restWithoutHostname } = rest as typeof rest & { hostname?: string | null };
+            const hostname = incomingHostname ?? ( () => { try { return new URL( rest.url ).hostname; } catch { return null; } } )();
 
             const created = await NoteModel.create( {
                 userId: request.user!.id,
-                ...rest,
+                ...restWithoutHostname,
+                hostname,
                 groupId: normalizedGroupId ?? null,
                 pageId: resolvedPageId,
                 canonicalUrl: resolvedCanonicalUrl,

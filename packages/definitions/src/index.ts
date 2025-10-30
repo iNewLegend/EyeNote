@@ -20,17 +20,13 @@ export interface ElementLocationSnapshot {
     rect : SerializedDOMRect;
     viewportPosition : ViewportPosition;
     elementOffset : Vector2D;
-    elementOffsetRatio : Vector2D;
     scrollPosition : Vector2D;
     timestamp : number;
 }
 
 export interface NoteLocationMetadata {
-    x ?: number;
-    y ?: number;
     elementRect ?: SerializedDOMRect;
     elementOffset ?: Vector2D;
-    elementOffsetRatio ?: Vector2D;
     scrollPosition ?: Vector2D;
     locationCapturedAt ?: number;
 }
@@ -39,10 +35,12 @@ export interface NoteBase extends NoteLocationMetadata {
     elementPath : string;
     content : string;
     url : string;
+    hostname ?: string | null;
     groupId ?: string | null;
     pageId ?: string | null;
     canonicalUrl ?: string | null;
     normalizedUrl ?: string | null;
+    anchorHints ?: AnchorHints;
 }
 
 export interface NoteRecord extends NoteBase {
@@ -58,6 +56,14 @@ export type CreateNotePayload = NoteBase & {
 export type UpdateNotePayload = Partial<NoteBase> & {
     pageIdentity ?: PageIdentityPayload;
 };
+
+export interface AnchorHints {
+    tagName ?: string;
+    id ?: string;
+    classListSample ?: string[];
+    dataAttrs ?: Record<string, string>;
+    textHash ?: string;
+}
 
 export interface GroupBase {
     name : string;
@@ -88,22 +94,9 @@ export interface ListGroupsResponse {
     groups : GroupRecord[];
 }
 
-export interface AuthUser {
-    id : string;
-    email ?: string;
-    name ?: string;
-    picture ?: string | null;
-}
-
-export interface AuthSession {
-    authToken : string;
-    authAccessToken : string;
-    authTokenExpiresAt : number;
-    user : AuthUser;
-}
-
 export interface ListNotesQuery {
     url ?: string;
+    hostname ?: string;
     groupIds ?: string[];
     pageId ?: string;
     normalizedUrl ?: string;
@@ -191,3 +184,5 @@ export interface ListNotesResponse {
     notes : NoteRecord[];
     identity ?: PageIdentityResolution;
 }
+
+export * from "./constants";

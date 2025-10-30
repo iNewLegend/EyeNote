@@ -33,21 +33,33 @@ const noteSchema = new Schema<NoteDocument>(
         elementPath: { type: String, required: true },
         content: { type: String, default: "" },
         url: { type: String, required: true, index: true },
+        hostname: { type: String, default: null, index: true },
         pageId: { type: String, default: null, index: true },
         canonicalUrl: { type: String, default: null },
         normalizedUrl: { type: String, default: null },
+        anchorHints: {
+            tagName: { type: String, default: null },
+            id: { type: String, default: null },
+            classListSample: { type: [ String ], default: undefined },
+            dataAttrs: { type: Schema.Types.Mixed, default: undefined },
+            textHash: { type: String, default: null },
+        },
         groupId: { type: String, default: null },
-        x: { type: Number, default: null },
-        y: { type: Number, default: null },
         elementRect: { type: rectSchema, default: null },
         elementOffset: { type: vectorSchema, default: null },
-        elementOffsetRatio: { type: vectorSchema, default: null },
         scrollPosition: { type: vectorSchema, default: null },
         locationCapturedAt: { type: Number, default: null },
     },
     {
         timestamps: true,
     }
+);
+
+// Prefer pageId; otherwise composite on hostname + normalizedUrl (only when both present)
+noteSchema.index( { userId: 1, pageId: 1, updatedAt: -1 } );
+noteSchema.index(
+    { userId: 1, hostname: 1, normalizedUrl: 1, updatedAt: -1 },
+    { partialFilterExpression: { hostname: { $type: "string" }, normalizedUrl: { $type: "string" } } }
 );
 
 export const NoteModel : Model<NoteDocument> =

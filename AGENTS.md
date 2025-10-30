@@ -1,15 +1,22 @@
-
 ## Project Structure & Module Organization
-- `apps/frontend`: Vite/React extension; code in `src`, builds in `dist`, Chrome load from `extension`.
-- `apps/backend`: Fastify + Socket.IO API; TypeScript in `src`, compiled output in `dist`.
+- `apps/app`: Fastify + Socket.IO API; TypeScript lives in `src` and compiles to `dist`.
+- `apps/dashboard`: Vite + React dashboard; code in `src`, Vite builds into `dist`.
+- `apps/ext`: Vite Chrome extension; `src` sources, watch/build rolls up to `dist` and copies the unpacked bundle into `extension/`.
+- `packages/auth`: Shared auth flows with environment-specific entrypoints.
 - `packages/definitions`: Shared Zod schemas and TypeScript contracts.
-- `packages/commander`: Reusable command framework (providers, hooks, utilities).
+- `packages/page-identity`: Shared document fingerprinting and resolution helpers.
+- `packages/ui`: Shared shadcn/Tailwind UI primitives.
 
 ## Build, Test, and Development Commands
 - `pnpm install` — bootstrap all workspaces.
-- `pnpm --filter @eye-note/frontend watch` — live-builds the extension into `apps/frontend/extension`.
-- `pnpm --filter @eye-note/backend dev` — ts-node Fastify server (reads `.env`).
-- `pnpm --filter {frontend|backend} build` — production bundles; `pnpm lint` keeps ESLint clean.
+- `pnpm backend:dev` or `pnpm --filter @eye-note/backend dev` — nodemon + tsx Fastify server (reads `.env`).
+- `pnpm app:dev` or `pnpm --filter @eye-note/app dev` — Vite dev server for the dashboard.
+- `pnpm ext:dev` or `pnpm --filter @eye-note/ext dev` — watches Vite builds and repacks the Chrome extension into `apps/ext/extension`.
+- `pnpm --filter @eye-note/backend build` — transpile the API into `apps/app/dist`.
+- `pnpm --filter @eye-note/app build` — type-check then bundle the dashboard into `apps/dashboard/dist`.
+- `pnpm --filter @eye-note/ext build` — clean/build Vite outputs and prepare the unpacked extension.
+- `pnpm lint` — run ESLint across all `apps`.
+- `pnpm type-check` — run `tsc --noEmit` against every workspace to keep shared types honest.
 - `pnpm --filter <workspace> exec tsc --noEmit` — mandatory type gate before PRs.
 
 ## Coding Style & Naming Conventions
@@ -20,7 +27,7 @@
 ## Testing Guidelines
 - Automated suites are absent (`apps/backend` test exits 1); align before adding harnesses.
 - Once testing lands, prefer Fastify injection tests (Vitest/tap) and document scripts.
-- Smoke-test via Chrome-loaded `apps/frontend/extension` and Inspector Mode.
+- Smoke-test via Chrome-loaded `apps/ext/extension` and Inspector Mode.
 - `pnpm --filter <workspace> exec tsc --noEmit` is the regression gate.
 
 ## Commit & Pull Request Guidelines
@@ -30,7 +37,7 @@
 
 ## Security & Configuration Tips
 - Keep secrets in untracked `.env` files (`MONGODB_URI`, `GOOGLE_CLIENT_ID`, backend socket config).
-- Never commit `apps/frontend/extension`; regenerate via build scripts.
+- Never commit `apps/ext/extension`; regenerate via build scripts.
 
 ## Changelog & Task Log
 - Maintained in `CHANGELOG.md`. Read existing entries there and append new dated bullets in that file after every substantial task; this replaces `gpt-codex-history.txt`.
@@ -47,6 +54,18 @@
 - Remember the workspace uses `pnpm` with a monorepo layout.
 - Name new TypeScript files with kebab-case filenames.
 - Reach for Zustand when a shared client-side store is warranted.
+
+### Cursor Rule Details
+- `always-find-the-root-cause-instead-of-using-hacks`: Always find the root cause instead of patching around problems.
+- `code-should-be-modular`: Shape code so components stay reusable and implementation-agnostic.
+- `never-commit-without-my-permission`: Ask for approval before creating commits.
+- `prefer-use-react-instead-of-direct-dom`: Implement UI changes through React rather than touching the DOM directly.
+- `prefer-use-shadcn-for-ui`: Build interface pieces with shadcn UI components by default.
+- `prefer-use-tailwind-style`: Prefer Tailwind utility classes wherever styling makes sense.
+- `small-steps-for-changes`: Deliver work in small, testable increments.
+- `this-project-use-pnpm-its-monorepo-workspace`: Use `pnpm` and treat the repo as a monorepo workspace.
+- `use-kebab-case-for-filenames`: Name new TypeScript files with kebab-case file names.
+- `use-zustand-when-needed`: Reach for Zustand when shared client-side state is needed.
 
 ## Cursor Rules for Commit Messages
 
@@ -70,7 +89,7 @@ Choose ONE from these options:
 
 ### Tag2 - Package/Area (Required)
 
-Specify the relevant workspace, package, or directory using slash notation (e.g. `frontend/groups`, `backend/api`, `shared/utils`). Pick the narrowest scope that reflects the change.
+Specify the relevant workspace, package, or directory using slash notation (e.g. `ext/overlay`, `backend/api`, `shared/ui`). Pick the narrowest scope that reflects the change.
 
 ### Tag3 - Description (Required)
 
@@ -85,11 +104,11 @@ Provide a clear, concise explanation of what was done:
 ### Examples
 
 ```
-feat(`frontend/app`): add resume section reordering functionality
-fix(`docs`): resolve broken internal links in api documentation
-chore(`shared/types`): update typescript dependencies to latest
-infra(`root`): configure automated deployment pipeline
-tweak(`frontend/groups`): centralize group bootstrap hook
+feat(`ext/overlay`): add inspector controls
+fix(`backend/api`): guard missing sessions
+chore(`shared/definitions`): sync zod contracts
+infra(`root`): configure lint workflow
+tweak(`dashboard/ui`): refine settings layout
 ```
 
 ### Instructions
