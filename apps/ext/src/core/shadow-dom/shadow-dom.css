@@ -28,6 +28,12 @@
     pointer-events: auto;
 }
 
+.notes-plugin[data-inspector-active="1"] .note-marker:hover {
+    cursor: pointer;
+    outline: 2px solid black;
+    box-shadow: 0 0 6px 7px rgba(72, 4, 173, 0.35);
+}
+
 .notes-plugin .note-marker.is-pending {
     background: var(--eye-note-marker-pending-color, #f97316);
     box-shadow: 0 2px 8px rgba(249, 115, 22, 0.35);
