@@ -260,7 +260,7 @@ export function NotesComponent ( {
                     {...( container ? { container } : {} )}
                     side="right"
                     className="note-content w-full sm:max-w-md flex flex-col"
-                    onPointerDownOutside={( e ) => {
+                    onPointerDownOutside={( e : PointerEvent ) => {
                         console.log( "[Debug] Sheet pointer down outside" );
                         if ( note.isLocalDraft ) {
                             e.preventDefault();
@@ -268,7 +268,7 @@ export function NotesComponent ( {
                         }
                         handleOpenChange( false );
                     }}
-                    onInteractOutside={( e ) => {
+                    onInteractOutside={( e : PointerEvent ) => {
                         if ( note.isLocalDraft ) {
                             e.preventDefault();
                         }
@@ -287,6 +287,31 @@ export function NotesComponent ( {
                             />
                             <span>{currentGroup?.name ?? ( note.groupId ? "Group" : "No group" )}</span>
                         </div>
+                        {note.screenshots && note.screenshots.length > 0 ? (
+                            <div className="space-y-2">
+                                <label className="text-xs font-medium text-muted-foreground">
+                                    Element Capture
+                                </label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {note.screenshots.map( ( screenshot, index ) => (
+                                        <div
+                                            key={index}
+                                            className="relative rounded-md overflow-hidden border border-border/50 bg-background/40"
+                                        >
+                                            <img
+                                                src={screenshot.dataUrl}
+                                                alt={ `Element capture at ${ screenshot.zoom }x zoom` }
+                                                className="w-full h-auto object-contain"
+                                                style={{ maxHeight: "300px", minHeight: "150px" }}
+                                            />
+                                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-1 py-0.5 text-center">
+                                                { `${ screenshot.zoom }x` }
+                                            </div>
+                                        </div>
+                                    ) )}
+                                </div>
+                            </div>
+                        ) : null}
                         <div className="space-y-2">
                             <label
                                 htmlFor={`note-group-${ note.id }`}
@@ -327,19 +352,20 @@ export function NotesComponent ( {
                             />
                         </div>
                         <div className="flex justify-end gap-2 pt-4 border-t border-border/50">
-                        <Button variant="outline" onClick={handleCancel} disabled={isActionLocked}>
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            onClick={handleDelete}
-                            disabled={isDeleting || isExistingPending}
-                        >
-                            {isDeleting ? "Deleting..." : "Delete"}
-                        </Button>
-                        <Button onClick={handleSave} disabled={isSaving || isExistingPending}>
-                            {isSaving ? "Saving..." : "Save"}
-                        </Button>
+                            <Button variant="outline" onClick={handleCancel} disabled={isActionLocked}>
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={handleDelete}
+                                disabled={isDeleting || isExistingPending}
+                            >
+                                {isDeleting ? "Deleting..." : "Delete"}
+                            </Button>
+                            <Button onClick={handleSave} disabled={isSaving || isExistingPending}>
+                                {isSaving ? "Saving..." : "Save"}
+                            </Button>
+                        </div>
                     </div>
                 </SheetContent>
             </Sheet>

@@ -4,6 +4,7 @@ import type { StoreApi } from "zustand";
 import type { Note } from "../../types";
 import { getPageAnalyzer } from "../../lib/page-analyzer";
 import { createDraftFromElement, rehydrateNotePosition } from "./notes-utils";
+import { captureElementScreenshots } from "../../utils/capture-element-screenshots";
 
 type NotesState = {
     notes : Note[];
@@ -74,7 +75,7 @@ export const useNotesStore = create<NotesStore>( ( set, get ) => ( {
 
 /**
  * Effect: create a local draft from a DOM element, capture analyzer snapshot,
- * insert into the store immediately (optimistic), and return the draft.
+ * capture screenshots with marker, insert into the store immediately (optimistic), and return the draft.
  */
 async function createDraftNoteEffect (
     api : NotesStoreApi,
@@ -91,6 +92,22 @@ async function createDraftNoteEffect (
         elementPath: draft.elementPath,
         rect: draft.elementRect,
         pointerPosition,
+    } );
+
+    requestAnimationFrame( () => {
+        requestAnimationFrame( async () => {
+            try {
+                const screenshots = await captureElementScreenshots( {
+                    element,
+                    padding: 60,
+                    zoomLevels: [ 1, 1.5, 2 ],
+                } );
+
+                mergeNoteState( api, draft.id, { screenshots } );
+            } catch ( error ) {
+                console.warn( "[EyeNote] Failed to capture screenshots:", error );
+            }
+        } );
     } );
 
     return draft;

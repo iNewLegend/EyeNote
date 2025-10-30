@@ -354,6 +354,7 @@ export function createPayloadFromDraft (
         elementOffset: draft.elementOffset,
         scrollPosition: draft.scrollPosition,
         locationCapturedAt: draft.locationCapturedAt,
+        screenshots: updates.screenshots ?? draft.screenshots,
         pageIdentity: resolvedPageIdentity,
     };
 

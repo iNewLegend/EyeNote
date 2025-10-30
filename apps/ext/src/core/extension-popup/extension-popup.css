@@ -60,14 +60,7 @@
     }
 
     .note-content {
-        @apply bg-background text-foreground z-note-content;
-        background-color: hsl(var(--violet-950));
-        border-left: 1px solid hsl(var(--violet-700));
-    }
-
-    :host([data-theme="light"]) .note-content {
-        background-color: hsl(var(--violet-50));
-        border-left-color: hsl(var(--violet-200));
+        @apply w-[300px] max-h-[80vh] overflow-y-auto bg-background text-foreground rounded-lg shadow-lg z-note-content border border-border;
     }
 
     [data-radix-dialog-overlay][data-state="open"] {
