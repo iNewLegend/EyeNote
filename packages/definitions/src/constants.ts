@@ -25,8 +25,6 @@ export const ANCHOR_HINTS_DATA_ATTR_WHITELIST = [
 ] as const;
 
 // Custom event names
-export const EVENT_PAGE_IDENTITY = "eye-note-page-identity";
-export const EVENT_PAGE_IDENTITY_RESOLVED = "eye-note-page-identity-resolved";
 export const EVENT_OPEN_GROUP_MANAGER = "eye-note-open-group-manager";
 export const EVENT_OPEN_QUICK_MENU = "eye-note-open-quick-menu";
 export const EVENT_OPEN_SETTINGS_DIALOG = "eye-note-open-settings-dialog";

@@ -116,6 +116,17 @@ export async function resolvePageIdentity (
         }
     }
 
+    if ( !bestMatchDocument && candidates.length > 0 ) {
+        // Fallback: reuse the most recently updated document with matching normalizedUrl
+        const fallback = candidates[ 0 ];
+        bestMatchDocument = fallback;
+        bestMatchScore = 0;
+        canonicalMatch =
+            Boolean( payload.canonicalUrl ) &&
+            payload.canonicalUrl === fallback.canonicalUrl;
+        reasons = [ "normalized-url-match" ];
+    }
+
     if ( bestMatchDocument ) {
         const update = buildUpdateFromPayload( payload, bestMatchDocument );
         await PageIdentityModel.updateOne(
