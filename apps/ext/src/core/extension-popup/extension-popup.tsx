@@ -259,7 +259,7 @@ export function ExtensionPopup () {
                     </div>
                 </CardHeader>
 
-                {isBackendDown ? (
+                {isBackendDown ? (  
                     <CardContent className="flex-1 flex items-center justify-center p-6 text-center">
                         <DowntimeNotice className="text-center" />
                     </CardContent>

@@ -344,21 +344,24 @@ export function NotesComponent ( {
                                     Element Capture
                                 </label>
                                 {note.isCapturingScreenshots ? (
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {[ 1, 1.5, 2 ].map( ( zoom ) => (
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {[ 1, 2 ].map( ( zoom ) => (
                                             <div
                                                 key={zoom}
-                                                className="relative rounded-md overflow-hidden border border-border/50 bg-background/40 flex items-center justify-center"
+                                                className="relative rounded-md overflow-hidden border border-border/50 bg-background/40 flex flex-col items-center justify-center"
                                                 style={{ minHeight: "150px", maxHeight: "300px" }}
                                             >
-                                                <div className="text-xs text-muted-foreground">
-                                                    Loading...
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
+                                                    <div className="text-xs text-muted-foreground">
+                                                        Capturing {zoom}x...
+                                                    </div>
                                                 </div>
                                             </div>
                                         ) )}
                                     </div>
                                 ) : note.screenshots && note.screenshots.length > 0 ? (
-                                    <div className="grid grid-cols-3 gap-2">
+                                    <div className="grid grid-cols-2 gap-2">
                                         {note.screenshots.map( ( screenshot, index ) => (
                                             <div
                                                 key={index}
