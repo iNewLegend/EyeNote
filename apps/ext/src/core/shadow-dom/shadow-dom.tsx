@@ -7,7 +7,6 @@ import { isElementVisible } from "../../utils/is-element-visible";
 import { useDomMutations } from "../../hooks/use-dom-mutations";
 import { EVENT_OPEN_GROUP_MANAGER, EVENT_OPEN_QUICK_MENU, EVENT_OPEN_SETTINGS_DIALOG } from "@eye-note/definitions";
 import { useMarkerVirtualization } from "../../hooks/use-marker-virtualization";
-import { ThemeProvider } from "../theme/theme-provider";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { InteractionBlocker } from "../../components/interaction-blocker";
 import { useAuthStore, useAuthStatusEffects } from "@eye-note/auth/extension";
@@ -390,7 +389,7 @@ export const ShadowDOM : React.FC = () => {
     }, [ dismiss ] );
 
     return (
-        <ThemeProvider>
+        <>
             <Toaster />
             <div
                 ref={notesContainerRef}
@@ -445,6 +444,6 @@ export const ShadowDOM : React.FC = () => {
                     />
                 ) )}
             </div>
-        </ThemeProvider>
+        </>
     );
 };

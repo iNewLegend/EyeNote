@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { CursorDotWrapper } from "../../components/cursor-dot-wrapper";
 import { HighlightOverlay } from "../../components/highlight-overlay";
-import { ThemeProvider } from "../theme/theme-provider";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { useHighlightStore } from "../../stores/highlight-store";
 import { useElementInspector, InspectionEvent } from "../../hooks/use-element-inspector";
@@ -41,7 +40,7 @@ export const UserlandDOM : React.FC = () => {
     // Handle inspection events
     const handleInspectionEvent = useCallback( ( event : InspectionEvent ) => {
         const highlightStore = useHighlightStore.getState();
-        
+
         switch ( event.type ) {
             case 'inspection:highlight':
                 highlightStore.addHighlight( event.element );
@@ -98,9 +97,9 @@ export const UserlandDOM : React.FC = () => {
     }, [ hasActiveMode ] );
 
     return (
-        <ThemeProvider>
+        <>
             <CursorDotWrapper />
             <HighlightOverlay style={overlayStyle} visible={isVisible} />
-        </ThemeProvider>
+        </>
     );
 };

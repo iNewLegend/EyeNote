@@ -14,7 +14,6 @@ import {
     SignInPrompt,
     Toaster,
 } from "@eye-note/ui";
-import { ThemeProvider } from "../theme/theme-provider";
 import "./extension-popup.css";
 import { useAuthStore, useAuthStatusEffects } from "@eye-note/auth/extension";
 import { useBackendHealthStore } from "@eye-note/backend-health";
@@ -259,7 +258,7 @@ export function ExtensionPopup () {
                     </div>
                 </CardHeader>
 
-                {isBackendDown ? (  
+                {isBackendDown ? (
                     <CardContent className="flex-1 flex items-center justify-center p-6 text-center">
                         <DowntimeNotice className="text-center" />
                     </CardContent>
@@ -438,10 +437,8 @@ try {
 
     root.render(
         <React.StrictMode>
-            <ThemeProvider defaultTheme="dark">
                 <ExtensionPopup />
                 <Toaster />
-            </ThemeProvider>
         </React.StrictMode>
     );
 

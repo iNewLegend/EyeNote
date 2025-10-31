@@ -1,10 +1,10 @@
-const { fontFamily } = require("tailwindcss/defaultTheme");
+const { fontFamily } = require( "tailwindcss/defaultTheme" );
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-    important: ["#eye-note-shadow-dom", "#eye-note-userland-dom"],
-    safelist: ["animate-cursor"],
-    darkMode: ["class"],
+    important: [ "#eye-note-shadow-dom", "#eye-note-userland-dom" ],
+    safelist: [ "animate-cursor" ],
+    darkMode: [ "class" ],
     content: [
         "./src/**/*.{js,ts,jsx,tsx}",
         "../../packages/ui/src/**/*.{ts,tsx}"
@@ -79,7 +79,7 @@ module.exports = {
                 sm: "calc(var(--radius) - 4px)",
             },
             fontFamily: {
-                sans: ["var(--font-sans)", ...fontFamily.sans],
+                sans: [ "var(--font-sans)", ...fontFamily.sans ],
             },
             keyframes: {
                 "accordion-down": {
@@ -124,9 +124,9 @@ module.exports = {
         },
     },
     plugins: [
-        require("tailwindcss-animate"),
-        function ({ addUtilities }) {
-            addUtilities({
+        require( "tailwindcss-animate" ),
+        function ( { addUtilities } ) {
+            addUtilities( {
                 ".backface-hidden": {
                     "backface-visibility": "hidden",
                     "-webkit-backface-visibility": "hidden",
@@ -138,7 +138,7 @@ module.exports = {
                     "-webkit-font-smoothing": "antialiased",
                     "-moz-osx-font-smoothing": "grayscale",
                 },
-            });
+            } );
         },
     ],
 };
