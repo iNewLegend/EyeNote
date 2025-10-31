@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, type CSSProperties } from "react";
+import { useState, useEffect, useMemo, useCallback, type CSSProperties } from "react";
 import type { Note } from "../../types";
 import type { UpdateNotePayload } from "@eye-note/definitions";
 import {
@@ -7,6 +7,8 @@ import {
     SheetContent,
     SheetDescription,
     SheetTitle,
+    Dialog,
+    DialogContent,
 } from "@eye-note/ui";
 import { useHighlightStore } from "../../stores/highlight-store";
 import { useNotesStore } from "./notes-store";
@@ -60,6 +62,7 @@ export function NotesComponent ( {
     const [ isSaving, setIsSaving ] = useState( false );
     const [ isDeleting, setIsDeleting ] = useState( false );
     const [ selectedGroupId, setSelectedGroupId ] = useState( note.groupId ?? "" );
+    const [ selectedScreenshotIndex, setSelectedScreenshotIndex ] = useState<number | null>( null );
 
     useEffect( () => {
         setDraftContent( note.content );
@@ -231,6 +234,51 @@ export function NotesComponent ( {
         handleOpenChange( false );
     };
 
+    const screenshots = note.screenshots ?? [];
+    const selectedScreenshot = selectedScreenshotIndex !== null ? screenshots[ selectedScreenshotIndex ] : null;
+    const hasMultipleScreenshots = screenshots.length > 1;
+
+    const handleImageClick = useCallback( ( index : number ) => {
+        setSelectedScreenshotIndex( index );
+    }, [] );
+
+    const handleCloseImageViewer = useCallback( () => {
+        setSelectedScreenshotIndex( null );
+    }, [] );
+
+    const handlePreviousImage = useCallback( () => {
+        if ( selectedScreenshotIndex === null || screenshots.length === 0 ) return;
+        const prevIndex = selectedScreenshotIndex > 0 ? selectedScreenshotIndex - 1 : screenshots.length - 1;
+        setSelectedScreenshotIndex( prevIndex );
+    }, [ selectedScreenshotIndex, screenshots.length ] );
+
+    const handleNextImage = useCallback( () => {
+        if ( selectedScreenshotIndex === null || screenshots.length === 0 ) return;
+        const nextIndex = selectedScreenshotIndex < screenshots.length - 1 ? selectedScreenshotIndex + 1 : 0;
+        setSelectedScreenshotIndex( nextIndex );
+    }, [ selectedScreenshotIndex, screenshots.length ] );
+
+    useEffect( () => {
+        if ( selectedScreenshotIndex === null ) return;
+
+        const handleKeyDown = ( event : KeyboardEvent ) => {
+            if ( event.key === "Escape" ) {
+                handleCloseImageViewer();
+            } else if ( event.key === "ArrowLeft" ) {
+                event.preventDefault();
+                handlePreviousImage();
+            } else if ( event.key === "ArrowRight" ) {
+                event.preventDefault();
+                handleNextImage();
+            }
+        };
+
+        window.addEventListener( "keydown", handleKeyDown );
+        return () => {
+            window.removeEventListener( "keydown", handleKeyDown );
+        };
+    }, [ selectedScreenshotIndex, handleCloseImageViewer, handlePreviousImage, handleNextImage ] );
+
     return (
         <div>
             <div
@@ -263,17 +311,17 @@ export function NotesComponent ( {
                     {...( container ? { container } : {} )}
                     side="right"
                     className="note-content w-full sm:max-w-md flex flex-col outline-none opacity-50 hover:opacity-100 transition-opacity duration-200"
-                    onPointerDownOutside={( e : PointerEvent ) => {
+                    onPointerDownOutside={( event ) => {
                         console.log( "[Debug] Sheet pointer down outside" );
                         if ( note.isLocalDraft ) {
-                            e.preventDefault();
+                            event.preventDefault();
                             return;
                         }
                         handleOpenChange( false );
                     }}
-                    onInteractOutside={( e : PointerEvent ) => {
+                    onInteractOutside={( event ) => {
                         if ( note.isLocalDraft ) {
-                            e.preventDefault();
+                            event.preventDefault();
                         }
                     }}
                 >
@@ -314,12 +362,13 @@ export function NotesComponent ( {
                                         {note.screenshots.map( ( screenshot, index ) => (
                                             <div
                                                 key={index}
-                                                className="relative rounded-md overflow-hidden border border-border/50 bg-background/40"
+                                                className="relative rounded-md overflow-hidden border border-border/50 bg-background/40 cursor-pointer hover:border-primary/50 transition-colors"
+                                                onClick={() => handleImageClick( index )}
                                             >
                                                 <img
                                                     src={screenshot.dataUrl}
                                                     alt={ `Element capture at ${ screenshot.zoom }x zoom` }
-                                                    className="w-full h-auto object-contain"
+                                                    className="w-full h-auto object-contain pointer-events-none"
                                                     style={{ maxHeight: "300px", minHeight: "150px" }}
                                                 />
                                                 <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-1 py-0.5 text-center">
@@ -388,6 +437,99 @@ export function NotesComponent ( {
                     </div>
                 </SheetContent>
             </Sheet>
+            <Dialog open={selectedScreenshotIndex !== null} onOpenChange={( open ) => {
+                if ( !open ) {
+                    handleCloseImageViewer();
+                }
+            }}>
+                <DialogContent
+                    {...( container ? { container } : {} )}
+                    className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 bg-black/95 border-none"
+                    onPointerDownOutside={handleCloseImageViewer}
+                >
+                    {selectedScreenshot && (
+                        <div className="relative w-full h-full flex items-center justify-center">
+                            <img
+                                src={selectedScreenshot.dataUrl}
+                                alt={ `Element capture at ${ selectedScreenshot.zoom }x zoom` }
+                                className="max-w-full max-h-full object-contain"
+                            />
+                            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-sm px-4 py-2 rounded-md backdrop-blur-sm">
+                                <span className="font-medium">{ `${ selectedScreenshot.zoom }x zoom` }</span>
+                                {hasMultipleScreenshots && (
+                                    <span className="ml-2 text-muted-foreground">
+                                        { `${ selectedScreenshotIndex! + 1 } / ${ screenshots.length }` }
+                                    </span>
+                                )}
+                            </div>
+                            {hasMultipleScreenshots && (
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/70 hover:bg-black/90 border-white/20 text-white backdrop-blur-sm"
+                                        onClick={handlePreviousImage}
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="20"
+                                            height="20"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <path d="M15 18l-6-6 6-6" />
+                                        </svg>
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/70 hover:bg-black/90 border-white/20 text-white backdrop-blur-sm"
+                                        onClick={handleNextImage}
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="20"
+                                            height="20"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <path d="M9 18l6-6-6-6" />
+                                        </svg>
+                                    </Button>
+                                </>
+                            )}
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="absolute top-4 right-4 bg-black/70 hover:bg-black/90 border-white/20 text-white backdrop-blur-sm"
+                                onClick={handleCloseImageViewer}
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <path d="M18 6L6 18M6 6l12 12" />
+                                </svg>
+                            </Button>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
