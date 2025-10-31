@@ -85,6 +85,7 @@ export function mapRecordToNote ( record : NoteRecord, overrides : Partial<Note>
         isEditing: false,
         isPendingSync: false,
         isLocalDraft: false,
+        isCapturingScreenshots: false,
         highlightedElement: null,
         ...overrides,
     };
@@ -354,6 +355,7 @@ export function createPayloadFromDraft (
         elementOffset: draft.elementOffset,
         scrollPosition: draft.scrollPosition,
         locationCapturedAt: draft.locationCapturedAt,
+        screenshots: updates.screenshots ?? draft.screenshots,
         pageIdentity: resolvedPageIdentity,
     };
 

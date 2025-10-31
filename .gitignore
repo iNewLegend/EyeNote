@@ -4,7 +4,6 @@ node_modules
 
 # Build outputs
 dist
-extension
 *.tsbuildinfo
 
 # IDE and OS files
@@ -44,3 +43,5 @@ temp/
 scripts/.vscode/chrome-debug-profile/
 
 apps/backend/.vscode/chrome-debug-profile/
+
+apps/ext/extension/

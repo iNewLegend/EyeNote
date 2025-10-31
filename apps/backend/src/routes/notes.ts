@@ -43,6 +43,13 @@ const anchorHintsSchema = z.object( {
     textHash: z.string().optional(),
 } );
 
+const screenshotSchema = z.object( {
+    dataUrl: z.string(),
+    width: z.number(),
+    height: z.number(),
+    zoom: z.number(),
+} );
+
 const notePayloadSchema = z.object( {
     elementPath: z.string().min( 1 ),
     content: z.string().default( "" ),
@@ -58,6 +65,7 @@ const notePayloadSchema = z.object( {
     elementOffset: vectorSchema.optional(),
     scrollPosition: vectorSchema.optional(),
     locationCapturedAt: z.number().optional(),
+    screenshots: z.array( screenshotSchema ).optional(),
 } );
 
 const noteUpdateSchema = notePayloadSchema.partial();
@@ -123,6 +131,7 @@ function serializeNote ( doc : NoteLean ) : NoteRecord {
         elementOffset: doc.elementOffset ?? undefined,
         scrollPosition: doc.scrollPosition ?? undefined,
         locationCapturedAt: doc.locationCapturedAt ?? undefined,
+        screenshots: doc.screenshots ?? undefined,
         createdAt: doc.createdAt.toISOString(),
         updatedAt: doc.updatedAt.toISOString(),
     };
@@ -528,7 +537,7 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
 
                         updateDoc.groupId = normalized;
                     }
-                    return;
+                    continue;
                 }
 
                 if ( value !== undefined ) {

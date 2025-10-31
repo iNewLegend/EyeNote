@@ -1,5 +1,5 @@
 import { Schema, model, models, type Document, type Model } from "mongoose";
-import type { NoteBase, SerializedDOMRect, Vector2D } from "@eye-note/definitions";
+import type { NoteBase, SerializedDOMRect, Vector2D, ElementScreenshot } from "@eye-note/definitions";
 
 export interface NoteDocument extends NoteBase, Document {
     userId : string;
@@ -27,6 +27,16 @@ const rectSchema = new Schema<SerializedDOMRect>(
     { _id: false }
 );
 
+const screenshotSchema = new Schema<ElementScreenshot>(
+    {
+        dataUrl: { type: String, required: true },
+        width: { type: Number, required: true },
+        height: { type: Number, required: true },
+        zoom: { type: Number, required: true },
+    },
+    { _id: false }
+);
+
 const noteSchema = new Schema<NoteDocument>(
     {
         userId: { type: String, required: true, index: true },
@@ -49,6 +59,7 @@ const noteSchema = new Schema<NoteDocument>(
         elementOffset: { type: vectorSchema, default: null },
         scrollPosition: { type: vectorSchema, default: null },
         locationCapturedAt: { type: Number, default: null },
+        screenshots: { type: [ screenshotSchema ], default: undefined },
     },
     {
         timestamps: true,

@@ -53,13 +53,23 @@ export function useInspectorMode () {
     useEventListener( "keydown", handleKeyDown );
     useEventListener( "keyup", handleKeyUp );
 
+    const isNotesMode = ( modes & AppMode.NOTES_MODE ) === AppMode.NOTES_MODE;
+
+    useEffect( () => {
+        if ( isNotesMode && !isInspectorActive ) {
+            if ( isConnected && isAuthenticated ) {
+                addMode( AppMode.INSPECTOR_MODE );
+            }
+        }
+    }, [ isNotesMode, isInspectorActive, isConnected, isAuthenticated, addMode ] );
+
     // Handle mouse movement for element inspection
     const handleMouseMove = useCallback(
         ( e : MouseEvent ) => {
-            const shouldHighlight = ( modes & AppMode.NOTES_MODE ) === 0 && isInspectorActive;
+            const shouldHighlight = isInspectorActive || isNotesMode;
             handleElementHighlight( e.clientX, e.clientY, shouldHighlight );
         },
-        [ handleElementHighlight, modes, isInspectorActive ]
+        [ handleElementHighlight, isInspectorActive, isNotesMode ]
     );
 
     useEventListener( "mousemove", handleMouseMove );
@@ -70,10 +80,12 @@ export function useInspectorMode () {
             preserveScroll( () => {
                 setSelectedElement( element );
                 addMode( AppMode.NOTES_MODE );
-                removeMode( AppMode.INSPECTOR_MODE );
+                if ( isConnected && isAuthenticated ) {
+                    addMode( AppMode.INSPECTOR_MODE );
+                }
             } );
         },
-        [ setSelectedElement, addMode, removeMode, preserveScroll ]
+        [ setSelectedElement, addMode, isConnected, isAuthenticated, preserveScroll ]
     );
 
     // Handle dismissal

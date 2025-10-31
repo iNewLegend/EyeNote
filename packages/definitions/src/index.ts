@@ -31,6 +31,13 @@ export interface NoteLocationMetadata {
     locationCapturedAt ?: number;
 }
 
+export interface ElementScreenshot {
+    dataUrl : string;
+    width : number;
+    height : number;
+    zoom : number;
+}
+
 export interface NoteBase extends NoteLocationMetadata {
     elementPath : string;
     content : string;
@@ -41,6 +48,7 @@ export interface NoteBase extends NoteLocationMetadata {
     canonicalUrl ?: string | null;
     normalizedUrl ?: string | null;
     anchorHints ?: AnchorHints;
+    screenshots ?: ElementScreenshot[];
 }
 
 export interface NoteRecord extends NoteBase {

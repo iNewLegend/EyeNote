@@ -63,6 +63,10 @@
         @apply w-[300px] max-h-[80vh] overflow-y-auto bg-background text-foreground rounded-lg shadow-lg z-note-content border border-border;
     }
 
+    [data-radix-dialog-overlay][data-state="open"] {
+        @apply bg-black/20 backdrop-blur-sm;
+    }
+
     .note-marker {
         @apply absolute w-6 h-6 bg-primary hover:bg-primary-hover rounded-full cursor-pointer pointer-events-auto transition-transform duration-200 ease-in-out hover:scale-110;
     }
