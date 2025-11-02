@@ -3,20 +3,18 @@ import type { ElementScreenshot } from "@eye-note/definitions";
 export type { ElementScreenshot };
 
 interface CaptureOptions {
-    element: Element;
-    markerElement?: HTMLElement | null;
-    padding?: number;
-    zoomLevels?: number[];
-    onProgress?: ( current: number, total: number, zoom: number ) => void;
+    element : Element;
+    padding ?: number;
+    zoomLevels ?: number[];
+    onProgress ?: ( current : number, total : number, zoom : number ) => void;
 }
 
-export async function captureElementScreenshots( {
+export async function captureElementScreenshots ( {
     element,
-    markerElement,
     padding = 20,
     zoomLevels = [ 1, 2 ],
     onProgress,
-}: CaptureOptions ): Promise<ElementScreenshot[]> {
+} : CaptureOptions ) : Promise<ElementScreenshot[]> {
     const html2canvas = await import( "html2canvas" );
     
     const blockerElement = document.getElementById( "eye-note-interaction-blocker" );
@@ -31,7 +29,7 @@ export async function captureElementScreenshots( {
     const rect = element.getBoundingClientRect();
     const scrollX = window.scrollX;
     const scrollY = window.scrollY;
-    const screenshots: ElementScreenshot[] = [];
+    const screenshots : ElementScreenshot[] = [];
     
     try {
         for ( let i = 0; i < zoomLevels.length; i++ ) {
@@ -82,6 +80,32 @@ export async function captureElementScreenshots( {
                                          el.id === "eye-note-interaction-blocker";
                         return Boolean( isOverlay );
                     },
+                    onclone: ( clonedDoc ) => {
+                        try {
+                            const walker = clonedDoc.createTreeWalker(
+                                clonedDoc.body,
+                                NodeFilter.SHOW_ELEMENT,
+                                null
+                            );
+
+                            let node;
+                            while ( ( node = walker.nextNode() ) ) {
+                                const element = node as HTMLElement;
+                                if ( element.style ) {
+                                    const style = element.style;
+                                    for ( let i = 0; i < style.length; i++ ) {
+                                        const prop = style[ i ];
+                                        const value = style.getPropertyValue( prop );
+                                        if ( value && ( value.includes( "oklab" ) || value.includes( "oklch" ) || value.includes( "color(" ) ) ) {
+                                            style.removeProperty( prop );
+                                        }
+                                    }
+                                }
+                            }
+                        } catch ( error ) {
+                            console.warn( "[EyeNote] Failed to sanitize CSS colors:", error );
+                        }
+                    },
                 } );
 
                 await new Promise( ( resolve ) => setTimeout( resolve, 50 ) );
@@ -115,7 +139,7 @@ export async function captureElementScreenshots( {
                 
                 await new Promise( ( resolve ) => setTimeout( resolve, 100 ) );
             } catch ( error ) {
-                console.warn( `[EyeNote] Failed to capture screenshot at zoom ${zoom}:`, error );
+                console.warn( `[EyeNote] Failed to capture screenshot at zoom ${ zoom }:`, error );
             }
         }
     } finally {
