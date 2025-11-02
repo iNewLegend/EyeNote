@@ -170,3 +170,9 @@
 - Accept note creates when `pageIdentity` is briefly unavailable by using provided `pageId` or safe `(hostname, normalizedUrl)` composite; add server-side composite query fallback when pageId lookup returns empty.
 - Quiet health endpoint logs to reduce noise while debugging.
 - Improve client robustness: wait for identity/pageId before saving, inline-capture identity on save if missing, and log payloads clearly for diagnosis.
+
+# 2025-11-02
+
+## Extension notes modularization
+- Broke `notes-component` into dedicated marker, sheet, and image viewer components under `apps/ext/src/features/notes/components` to keep the feature composable and easier to maintain.
+- Confirmed the extension workspace still type-checks via `pnpm --filter @eye-note/ext exec tsc --noEmit`.
