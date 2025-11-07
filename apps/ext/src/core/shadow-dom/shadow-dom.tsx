@@ -25,14 +25,18 @@ import { QuickMenuDialog } from "../../components/quick-menu-dialog";
 import {
     Label,
     SettingsDialog,
+    ShadowToastProvider,
     Switch,
     Toaster,
+    useShadowToast,
     type SettingsDialogItem,
 } from "@eye-note/ui";
+import { INSPECTOR_BLOCKED_EVENT } from "../../hooks/use-inspector-mode";
 
 type SettingsSectionId = "general" | "groups";
+const SHADOW_HOST_ID = "eye-note-shadow-dom";
 
-export const ShadowDOM : React.FC = () => {
+const ShadowDomContent : React.FC = () => {
     const notes = useNotesStore( ( state ) => state.notes );
     const clearNotes = useNotesStore( ( state ) => state.clearNotes );
     const rehydrateNotes = useNotesStore( ( state ) => state.rehydrateNotes );
@@ -63,6 +67,8 @@ export const ShadowDOM : React.FC = () => {
         ( key : keyof ExtensionSettings ) => ( value : boolean ) => setSetting( key, value ),
         [ setSetting ]
     );
+    const { showToast, dismissToast } = useShadowToast();
+    const inspectorToastTimeoutsRef = useRef<Record<string, number | null>>( {} );
     const dialogContainer = notesContainerRef.current?.parentElement ?? null;
     const visibleNoteIds = useMarkerVirtualization( notes, { rootMargin: "200px" } );
 
@@ -224,6 +230,46 @@ export const ShadowDOM : React.FC = () => {
         ],
         [ canManageGroups ]
     );
+
+    useEffect( () => {
+        const handler = ( event : Event ) => {
+            const reason = ( event as CustomEvent<{ reason ?: string }> ).detail?.reason ?? "backend-offline";
+            const toastId =
+                reason === "unauthenticated"
+                    ? "shadow-toast-inspector-unauthenticated"
+                    : "shadow-toast-inspector-offline";
+            const message =
+                reason === "unauthenticated"
+                    ? "Sign in to use inspector mode."
+                    : "Trying to reconnect… inspector will be ready once EyeNote is online.";
+
+            showToast( message, {
+                id: toastId,
+                duration: 0,
+            } );
+
+            const existingTimeout = inspectorToastTimeoutsRef.current[ toastId ];
+            if ( existingTimeout ) {
+                window.clearTimeout( existingTimeout );
+            }
+
+            inspectorToastTimeoutsRef.current[ toastId ] = window.setTimeout( () => {
+                dismissToast( toastId );
+                inspectorToastTimeoutsRef.current[ toastId ] = null;
+            }, 3000 );
+        };
+
+        window.addEventListener( INSPECTOR_BLOCKED_EVENT, handler as EventListener );
+        return () => {
+            window.removeEventListener( INSPECTOR_BLOCKED_EVENT, handler as EventListener );
+            Object.entries( inspectorToastTimeoutsRef.current ).forEach( ( [ , timeoutId ] ) => {
+                if ( timeoutId ) {
+                    window.clearTimeout( timeoutId );
+                }
+            } );
+            inspectorToastTimeoutsRef.current = {};
+        };
+    }, [ showToast, dismissToast ] );
 
     useEffect( () => {
         const handler = () => {
@@ -445,5 +491,25 @@ export const ShadowDOM : React.FC = () => {
                 ) )}
             </div>
         </>
+    );
+};
+
+export const ShadowDOM : React.FC = () => {
+    const [ toastContainer, setToastContainer ] = useState<DocumentFragment | null>( null );
+
+    useEffect( () => {
+        if ( typeof document === "undefined" ) {
+            return;
+        }
+        const host = document.getElementById( SHADOW_HOST_ID );
+        if ( host?.shadowRoot ) {
+            setToastContainer( host.shadowRoot );
+        }
+    }, [] );
+
+    return (
+        <ShadowToastProvider container={toastContainer}>
+            <ShadowDomContent />
+        </ShadowToastProvider>
     );
 };

@@ -47,6 +47,7 @@ export {
     type ToastVariants,
 } from "./components/ui/toast";
 export { dismiss as dismissToast, toast, useToast, type ToasterToast } from "./components/ui/toast-context";
+export { ShadowToastProvider, useShadowToast } from "./components/ui/shadow-toast";
 
 export { SettingsDialog, type SettingsDialogItem, type SettingsDialogProps } from "./components/settings-dialog";
 export { SettingsSurface, type SettingsSurfaceProps } from "./components/settings-surface";
