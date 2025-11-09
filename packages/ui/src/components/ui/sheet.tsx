@@ -3,6 +3,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/utils";
+import { Z_INDEX } from "../../lib/z-index";
 
 const Sheet = DialogPrimitive.Root;
 
@@ -20,9 +21,10 @@ const SheetOverlay = React.forwardRef<
 >( ( { className, ...props }, ref ) => (
     <DialogPrimitive.Overlay
         className={cn(
-            "fixed inset-0 z-[2147483647] bg-black/20 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+            "fixed inset-0 bg-black/20 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
             className
         )}
+        style={{ zIndex: Z_INDEX.dialogOverlay }}
         {...props}
         ref={ref}
     />
@@ -30,7 +32,7 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const sheetVariants = cva(
-    "fixed z-[2147483647] gap-4 bg-background p-6 shadow-2xl transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
+    "fixed gap-4 bg-background p-6 shadow-2xl transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
     {
         variants: {
             side: {
@@ -63,6 +65,7 @@ const SheetContent = React.forwardRef<
         <DialogPrimitive.Content
             ref={ref}
             className={cn( sheetVariants( { side } ), className )}
+            style={{ zIndex: Z_INDEX.dialogContent }}
             {...props}
         >
             {children}
@@ -139,4 +142,3 @@ export {
     SheetTitle,
     SheetDescription,
 };
-

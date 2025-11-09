@@ -1,3 +1,10 @@
+# 2025-11-09
+
+## Overlay layering
+- Added `packages/ui/src/lib/z-index-tokens.json` plus the `Z_INDEX`/`Z_INDEX_META` helpers so React/Tailwind surfaces share a single, documented stack order.
+- Updated `@eye-note/ui` primitives (sheet, toast, shadow toast) and the extension overlay, cursor, markers, and interaction blocker to read those tokens instead of hard-coded values.
+- Taught the extension Tailwind config to source `z-*` utilities from the same token file and documented the layering map in `specs/z-index.md`.
+
 # 2025-10-30
 
 ## Overlay capture & rendering

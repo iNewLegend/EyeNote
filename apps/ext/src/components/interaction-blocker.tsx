@@ -1,4 +1,4 @@
-import { cn } from "@eye-note/ui";
+import { cn, Z_INDEX } from "@eye-note/ui";
 
 interface InteractionBlockerProps {
     isVisible : boolean;
@@ -11,10 +11,11 @@ export function InteractionBlocker ( { isVisible, className } : InteractionBlock
     return (
         <div
             className={cn(
-                "fixed inset-0 w-full h-full pointer-events-none z-[2147483646]",
+                "fixed inset-0 w-full h-full pointer-events-none",
                 className
             )}
+            style={{ zIndex: Z_INDEX.interactionShield }}
             data-testid="eye-note-interaction-blocker"
         />
     );
-} 
+}

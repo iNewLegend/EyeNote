@@ -1,4 +1,5 @@
 import type { ElementScreenshot } from "@eye-note/definitions";
+import type { Html2CanvasFn } from "html2canvas";
 
 export type { ElementScreenshot };
 
@@ -15,7 +16,7 @@ export async function captureElementScreenshots ( {
     zoomLevels = [ 1, 2 ],
     onProgress,
 } : CaptureOptions ) : Promise<ElementScreenshot[]> {
-    const html2canvas = await import( "html2canvas" );
+    const html2canvas = ( await import( "html2canvas" ) ) as unknown as Html2CanvasFn;
     
     const blockerElement = document.getElementById( "eye-note-interaction-blocker" );
     const originalBlockerDisplay = blockerElement?.style.display;
@@ -64,7 +65,7 @@ export async function captureElementScreenshots ( {
 
                 await new Promise( ( resolve ) => requestAnimationFrame( resolve ) );
 
-                const canvas = await html2canvas.default( document.body, {
+                const canvas = await html2canvas( document.body, {
                     x: captureX,
                     y: captureY,
                     width: captureWidth,
@@ -74,13 +75,14 @@ export async function captureElementScreenshots ( {
                     allowTaint: false,
                     backgroundColor: "#ffffff",
                     logging: false,
-                    ignoreElements: ( el ) => {
-                        if ( !el ) return false;
-                        const isOverlay = el.classList?.contains( "notes-plugin" ) || 
-                                         el.id === "eye-note-interaction-blocker";
+                    ignoreElements: ( el : Element ) => {
+                        const target = el as HTMLElement;
+                        const isOverlay =
+                            target.classList?.contains( "notes-plugin" ) ||
+                            target.id === "eye-note-interaction-blocker";
                         return Boolean( isOverlay );
                     },
-                    onclone: ( clonedDoc ) => {
+                    onclone: ( clonedDoc : Document ) => {
                         try {
                             const walker = clonedDoc.createTreeWalker(
                                 clonedDoc.body,
@@ -88,7 +90,7 @@ export async function captureElementScreenshots ( {
                                 null
                             );
 
-                            let node;
+                            let node : Node | null;
                             while ( ( node = walker.nextNode() ) ) {
                                 const element = node as HTMLElement;
                                 if ( element.style ) {
@@ -154,4 +156,3 @@ export async function captureElementScreenshots ( {
     
     return screenshots;
 }
-

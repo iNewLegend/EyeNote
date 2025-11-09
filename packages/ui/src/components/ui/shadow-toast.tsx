@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { createPortal } from "react-dom";
 
 import { cn } from "../../lib/utils";
+import { Z_INDEX } from "../../lib/z-index";
 import eyeNoteIconImport from "../../assets/icon.svg";
 
 const eyeNoteIconUrl = (() => {
@@ -118,7 +119,10 @@ export function ShadowToastProvider ( {
     } ), [ showToast, dismissToast ] );
 
     const content = (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-toast flex flex-col gap-2 p-4">
+        <div
+            className="pointer-events-none fixed inset-x-0 bottom-0 flex flex-col gap-2 p-4"
+            style={{ zIndex: Z_INDEX.shadowToastViewport }}
+        >
             {toasts.map( ( toast ) => (
                 <div
                     key={toast.id}

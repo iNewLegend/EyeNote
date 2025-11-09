@@ -1,4 +1,5 @@
 export { cn } from "./lib/utils";
+export { Z_INDEX, Z_INDEX_META, type ZIndexToken } from "./lib/z-index";
 
 export { Badge } from "./components/ui/badge";
 export { Button, type ButtonProps, buttonVariants } from "./components/ui/button";

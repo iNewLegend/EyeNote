@@ -1,0 +1,42 @@
+{
+    "globalToastViewport": {
+        "value": 100,
+        "description": "Radix toast viewport used in dashboard/popup contexts; intentionally low to avoid covering onboarding overlays."
+    },
+    "shadowOverlayHost": {
+        "value": 2147483644,
+        "description": "Fixed container injected into inspected pages; all EyeNote overlay UI renders inside this root."
+    },
+    "highlightOverlay": {
+        "value": 2147483645,
+        "description": "Highlight rectangles and cursor guides that should sit above the inspected DOM but below actionable UI."
+    },
+    "cursor": {
+        "value": 2147483645,
+        "description": "Custom cursor indicator that mirrors the highlight overlay depth."
+    },
+    "noteMarker": {
+        "value": 2147483646,
+        "description": "Pinned note markers and floating affordances that must receive pointer events over highlights."
+    },
+    "interactionShield": {
+        "value": 2147483646,
+        "description": "Full-screen interaction blocker used while inspector modes are active."
+    },
+    "panel": {
+        "value": 2147483646,
+        "description": "Side panels, sheets, and contextual editors that open beside the inspected page."
+    },
+    "dialogOverlay": {
+        "value": 2147483647,
+        "description": "Modal scrims that must sit at the absolute top of the overlay stack."
+    },
+    "dialogContent": {
+        "value": 2147483647,
+        "description": "Modal content, note sheets, and dialogs that should never be occluded."
+    },
+    "shadowToastViewport": {
+        "value": 2147483646,
+        "description": "Toast viewport rendered inside the overlay shadow root; aligns with other actionable UI layers."
+    }
+}

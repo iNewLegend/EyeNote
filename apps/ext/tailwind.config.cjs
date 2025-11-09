@@ -1,4 +1,7 @@
 const { fontFamily } = require( "tailwindcss/defaultTheme" );
+const zIndexTokens = require( "../../packages/ui/src/lib/z-index-tokens.json" );
+
+const toZValue = ( token ) => token.value.toString();
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
@@ -22,12 +25,12 @@ module.exports = {
                 DEFAULT: "hsl(var(--border))",
             },
             zIndex: {
-                "plugin-container": "9999",
-                "highlight-element": "99999",
-                "note-content": "100000",
-                "dialog-overlay": "100001",
-                "dialog-content": "100002",
-                toast: "100003",
+                "plugin-container": toZValue( zIndexTokens.shadowOverlayHost ),
+                "highlight-element": toZValue( zIndexTokens.highlightOverlay ),
+                "note-content": toZValue( zIndexTokens.panel ),
+                "dialog-overlay": toZValue( zIndexTokens.dialogOverlay ),
+                "dialog-content": toZValue( zIndexTokens.dialogContent ),
+                toast: toZValue( zIndexTokens.shadowToastViewport ),
             },
             colors: {
                 border: "hsl(var(--border))",

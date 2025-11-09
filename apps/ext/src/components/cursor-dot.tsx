@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { cn } from "@eye-note/ui";
+import { cn, Z_INDEX } from "@eye-note/ui";
 import { useCursorStore } from "../stores/use-cursor-store";
 
 interface CursorDotProps {
@@ -37,7 +37,6 @@ export const CursorDot : React.FC<CursorDotProps> = ( { color = "#7c3aed", visib
                     "fixed w-2 h-2",
                     "rounded-full",
                     "pointer-events-none -translate-x-1/2 -translate-y-1/2",
-                    "z-[2147483645]",
                     "transition-[opacity,visibility] duration-200 ease-out",
                     "drop-shadow-[0_0_4px_rgba(72,4,173,0.3)]",
                     visible ? "opacity-100 visible" : "opacity-0 invisible"
@@ -47,6 +46,7 @@ export const CursorDot : React.FC<CursorDotProps> = ( { color = "#7c3aed", visib
                         backgroundColor: color,
                         left: `${ position.x }px`,
                         top: `${ position.y }px`,
+                        zIndex: Z_INDEX.cursor,
                         "--pulse-color": color,
                     } as React.CSSProperties
                 }

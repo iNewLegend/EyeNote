@@ -1,4 +1,5 @@
 import React from "react";
+import { Z_INDEX } from "@eye-note/ui";
 
 interface HighlightOverlayProps {
     id ?: string;
@@ -16,7 +17,7 @@ export const HighlightOverlay : React.FC<HighlightOverlayProps> = ( {
     const baseStyle : React.CSSProperties = {
         position: "fixed",
         pointerEvents: "none",
-        zIndex: 2147483645,
+        zIndex: Z_INDEX.highlightOverlay,
         border: "2px solid #7c3aed",
         backgroundColor: "rgba(124, 58, 237, 0.35)",
         transition: "all 0.2s ease",

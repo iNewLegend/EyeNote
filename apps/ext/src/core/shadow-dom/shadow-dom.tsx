@@ -28,6 +28,7 @@ import {
     ShadowToastProvider,
     Switch,
     Toaster,
+    Z_INDEX,
     useShadowToast,
     type SettingsDialogItem,
 } from "@eye-note/ui";
@@ -441,6 +442,7 @@ const ShadowDomContent : React.FC = () => {
                 ref={notesContainerRef}
                 className="notes-plugin"
                 data-inspector-active={isActive ? "1" : "0"}
+                style={{ zIndex: Z_INDEX.shadowOverlayHost }}
             >
                 <InteractionBlocker isVisible={isActive} />
                 <QuickMenuDialog

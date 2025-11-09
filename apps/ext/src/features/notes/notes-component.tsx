@@ -10,6 +10,7 @@ import { calculateMarkerPosition } from "./notes-utils";
 import { NoteMarker } from "./components/note-marker";
 import { NoteSheet, type NoteGroupOption } from "./components/note-sheet";
 import { NoteImageViewer } from "./components/note-image-viewer";
+import { Z_INDEX } from "@eye-note/ui";
 
 interface NoteComponentProps {
     note : Note;
@@ -77,7 +78,7 @@ export function NotesComponent ( {
     const markerStyle : CSSProperties = {
         left: `${ markerPosition.x }px`,
         top: `${ markerPosition.y }px`,
-        zIndex: 2147483646,
+        zIndex: Z_INDEX.noteMarker,
         transform: "translate(-50%, -50%)",
         backgroundColor: note.isPendingSync ? "#f97316" : groupColor,
         borderColor: note.isPendingSync ? "#f97316" : groupColor,
