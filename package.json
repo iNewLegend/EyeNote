@@ -17,13 +17,13 @@
     },
     "packageManager": "pnpm@8.15.1",
     "dependencies": {
-        "@eye-note/workspace": "workspace:*",
-        "@zenflux/eslint": "^0.1.18"
+        "@eye-note/workspace": "workspace:*"
     },
     "devDependencies": {
         "@types/node": "^20.10.0",
         "@typescript-eslint/eslint-plugin": "^6.21.0",
         "@typescript-eslint/parser": "^6.21.0",
+        "@zenflux/eslint": "^0.1.19",
         "concurrently": "^8.2.2",
         "eslint": "^8.56.0",
         "eslint-config-next": "^15.2.1",
