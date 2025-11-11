@@ -11,7 +11,7 @@ export function InteractionBlocker ( { isVisible, className } : InteractionBlock
     return (
         <div
             className={cn(
-                "fixed inset-0 w-full h-full pointer-events-none z-[2147483646]",
+                "fixed inset-0 w-full h-full pointer-events-none z-interaction-blocker",
                 className
             )}
             data-testid="eye-note-interaction-blocker"

@@ -1,10 +1,10 @@
-const { fontFamily } = require("tailwindcss/defaultTheme");
+const { fontFamily } = require( "tailwindcss/defaultTheme" );
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-    important: ["#eye-note-shadow-dom", "#eye-note-userland-dom"],
-    safelist: ["animate-cursor"],
-    darkMode: ["class"],
+    important: [ "#eye-note-shadow-dom", "#eye-note-userland-dom" ],
+    safelist: [ "animate-cursor" ],
+    darkMode: [ "class" ],
     content: [
         "./src/**/*.{js,ts,jsx,tsx}",
         "../../packages/ui/src/**/*.{ts,tsx}"
@@ -22,12 +22,18 @@ module.exports = {
                 DEFAULT: "hsl(var(--border))",
             },
             zIndex: {
-                "plugin-container": "9999",
-                "highlight-element": "99999",
-                "note-content": "100000",
-                "dialog-overlay": "100001",
-                "dialog-content": "100002",
-                toast: "100003",
+                "plugin-container": 9999,
+                "highlight-element": 99999,
+                "note-content": 100000,
+                "dialog-overlay": 100001,
+                "dialog-content": 100002,
+                toast: 100003,
+                "cursor-dot": 2147483645,
+                "highlight-overlay": 2147483645,
+                "shadow-dom-container": 2147483646,
+                "interaction-blocker": 2147483646,
+                "sheet-overlay": 2147483647,
+                "sheet-content": 2147483647,
             },
             colors: {
                 border: "hsl(var(--border))",
@@ -79,7 +85,7 @@ module.exports = {
                 sm: "calc(var(--radius) - 4px)",
             },
             fontFamily: {
-                sans: ["var(--font-sans)", ...fontFamily.sans],
+                sans: [ "var(--font-sans)", ...fontFamily.sans ],
             },
             keyframes: {
                 "accordion-down": {
@@ -124,9 +130,9 @@ module.exports = {
         },
     },
     plugins: [
-        require("tailwindcss-animate"),
-        function ({ addUtilities }) {
-            addUtilities({
+        require( "tailwindcss-animate" ),
+        function ( { addUtilities } ) {
+            addUtilities( {
                 ".backface-hidden": {
                     "backface-visibility": "hidden",
                     "-webkit-backface-visibility": "hidden",
@@ -138,7 +144,7 @@ module.exports = {
                     "-webkit-font-smoothing": "antialiased",
                     "-moz-osx-font-smoothing": "grayscale",
                 },
-            });
+            } );
         },
     ],
 };

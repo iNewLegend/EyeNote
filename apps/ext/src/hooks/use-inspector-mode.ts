@@ -6,6 +6,9 @@ import { useEventListener } from "./use-event-listener";
 import { useElementHighlight } from "./use-element-highlight";
 import { useAuthStore } from "@eye-note/auth/extension";
 
+export const INSPECTOR_BLOCKED_EVENT = "eye-note-inspector-blocked";
+type InspectorBlockedReason = "backend-offline" | "unauthenticated";
+
 export function useInspectorMode () {
     const {
         hoveredElement,
@@ -22,15 +25,33 @@ export function useInspectorMode () {
     const preserveScroll = usePreserveScroll();
     const { handleElementHighlight } = useElementHighlight();
 
+    const emitInspectorBlocked = useCallback( ( reason : InspectorBlockedReason ) => {
+        if ( typeof window === "undefined" ) {
+            return;
+        }
+
+        window.dispatchEvent(
+            new CustomEvent( INSPECTOR_BLOCKED_EVENT, {
+                detail: { reason },
+            } )
+        );
+    }, [] );
+
     // Handle shift key events to toggle inspector mode
     const handleKeyDown = useCallback( ( e : KeyboardEvent ) => {
-        if ( e.key === "Shift" && !isInspectorActive ) {
+        if ( e.key !== "Shift" || e.repeat ) {
+            return;
+        }
+
+        if ( !isInspectorActive ) {
             if ( !isConnected ) {
                 console.warn( "[EyeNote] Cannot enter inspector mode until backend connection is established." );
+                emitInspectorBlocked( "backend-offline" );
                 return;
             }
             if ( !isAuthenticated ) {
                 console.warn( "[EyeNote] Cannot enter inspector mode until you are signed in." );
+                emitInspectorBlocked( "unauthenticated" );
                 return;
             }
             // Only enter inspector mode if we're not in notes mode
@@ -38,7 +59,7 @@ export function useInspectorMode () {
                 addMode( AppMode.INSPECTOR_MODE );
             }
         }
-    }, [ isInspectorActive, isConnected, modes, addMode, isAuthenticated ] );
+    }, [ isInspectorActive, isConnected, modes, addMode, isAuthenticated, emitInspectorBlocked ] );
 
     const handleKeyUp = useCallback( ( e : KeyboardEvent ) => {
         if ( e.key === "Shift" ) {

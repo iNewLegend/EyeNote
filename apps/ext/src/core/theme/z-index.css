@@ -1,0 +1,15 @@
+:root {
+    --z-index-plugin-container: 9999;
+    --z-index-highlight-element: 99999;
+    --z-index-note-content: 100000;
+    --z-index-dialog-overlay: 100001;
+    --z-index-dialog-content: 100002;
+    --z-index-toast: 100003;
+    --z-index-cursor-dot: 2147483645;
+    --z-index-highlight-overlay: 2147483645;
+    --z-index-shadow-dom-container: 2147483646;
+    --z-index-interaction-blocker: 2147483646;
+    --z-index-sheet-overlay: 2147483647;
+    --z-index-sheet-content: 2147483647;
+}
+

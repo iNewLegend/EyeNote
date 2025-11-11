@@ -101,10 +101,16 @@ async function createDraftNoteEffect (
             requestAnimationFrame( () => {
                 requestAnimationFrame( async () => {
                     try {
+                        const zoomLevels = [ 1, 2 ];
+
                         const screenshots = await captureElementScreenshots( {
                             element,
                             padding: 60,
-                            zoomLevels: [ 1, 1.5, 2 ],
+                            zoomLevels,
+                            onProgress: ( current, total, zoom ) => {
+                                const progress = Math.round( ( current / total ) * 100 );
+                                console.log( `[EyeNote] Capturing ${ current }/${ total } (${ zoom }x) - ${ progress }%` );
+                            },
                         } );
 
                         mergeNoteState( api, draft.id, { screenshots, isCapturingScreenshots: false } );

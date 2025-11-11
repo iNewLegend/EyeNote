@@ -170,3 +170,17 @@
 - Accept note creates when `pageIdentity` is briefly unavailable by using provided `pageId` or safe `(hostname, normalizedUrl)` composite; add server-side composite query fallback when pageId lookup returns empty.
 - Quiet health endpoint logs to reduce noise while debugging.
 - Improve client robustness: wait for identity/pageId before saving, inline-capture identity on save if missing, and log payloads clearly for diagnosis.
+
+# 2025-11-02
+
+## Extension notes modularization
+- Broke `notes-component` into dedicated marker, sheet, and image viewer components under `apps/ext/src/features/notes/components` to keep the feature composable and easier to maintain.
+- Confirmed the extension workspace still type-checks via `pnpm --filter @eye-note/ext exec tsc --noEmit`.
+
+## Inspector feedback improvements
+- Introduced `ShadowToastProvider` + `useShadowToast` in `@eye-note/ui` so shadow DOM surfaces can trigger full-width, bottom-anchored toast messages without relying on the document body.
+- Wrapped the overlay tree with the new provider and emit a toast when Shift-triggered inspector mode is blocked because the backend is offline, giving users immediate feedback about the connection state.
+- Reused a stable toast id and manage a 3-second timeout manually so the notification auto-dismisses even if the backend remains down, while still preventing duplicate toasts.
+- Added the official `icon.svg` asset to the left of every shadow toast so the overlay branding stays present even when rendered inside arbitrary shadow roots.
+- Added a `KeyboardEvent.repeat` guard to the inspector hotkey handler so holding Shift no longer spams the warning toast while the backend is offline.
+- Show a second toast when Shift is pressed while signed out (“Sign in to use inspector mode.”) using the same debounced infrastructure so users understand both offline and authentication blockers.

@@ -3,18 +3,18 @@ import type { ElementScreenshot } from "@eye-note/definitions";
 export type { ElementScreenshot };
 
 interface CaptureOptions {
-    element: Element;
-    markerElement?: HTMLElement | null;
-    padding?: number;
-    zoomLevels?: number[];
+    element : Element;
+    padding ?: number;
+    zoomLevels ?: number[];
+    onProgress ?: ( current : number, total : number, zoom : number ) => void;
 }
 
-export async function captureElementScreenshots( {
+export async function captureElementScreenshots ( {
     element,
-    markerElement,
     padding = 20,
-    zoomLevels = [ 1, 1.5, 2 ],
-}: CaptureOptions ): Promise<ElementScreenshot[]> {
+    zoomLevels = [ 1, 2 ],
+    onProgress,
+} : CaptureOptions ) : Promise<ElementScreenshot[]> {
     const html2canvas = await import( "html2canvas" );
     
     const blockerElement = document.getElementById( "eye-note-interaction-blocker" );
@@ -29,7 +29,7 @@ export async function captureElementScreenshots( {
     const rect = element.getBoundingClientRect();
     const scrollX = window.scrollX;
     const scrollY = window.scrollY;
-    const screenshots: ElementScreenshot[] = [];
+    const screenshots : ElementScreenshot[] = [];
     
     try {
         for ( let i = 0; i < zoomLevels.length; i++ ) {
@@ -56,7 +56,13 @@ export async function captureElementScreenshots( {
                     rect.height + zoomPadding * 2 
                 );
 
-                await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+                await new Promise( ( resolve ) => setTimeout( resolve, 100 ) );
+
+                if ( onProgress ) {
+                    onProgress( i + 1, zoomLevels.length, zoom );
+                }
+
+                await new Promise( ( resolve ) => requestAnimationFrame( resolve ) );
 
                 const canvas = await html2canvas.default( document.body, {
                     x: captureX,
@@ -74,22 +80,66 @@ export async function captureElementScreenshots( {
                                          el.id === "eye-note-interaction-blocker";
                         return Boolean( isOverlay );
                     },
+                    onclone: ( clonedDoc ) => {
+                        try {
+                            const walker = clonedDoc.createTreeWalker(
+                                clonedDoc.body,
+                                NodeFilter.SHOW_ELEMENT,
+                                null
+                            );
+
+                            let node;
+                            while ( ( node = walker.nextNode() ) ) {
+                                const element = node as HTMLElement;
+                                if ( element.style ) {
+                                    const style = element.style;
+                                    for ( let i = 0; i < style.length; i++ ) {
+                                        const prop = style[ i ];
+                                        const value = style.getPropertyValue( prop );
+                                        if ( value && ( value.includes( "oklab" ) || value.includes( "oklch" ) || value.includes( "color(" ) ) ) {
+                                            style.removeProperty( prop );
+                                        }
+                                    }
+                                }
+                            }
+                        } catch ( error ) {
+                            console.warn( "[EyeNote] Failed to sanitize CSS colors:", error );
+                        }
+                    },
                 } );
 
-                await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+                await new Promise( ( resolve ) => setTimeout( resolve, 50 ) );
 
-                const dataUrl = canvas.toDataURL( "image/png", 1.0 );
+                const maxWidth = 1920;
+                const maxHeight = 1080;
+                let finalCanvas = canvas;
+
+                if ( canvas.width > maxWidth || canvas.height > maxHeight ) {
+                    const ratio = Math.min( maxWidth / canvas.width, maxHeight / canvas.height );
+                    const scaledWidth = Math.floor( canvas.width * ratio );
+                    const scaledHeight = Math.floor( canvas.height * ratio );
+                    
+                    finalCanvas = document.createElement( "canvas" );
+                    finalCanvas.width = scaledWidth;
+                    finalCanvas.height = scaledHeight;
+                    const ctx = finalCanvas.getContext( "2d" );
+                    if ( ctx ) {
+                        ctx.drawImage( canvas, 0, 0, scaledWidth, scaledHeight );
+                    }
+                }
+
+                const dataUrl = finalCanvas.toDataURL( "image/jpeg", 0.85 );
                 
                 screenshots.push( {
                     dataUrl,
-                    width: canvas.width,
-                    height: canvas.height,
+                    width: finalCanvas.width,
+                    height: finalCanvas.height,
                     zoom,
                 } );
                 
-                await new Promise( ( resolve ) => requestAnimationFrame( resolve ) );
+                await new Promise( ( resolve ) => setTimeout( resolve, 100 ) );
             } catch ( error ) {
-                console.warn( `[EyeNote] Failed to capture screenshot at zoom ${zoom}:`, error );
+                console.warn( `[EyeNote] Failed to capture screenshot at zoom ${ zoom }:`, error );
             }
         }
     } finally {

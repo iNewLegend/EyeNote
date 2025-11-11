@@ -1,5 +1,6 @@
 import { useRef, useCallback, useEffect } from "react";
-import { useInspectorMode } from "./use-inspector-mode";
+import { useHighlightStore } from "../stores/highlight-store";
+import { useModeStore, AppMode } from "../stores/use-mode-store";
 
 type InspectionBoundsUpdater = ( element : Element | null ) => void;
 
@@ -23,14 +24,9 @@ interface UseElementInspectorReturn {
 }
 
 /**
- * A hook that handles element inspection visuals using the core useInspectorMode hook.
- * This hook focuses purely on the visual aspects of inspection and delegates
- * mode management and element detection to useInspectorMode.
- * 
- * This approach eliminates redundancy by:
- * 1. Removing duplicate keyboard event handling (already in useInspectorMode)
- * 2. Utilizing hoveredElement from useInspectorMode instead of duplicating element detection
- * 3. Focusing purely on the visual representation and event emission aspects
+ * A hook that handles element inspection visuals by subscribing directly to highlight/mode stores.
+ * This hook focuses purely on the visual aspects of inspection and relies on the shared inspector
+ * state that is managed elsewhere (see useInspectorMode for the keyboard/mode logic).
  */
 export function useElementInspector ( {
     updateInspectionBounds,
@@ -38,9 +34,8 @@ export function useElementInspector ( {
     excludeSelectors = []
 } : UseElementInspectorProps ) : UseElementInspectorReturn {
     const inspectedElementRef = useRef<HTMLElement | null>( null );
-    
-    // Use the existing inspector mode hook for core functionality
-    const inspectorMode = useInspectorMode();
+    const hoveredElement = useHighlightStore( ( state ) => state.hoveredElement );
+    const isInspectorActive = useModeStore( ( state ) => state.isMode( AppMode.INSPECTOR_MODE ) );
 
     // Function to set cursor style and update bounds
     const updateInspectedElement = useCallback( ( element : HTMLElement | null ) => {
@@ -69,12 +64,10 @@ export function useElementInspector ( {
         }
     }, [ updateInspectionBounds, onInspectionEvent ] );
 
-    // Monitor the hovered element from inspectorMode
+    // Monitor the hovered element from the shared highlight store
     useEffect( () => {
         // Only process if the inspector is active
-        if ( inspectorMode.isActive ) {
-            const hoveredElement = inspectorMode.hoveredElement;
-            
+        if ( isInspectorActive ) {
             // Skip elements that match excluded selectors
             if ( hoveredElement ) {
                 // The core hook already applies some exclusion logic,
@@ -100,8 +93,8 @@ export function useElementInspector ( {
             updateInspectedElement( null );
         }
     }, [
-        inspectorMode.isActive, 
-        inspectorMode.hoveredElement, 
+        isInspectorActive,
+        hoveredElement,
         excludeSelectors, 
         onInspectionEvent, 
         updateInspectedElement
