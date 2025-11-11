@@ -39,7 +39,8 @@ export function NoteImageViewer ( {
         >
             <DialogContent
                 {...( container ? { container } : {} )}
-                className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 bg-black/95 border-none"
+                className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 bg-black/95 border-none z-sheet-content"
+                overlayClassName="z-sheet-overlay"
                 onPointerDownOutside={onClose}
             >
                 {screenshot && (
