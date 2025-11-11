@@ -37,7 +37,7 @@ export const CursorDot : React.FC<CursorDotProps> = ( { color = "#7c3aed", visib
                     "fixed w-2 h-2",
                     "rounded-full",
                     "pointer-events-none -translate-x-1/2 -translate-y-1/2",
-                    "z-[2147483645]",
+                    "z-cursor-dot",
                     "transition-[opacity,visibility] duration-200 ease-out",
                     "drop-shadow-[0_0_4px_rgba(72,4,173,0.3)]",
                     visible ? "opacity-100 visible" : "opacity-0 invisible"

@@ -77,7 +77,7 @@ export function NotesComponent ( {
     const markerStyle : CSSProperties = {
         left: `${ markerPosition.x }px`,
         top: `${ markerPosition.y }px`,
-        zIndex: 2147483646,
+        zIndex: "var(--z-index-shadow-dom-container, 2147483646)",
         transform: "translate(-50%, -50%)",
         backgroundColor: note.isPendingSync ? "#f97316" : groupColor,
         borderColor: note.isPendingSync ? "#f97316" : groupColor,
