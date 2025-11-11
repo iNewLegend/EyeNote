@@ -1,3 +1,11 @@
+# 2025-11-11
+
+## Notes overlay
+- Replaced the note sheet's native select with the shared shadcn dropdown so editors can preview group colors directly inside the overlay.
+- Exported the select primitives from `@eye-note/ui` and threaded group color metadata through note group options to keep the picker in sync even when a group's membership changes.
+- Kept the note sheet at full opacity whenever the dropdown is open so the panel no longer fades mid-edit, moved the Radix select portal inside the shadow container, and boosted the popover z-index/logging so the menu renders above the overlay and we can trace when it opens or closes.
+- Simplified the group selector trigger so it no longer shows a duplicate color chip; the top-of-sheet header remains the single color indicator.
+
 # 2025-10-30
 
 ## Overlay capture & rendering

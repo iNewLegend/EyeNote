@@ -18,6 +18,18 @@ export {
 } from "./components/ui/dialog";
 export { Input } from "./components/ui/input";
 export { Label } from "./components/ui/label";
+export {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectScrollDownButton,
+    SelectScrollUpButton,
+    SelectSeparator,
+    SelectTrigger,
+    SelectValue,
+} from "./components/ui/select";
 export { Toaster } from "./components/ui/sonner";
 export { Switch } from "./components/ui/switch";
 export {

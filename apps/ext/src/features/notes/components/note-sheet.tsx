@@ -1,12 +1,31 @@
-import { Button, Sheet, SheetContent, SheetDescription, SheetTitle } from "@eye-note/ui";
+import { useState } from "react";
+import {
+    cn,
+    Button,
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetTitle,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@eye-note/ui";
 import type { Note } from "../../../types";
 
 export interface NoteGroupOption {
     id : string;
     name : string;
+    color ?: string;
 }
 
 type NoteScreenshot = NonNullable<Note["screenshots"]>[ number ];
+
+const GROUP_SWATCH_FALLBACK = "#94a3b8";
+const SELECT_EMPTY_VALUE = "__none__";
+
+const resolveGroupColor = ( color ?: string ) => ( color && color.trim().length > 0 ? color : GROUP_SWATCH_FALLBACK );
 
 interface NoteSheetProps {
     note : Note;
@@ -55,12 +74,27 @@ export function NoteSheet ( {
     isSaving,
     isExistingPending,
 } : NoteSheetProps ) {
+    const [ isSelectOpen, setIsSelectOpen ] = useState( false );
+    const groupLabelId = `note-group-label-${ note.id }`;
+    const groupTriggerId = `note-group-${ note.id }`;
+
+    const handleSelectOpenChange = ( open : boolean ) => {
+        setIsSelectOpen( open );
+        console.debug( "[EyeNote] Note sheet group select open:", {
+            open,
+            noteId: note.id,
+        } );
+    };
+
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
                 {...( container ? { container } : {} )}
                 side="right"
-                className="note-content w-full sm:max-w-md flex flex-col outline-none opacity-50 hover:opacity-100 transition-opacity duration-200"
+                className={cn(
+                    "note-content w-full sm:max-w-md flex flex-col outline-none opacity-50 hover:opacity-100 transition-opacity duration-200",
+                    isSelectOpen && "opacity-100"
+                )}
                 onPointerDownOutside={( event ) => {
                     if ( note.isLocalDraft ) {
                         event.preventDefault();
@@ -134,25 +168,49 @@ export function NoteSheet ( {
                     ) : null}
                     <div className="space-y-2">
                         <label
-                            htmlFor={`note-group-${ note.id }`}
+                            id={groupLabelId}
+                            htmlFor={groupTriggerId}
                             className="text-xs font-medium text-muted-foreground"
                         >
                             Group
                         </label>
-                        <select
-                            id={`note-group-${ note.id }`}
-                            className="w-full rounded-md border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                            value={selectedGroupId}
-                            onChange={( event ) => onSelectedGroupIdChange( event.target.value )}
+                        <Select
+                            value={selectedGroupId || SELECT_EMPTY_VALUE}
+                            onValueChange={( value ) => {
+                                onSelectedGroupIdChange( value === SELECT_EMPTY_VALUE ? "" : value );
+                            }}
+                            onOpenChange={handleSelectOpenChange}
                             disabled={isActionLocked}
                         >
-                            <option value="">No group</option>
-                            {selectOptions.map( ( option ) => (
-                                <option key={`${ note.id }-${ option.id }`} value={option.id}>
-                                    {option.name}
-                                </option>
-                            ) )}
-                        </select>
+                            <SelectTrigger
+                                id={groupTriggerId}
+                                aria-labelledby={groupLabelId}
+                                className="w-full px-3 py-2 text-sm rounded-md border border-border bg-background/80"
+                                disabled={isActionLocked}
+                            >
+                                <SelectValue placeholder="Select a group" />
+                            </SelectTrigger>
+                            <SelectContent align="start" container={container ?? undefined}>
+                                <SelectItem value={SELECT_EMPTY_VALUE}>
+                                    <div className="flex items-center gap-2">
+                                        <span className="h-3 w-3 rounded-full border border-border bg-transparent" />
+                                        <span>No group</span>
+                                    </div>
+                                </SelectItem>
+                                {selectOptions.map( ( option ) => (
+                                    <SelectItem key={`${ note.id }-${ option.id }`} value={option.id}>
+                                        <div className="flex items-center gap-2">
+                                            <span
+                                                aria-hidden="true"
+                                                className="h-3 w-3 rounded-full border border-border"
+                                                style={{ backgroundColor: resolveGroupColor( option.color ) }}
+                                            />
+                                            <span className="truncate">{option.name}</span>
+                                        </div>
+                                    </SelectItem>
+                                ) )}
+                            </SelectContent>
+                        </Select>
                     </div>
                     <div className="space-y-2 flex-1 min-h-0">
                         <label
