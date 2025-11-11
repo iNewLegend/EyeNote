@@ -5,21 +5,26 @@ import {
     DowntimeNotice,
     SettingsSurface,
     SignInPrompt,
-    type SettingsDialogItem,
+
     Toaster,
-    toast,
+    toast
 } from "@eye-note/ui";
 
 import { useAppAuth } from "@eye-note/auth/app";
 import { useBackendHealthPolling, useBackendHealthStore } from "@eye-note/backend-health";
 
-import { useAppSettings } from "./hooks/use-dashboard-settings";
-import { Header } from "./components/header";
+import { useAppSettings } from "@eye-note/app/src/hooks/use-dashboard-settings";
+import { Header } from "@eye-note/app/src/components/header";
+
+import { CollaborationPreviewSection } from "@eye-note/app/src/components/collaboration-preview-section";
+
 import {
-    GeneralSettingsSection,
-    type AppSettingDescriptor,
-} from "./components/general-settings-section";
-import { CollaborationPreviewSection } from "./components/collaboration-preview-section";
+    GeneralSettingsSection
+
+} from "@eye-note/app/src/components/general-settings-section";
+
+import type { AppSettingDescriptor } from "@eye-note/app/src/components/general-settings-section";
+import type { SettingsDialogItem } from "@eye-note/ui";
 
 const settingDescriptors : AppSettingDescriptor[] = [
     {
@@ -118,13 +123,13 @@ function AppApp () {
     const generalContent = useMemo(
         () => (
             <GeneralSettingsSection
-                descriptors={settingDescriptors}
-                settings={settings}
-                onToggle={setSetting}
-                onReset={resetSettings}
-                onSignIn={handleSignIn}
-                isAuthenticated={isAuthenticated}
-                isLoading={isLoading}
+                descriptors={ settingDescriptors }
+                settings={ settings }
+                onToggle={ setSetting }
+                onReset={ resetSettings }
+                onSignIn={ handleSignIn }
+                isAuthenticated={ isAuthenticated }
+                isLoading={ isLoading }
             />
         ),
         [
@@ -140,12 +145,12 @@ function AppApp () {
     const collaborationContent = useMemo(
         () => (
             <CollaborationPreviewSection
-                highlights={collaborationHighlights}
-                isAuthenticated={isAuthenticated}
-                isLoading={isLoading}
-                onSignIn={handleSignIn}
-                onNotify={handleNotify}
-                onLearnMore={handleLearnMore}
+                highlights={ collaborationHighlights }
+                isAuthenticated={ isAuthenticated }
+                isLoading={ isLoading }
+                onSignIn={ handleSignIn }
+                onNotify={ handleNotify }
+                onLearnMore={ handleLearnMore }
             />
         ),
         [
@@ -179,17 +184,17 @@ function AppApp () {
         <div className="flex items-center gap-3">
             <div className="text-right">
                 <p className="text-sm font-semibold text-foreground">
-                    {user?.name ?? user?.email ?? "Signed in"}
+                    { user?.name ?? user?.email ?? "Signed in" }
                 </p>
-                {user?.email ? (
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
-                ) : null}
+                { user?.email ? (
+                    <p className="text-xs text-muted-foreground">{ user.email }</p>
+                ) : null }
             </div>
             <Button
                 variant="outline"
                 size="sm"
                 type="button"
-                onClick={handleSignOut}
+                onClick={ handleSignOut }
             >
                 Sign out
             </Button>
@@ -198,14 +203,14 @@ function AppApp () {
         <Button
             type="button"
             size="sm"
-            onClick={handleSignIn}
-            disabled={isLoading || !isBackendHealthy}
+            onClick={ handleSignIn }
+            disabled={ isLoading || !isBackendHealthy }
         >
-            {isLoading
+            { isLoading
                 ? "Signing in..."
                 : isBackendHealthy
                     ? "Sign in with Google"
-                    : "Backend unavailable"}
+                    : "Backend unavailable" }
         </Button>
     );
 
@@ -229,8 +234,8 @@ function AppApp () {
                 <div className="container flex min-h-screen flex-col gap-10 py-12">
                     <div className="flex flex-1 items-center justify-center">
                         <SignInPrompt
-                            onGetStarted={handleSignIn}
-                            isSigningIn={isLoading}
+                            onGetStarted={ handleSignIn }
+                            isSigningIn={ isLoading }
                             getStartedLabel="Sign in with Google"
                             signingInLabel="Signing in..."
                         />
@@ -248,10 +253,10 @@ function AppApp () {
                 <SettingsSurface
                     title="Extension Managment"
                     description="Manage overlay behavior and collaboration options from the extension managment panel without launching the extension."
-                    items={settingsItems}
-                    selectedItemId={activeSection}
-                    onSelectedItemChange={setActiveSection}
-                    headerSlot={headerSlot}
+                    items={ settingsItems }
+                    selectedItemId={ activeSection }
+                    onSelectedItemChange={ setActiveSection }
+                    headerSlot={ headerSlot }
                 />
             </div>
             <Toaster position="top-right" />

@@ -1,4 +1,4 @@
-import type { AuthSession } from "../shared";
+import type { AuthSession } from "@eye-note/auth/src/shared";
 
 const STORAGE_KEY = "eye-note-app-auth";
 

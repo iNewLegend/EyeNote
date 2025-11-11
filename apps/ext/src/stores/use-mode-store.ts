@@ -66,64 +66,64 @@ export const useModeStore = create<ModeStore>( ( set, get ) => {
     return {
         modes: AppMode.DEBUG_MODE,
 
-    setMode: ( mode : AppMode ) => {
-        const oldModes = get().modes;
-        set( { modes: mode } );
-        updateDOMClasses( mode );
-        logModeChange( oldModes, mode );
-    },
+        setMode: ( mode : AppMode ) => {
+            const oldModes = get().modes;
+            set( { modes: mode } );
+            updateDOMClasses( mode );
+            logModeChange( oldModes, mode );
+        },
 
-    addMode: ( mode : AppMode ) => {
-        const oldModes = get().modes;
-        const newModes = oldModes | mode;
-        set( { modes: newModes } );
-        updateDOMClasses( newModes );
-        logModeChange( oldModes, newModes );
-    },
+        addMode: ( mode : AppMode ) => {
+            const oldModes = get().modes;
+            const newModes = oldModes | mode;
+            set( { modes: newModes } );
+            updateDOMClasses( newModes );
+            logModeChange( oldModes, newModes );
+        },
 
-    removeMode: ( mode : AppMode ) => {
-        const oldModes = get().modes;
-        const newModes = oldModes & ~mode;
-        set( { modes: newModes } );
-        updateDOMClasses( newModes );
-        logModeChange( oldModes, newModes );
-    },
+        removeMode: ( mode : AppMode ) => {
+            const oldModes = get().modes;
+            const newModes = oldModes & ~mode;
+            set( { modes: newModes } );
+            updateDOMClasses( newModes );
+            logModeChange( oldModes, newModes );
+        },
 
-    toggleMode: ( mode : AppMode ) => {
-        const oldModes = get().modes;
-        const newModes = oldModes ^ mode;
-        set( { modes: newModes } );
-        updateDOMClasses( newModes );
-        logModeChange( oldModes, newModes );
-    },
+        toggleMode: ( mode : AppMode ) => {
+            const oldModes = get().modes;
+            const newModes = oldModes ^ mode;
+            set( { modes: newModes } );
+            updateDOMClasses( newModes );
+            logModeChange( oldModes, newModes );
+        },
 
-    clearModes: () => {
-        const oldModes = get().modes;
-        set( { modes: AppMode.NEUTRAL } );
-        updateDOMClasses( AppMode.NEUTRAL );
-        logModeChange( oldModes, AppMode.NEUTRAL );
-    },
+        clearModes: () => {
+            const oldModes = get().modes;
+            set( { modes: AppMode.NEUTRAL } );
+            updateDOMClasses( AppMode.NEUTRAL );
+            logModeChange( oldModes, AppMode.NEUTRAL );
+        },
 
-    // Check if a specific mode is active (can be along with others)
-    isMode: ( mode : AppMode ) => {
-        return ( get().modes & mode ) === mode;
-    },
+        // Check if a specific mode is active (can be along with others)
+        isMode: ( mode : AppMode ) => {
+            return ( get().modes & mode ) === mode;
+        },
 
-    // Check if ONLY this mode is active (no other modes)
-    isOnlyMode: ( mode : AppMode ) => {
-        return get().modes === mode;
-    },
+        // Check if ONLY this mode is active (no other modes)
+        isOnlyMode: ( mode : AppMode ) => {
+            return get().modes === mode;
+        },
 
-    // Check if ALL specified modes are active (can have additional modes)
-    isModes: ( modes : AppMode[] ) => {
-        const combinedModes = modes.reduce( ( acc, mode ) => acc | mode, 0 );
-        return ( get().modes & combinedModes ) === combinedModes;
-    },
+        // Check if ALL specified modes are active (can have additional modes)
+        isModes: ( modes : AppMode[] ) => {
+            const combinedModes = modes.reduce( ( acc, mode ) => acc | mode, 0 );
+            return ( get().modes & combinedModes ) === combinedModes;
+        },
 
-    // Check if ANY of the specified modes are active
-    hasAnyMode: ( modes : AppMode[] ) => {
-        const combinedModes = modes.reduce( ( acc, mode ) => acc | mode, 0 );
-        return ( get().modes & combinedModes ) !== 0;
-    },
+        // Check if ANY of the specified modes are active
+        hasAnyMode: ( modes : AppMode[] ) => {
+            const combinedModes = modes.reduce( ( acc, mode ) => acc | mode, 0 );
+            return ( get().modes & combinedModes ) !== 0;
+        },
     };
 } );

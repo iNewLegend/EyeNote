@@ -1,10 +1,12 @@
-import type { FastifyInstance } from "fastify";
 import { Types } from "mongoose";
 import { z } from "zod";
+
+import { NoteModel } from "@eye-note/backend/src/models/note";
+import { GroupModel } from "@eye-note/backend/src/models/group";
+import { resolvePageIdentity } from "@eye-note/backend/src/services/page-identity-service";
+
 import type { NoteBase, NoteRecord, PageIdentityPayload } from "@eye-note/definitions";
-import { NoteModel } from "../models/note";
-import { GroupModel } from "../models/group";
-import { resolvePageIdentity } from "../services/page-identity-service";
+import type { FastifyInstance } from "fastify";
 
 const vectorSchema = z.object( {
     x: z.number(),

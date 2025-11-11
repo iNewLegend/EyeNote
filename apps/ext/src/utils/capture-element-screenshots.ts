@@ -16,44 +16,44 @@ export async function captureElementScreenshots ( {
     onProgress,
 } : CaptureOptions ) : Promise<ElementScreenshot[]> {
     const html2canvas = await import( "html2canvas" );
-    
+
     const blockerElement = document.getElementById( "eye-note-interaction-blocker" );
     const originalBlockerDisplay = blockerElement?.style.display;
-    
+
     if ( blockerElement ) {
         blockerElement.style.display = "none";
     }
-    
+
     await new Promise( ( resolve ) => requestAnimationFrame( () => requestAnimationFrame( resolve ) ) );
-    
+
     const rect = element.getBoundingClientRect();
     const scrollX = window.scrollX;
     const scrollY = window.scrollY;
     const screenshots : ElementScreenshot[] = [];
-    
+
     try {
         for ( let i = 0; i < zoomLevels.length; i++ ) {
             const zoom = zoomLevels[ i ];
-            
+
             if ( i > 0 ) {
                 await new Promise( ( resolve ) => setTimeout( resolve, 50 ) );
             }
-            
+
             await new Promise( ( resolve ) => requestAnimationFrame( resolve ) );
-            
+
             try {
                 const zoomPadding = padding * zoom;
                 const elementLeft = rect.left + scrollX;
                 const elementTop = rect.top + scrollY;
                 const captureX = Math.max( 0, elementLeft - zoomPadding );
                 const captureY = Math.max( 0, elementTop - zoomPadding );
-                const captureWidth = Math.min( 
-                    document.documentElement.scrollWidth - captureX, 
-                    rect.width + zoomPadding * 2 
+                const captureWidth = Math.min(
+                    document.documentElement.scrollWidth - captureX,
+                    rect.width + zoomPadding * 2
                 );
-                const captureHeight = Math.min( 
-                    document.documentElement.scrollHeight - captureY, 
-                    rect.height + zoomPadding * 2 
+                const captureHeight = Math.min(
+                    document.documentElement.scrollHeight - captureY,
+                    rect.height + zoomPadding * 2
                 );
 
                 await new Promise( ( resolve ) => setTimeout( resolve, 100 ) );
@@ -76,7 +76,7 @@ export async function captureElementScreenshots ( {
                     logging: false,
                     ignoreElements: ( el ) => {
                         if ( !el ) return false;
-                        const isOverlay = el.classList?.contains( "notes-plugin" ) || 
+                        const isOverlay = el.classList?.contains( "notes-plugin" ) ||
                                          el.id === "eye-note-interaction-blocker";
                         return Boolean( isOverlay );
                     },
@@ -118,7 +118,7 @@ export async function captureElementScreenshots ( {
                     const ratio = Math.min( maxWidth / canvas.width, maxHeight / canvas.height );
                     const scaledWidth = Math.floor( canvas.width * ratio );
                     const scaledHeight = Math.floor( canvas.height * ratio );
-                    
+
                     finalCanvas = document.createElement( "canvas" );
                     finalCanvas.width = scaledWidth;
                     finalCanvas.height = scaledHeight;
@@ -129,14 +129,14 @@ export async function captureElementScreenshots ( {
                 }
 
                 const dataUrl = finalCanvas.toDataURL( "image/jpeg", 0.85 );
-                
+
                 screenshots.push( {
                     dataUrl,
                     width: finalCanvas.width,
                     height: finalCanvas.height,
                     zoom,
                 } );
-                
+
                 await new Promise( ( resolve ) => setTimeout( resolve, 100 ) );
             } catch ( error ) {
                 console.warn( `[EyeNote] Failed to capture screenshot at zoom ${ zoom }:`, error );
@@ -151,7 +151,7 @@ export async function captureElementScreenshots ( {
             }
         }
     }
-    
+
     return screenshots;
 }
 

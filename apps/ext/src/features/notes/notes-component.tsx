@@ -1,15 +1,26 @@
-import { useState, useEffect, useMemo, useCallback, type CSSProperties } from "react";
-import type { Note } from "../../types";
+import { useState, useEffect, useMemo, useCallback  } from "react";
+
+import { useNotesStore } from "@eye-note/ext/src/features/notes/notes-store";
+import { useNotesController } from "@eye-note/ext/src/features/notes/notes-controller";
+
+import { NoteMarker } from "@eye-note/ext/src/features/notes/components/note-marker";
+
+import { NoteImageViewer } from "@eye-note/ext/src/features/notes/components/note-image-viewer";
+
+import { useGroupsStore } from "@eye-note/ext/src/modules/groups";
+import { useHighlightStore } from "@eye-note/ext/src/stores/highlight-store";
+
+import { calculateMarkerPosition } from "@eye-note/ext/src/features/notes/notes-utils";
+
+import { useModeStore, AppMode } from "@eye-note/ext/src/stores/use-mode-store";
+
+import { NoteSheet  } from "@eye-note/ext/src/features/notes/components/note-sheet";
+
+import type { NoteGroupOption } from "@eye-note/ext/src/features/notes/components/note-sheet";
+
 import type { UpdateNotePayload } from "@eye-note/definitions";
-import { useHighlightStore } from "../../stores/highlight-store";
-import { useNotesStore } from "./notes-store";
-import { useNotesController } from "./notes-controller";
-import { useGroupsStore } from "../../modules/groups";
-import { useModeStore, AppMode } from "../../stores/use-mode-store";
-import { calculateMarkerPosition } from "./notes-utils";
-import { NoteMarker } from "./components/note-marker";
-import { NoteSheet, type NoteGroupOption } from "./components/note-sheet";
-import { NoteImageViewer } from "./components/note-image-viewer";
+import type { CSSProperties } from "react";
+import type { Note } from "@eye-note/ext/src/types";
 
 interface NoteComponentProps {
     note : Note;
@@ -290,40 +301,40 @@ export function NotesComponent ( {
 
     return (
         <div>
-            <NoteMarker note={note} style={markerStyle} onClick={handleMarkerClick} />
+            <NoteMarker note={ note } style={ markerStyle } onClick={ handleMarkerClick } />
             <NoteSheet
-                note={note}
-                container={container}
-                open={Boolean( note.isEditing )}
-                onOpenChange={( open ) => handleOpenChange( open )}
-                groupColor={groupColor}
-                groupLabel={groupLabel}
-                screenshots={screenshots}
-                isCapturingScreenshots={Boolean( note.isCapturingScreenshots )}
-                onImageClick={handleImageClick}
-                selectOptions={selectOptions}
-                selectedGroupId={selectedGroupId}
-                onSelectedGroupIdChange={setSelectedGroupId}
-                draftContent={draftContent}
-                onDraftContentChange={setDraftContent}
-                isActionLocked={isActionLocked}
-                onCancel={handleCancel}
-                onDelete={handleDelete}
-                onSave={handleSave}
-                isDeleting={isDeleting}
-                isSaving={isSaving}
-                isExistingPending={isExistingPending}
+                note={ note }
+                container={ container }
+                open={ Boolean( note.isEditing ) }
+                onOpenChange={ ( open ) => handleOpenChange( open ) }
+                groupColor={ groupColor }
+                groupLabel={ groupLabel }
+                screenshots={ screenshots }
+                isCapturingScreenshots={ Boolean( note.isCapturingScreenshots ) }
+                onImageClick={ handleImageClick }
+                selectOptions={ selectOptions }
+                selectedGroupId={ selectedGroupId }
+                onSelectedGroupIdChange={ setSelectedGroupId }
+                draftContent={ draftContent }
+                onDraftContentChange={ setDraftContent }
+                isActionLocked={ isActionLocked }
+                onCancel={ handleCancel }
+                onDelete={ handleDelete }
+                onSave={ handleSave }
+                isDeleting={ isDeleting }
+                isSaving={ isSaving }
+                isExistingPending={ isExistingPending }
             />
             <NoteImageViewer
-                open={selectedScreenshotIndex !== null}
-                container={container}
-                screenshot={selectedScreenshot}
-                hasMultipleScreenshots={hasMultipleScreenshots}
-                currentIndex={selectedScreenshotIndex}
-                totalScreenshots={screenshots.length}
-                onClose={handleCloseImageViewer}
-                onPrevious={handlePreviousImage}
-                onNext={handleNextImage}
+                open={ selectedScreenshotIndex !== null }
+                container={ container }
+                screenshot={ selectedScreenshot }
+                hasMultipleScreenshots={ hasMultipleScreenshots }
+                currentIndex={ selectedScreenshotIndex }
+                totalScreenshots={ screenshots.length }
+                onClose={ handleCloseImageViewer }
+                onPrevious={ handlePreviousImage }
+                onNext={ handleNextImage }
             />
         </div>
     );

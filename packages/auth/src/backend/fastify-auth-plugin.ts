@@ -1,6 +1,8 @@
 import fastifyPlugin from "fastify-plugin";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+
 import { OAuth2Client } from "google-auth-library";
+
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
 export interface AuthenticatedUser {
     id : string;

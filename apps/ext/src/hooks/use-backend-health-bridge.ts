@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useBackendHealthStore } from "@eye-note/backend-health";
-import { useModeStore, AppMode } from "../stores/use-mode-store";
+
+import { useModeStore, AppMode } from "@eye-note/ext/src/stores/use-mode-store";
 
 type BackendHealthOptions = {
     onUpdate ?: ( healthy : boolean ) => void;

@@ -1,7 +1,10 @@
 import fastifyPlugin from "fastify-plugin";
-import type { FastifyInstance } from "fastify";
+
 import mongoose from "mongoose";
-import { appConfig } from "../config";
+
+import { appConfig } from "@eye-note/backend/src/config";
+
+import type { FastifyInstance } from "fastify";
 
 declare module "fastify" {
     interface FastifyInstance {

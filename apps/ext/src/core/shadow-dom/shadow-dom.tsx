@@ -1,37 +1,51 @@
 import React, { useEffect, useCallback, useState, useRef, useMemo } from "react";
-import { useNotesStore } from "../../features/notes/notes-store";
-import { useNotesController } from "../../features/notes/notes-controller";
-import { NotesComponent } from "../../features/notes/notes-component";
-import { useInspectorMode } from "../../hooks/use-inspector-mode";
-import { isElementVisible } from "../../utils/is-element-visible";
-import { useDomMutations } from "../../hooks/use-dom-mutations";
+
 import { EVENT_OPEN_GROUP_MANAGER, EVENT_OPEN_QUICK_MENU, EVENT_OPEN_SETTINGS_DIALOG } from "@eye-note/definitions";
-import { useMarkerVirtualization } from "../../hooks/use-marker-virtualization";
-import { useModeStore, AppMode } from "../../stores/use-mode-store";
-import { InteractionBlocker } from "../../components/interaction-blocker";
+
 import { useAuthStore, useAuthStatusEffects } from "@eye-note/auth/extension";
-import { useUrlListener } from "../../hooks/use-url-listener";
-import { useBackendHealthBridge } from "../../hooks/use-backend-health-bridge";
-import { useNotesLifecycle } from "../../features/notes/use-notes-lifecycle";
-import { useElementSelectionListener } from "../../hooks/use-element-selection-listener";
-import { usePageIdentity } from "../../hooks/use-page-identity";
-import {
-    useGroupsBootstrap,
-    useGroupsStore,
-    GroupManagerPanel,
-} from "../../modules/groups";
-import { useExtensionSettings, type ExtensionSettings } from "../../hooks/use-extension-settings";
-import { QuickMenuDialog } from "../../components/quick-menu-dialog";
+
 import {
     Label,
     SettingsDialog,
     ShadowToastProvider,
     Switch,
     Toaster,
-    useShadowToast,
-    type SettingsDialogItem,
+    useShadowToast
+
 } from "@eye-note/ui";
-import { INSPECTOR_BLOCKED_EVENT } from "../../hooks/use-inspector-mode";
+
+import { useMarkerVirtualization } from "@eye-note/ext/src/hooks/use-marker-virtualization";
+import { useModeStore, AppMode } from "@eye-note/ext/src/stores/use-mode-store";
+import { InteractionBlocker } from "@eye-note/ext/src/components/interaction-blocker";
+
+import { useUrlListener } from "@eye-note/ext/src/hooks/use-url-listener";
+import { useBackendHealthBridge } from "@eye-note/ext/src/hooks/use-backend-health-bridge";
+import { useNotesLifecycle } from "@eye-note/ext/src/features/notes/use-notes-lifecycle";
+import { useElementSelectionListener } from "@eye-note/ext/src/hooks/use-element-selection-listener";
+import { usePageIdentity } from "@eye-note/ext/src/hooks/use-page-identity";
+import {
+    useGroupsBootstrap,
+    useGroupsStore,
+    GroupManagerPanel,
+} from "@eye-note/ext/src/modules/groups";
+
+import { QuickMenuDialog } from "@eye-note/ext/src/components/quick-menu-dialog";
+
+import { INSPECTOR_BLOCKED_EVENT , useInspectorMode } from "@eye-note/ext/src/hooks/use-inspector-mode";
+
+import { useNotesStore } from "@eye-note/ext/src/features/notes/notes-store";
+
+import { NotesComponent } from "@eye-note/ext/src/features/notes/notes-component";
+
+import { useDomMutations } from "@eye-note/ext/src/hooks/use-dom-mutations";
+import { isElementVisible } from "@eye-note/ext/src/utils/is-element-visible";
+
+import { useExtensionSettings  } from "@eye-note/ext/src/hooks/use-extension-settings";
+
+import { useNotesController } from "@eye-note/ext/src/features/notes/notes-controller";
+
+import type { SettingsDialogItem } from "@eye-note/ui";
+import type { ExtensionSettings } from "@eye-note/ext/src/hooks/use-extension-settings";
 
 type SettingsSectionId = "general" | "groups";
 const SHADOW_HOST_ID = "eye-note-shadow-dom";
@@ -138,8 +152,8 @@ const ShadowDomContent : React.FC = () => {
                     </Label>
                     <Switch
                         id="overlay-enable-notes"
-                        checked={settings.enabled}
-                        onCheckedChange={handleSettingChange( "enabled" )}
+                        checked={ settings.enabled }
+                        onCheckedChange={ handleSettingChange( "enabled" ) }
                     />
                 </div>
                 <div className="flex items-center justify-between space-x-4">
@@ -151,8 +165,8 @@ const ShadowDomContent : React.FC = () => {
                     </Label>
                     <Switch
                         id="overlay-notification-sound"
-                        checked={settings.notificationSound}
-                        onCheckedChange={handleSettingChange( "notificationSound" )}
+                        checked={ settings.notificationSound }
+                        onCheckedChange={ handleSettingChange( "notificationSound" ) }
                     />
                 </div>
                 <div className="flex items-center justify-between space-x-4">
@@ -164,8 +178,8 @@ const ShadowDomContent : React.FC = () => {
                     </Label>
                     <Switch
                         id="overlay-unread-badge"
-                        checked={settings.showUnreadBadge}
-                        onCheckedChange={handleSettingChange( "showUnreadBadge" )}
+                        checked={ settings.showUnreadBadge }
+                        onCheckedChange={ handleSettingChange( "showUnreadBadge" ) }
                     />
                 </div>
             </div>
@@ -181,7 +195,7 @@ const ShadowDomContent : React.FC = () => {
     const groupsSection = useMemo(
         () =>
             canManageGroups ? (
-                <GroupManagerPanel onClose={() => setIsSettingsDialogOpen( false )} />
+                <GroupManagerPanel onClose={ () => setIsSettingsDialogOpen( false ) } />
             ) : (
                 <div className="space-y-2 text-sm text-muted-foreground">
                     <p>Sign in and connect to manage groups.</p>
@@ -438,16 +452,16 @@ const ShadowDomContent : React.FC = () => {
         <>
             <Toaster />
             <div
-                ref={notesContainerRef}
+                ref={ notesContainerRef }
                 className="notes-plugin"
-                data-inspector-active={isActive ? "1" : "0"}
+                data-inspector-active={ isActive ? "1" : "0" }
             >
-                <InteractionBlocker isVisible={isActive} />
+                <InteractionBlocker isVisible={ isActive } />
                 <QuickMenuDialog
-                    open={isQuickMenuOpen}
-                    onOpenChange={setIsQuickMenuOpen}
-                    dialogContainer={dialogContainer}
-                    items={quickMenuItems}
+                    open={ isQuickMenuOpen }
+                    onOpenChange={ setIsQuickMenuOpen }
+                    dialogContainer={ dialogContainer }
+                    items={ quickMenuItems }
                     onSelect={ ( item ) => {
                         setIsQuickMenuOpen( false );
                         if ( item === "groups" ) {
@@ -459,21 +473,21 @@ const ShadowDomContent : React.FC = () => {
                         }
                         setActiveSettingsSection( "general" );
                         setIsSettingsDialogOpen( true );
-                    }}
+                    } }
                 />
                 <SettingsDialog
-                    open={isSettingsDialogOpen}
-                    onOpenChange={setIsSettingsDialogOpen}
-                    dialogContainer={dialogContainer}
+                    open={ isSettingsDialogOpen }
+                    onOpenChange={ setIsSettingsDialogOpen }
+                    dialogContainer={ dialogContainer }
                     title="Extension Managment"
                     description="These preferences are stored locally in chrome.storage and sync across the popup and overlay."
-                    selectedItemId={activeSettingsSection}
-                    onSelectedItemChange={( id ) =>
+                    selectedItemId={ activeSettingsSection }
+                    onSelectedItemChange={ ( id ) =>
                         setActiveSettingsSection( id as SettingsSectionId )
                     }
-                    items={settingsItems}
+                    items={ settingsItems }
                 />
-                {notes
+                { notes
                     .filter( ( note ) => {
                         const el = note.highlightedElement;
                         if ( !el ) return false;
@@ -481,14 +495,14 @@ const ShadowDomContent : React.FC = () => {
                         return visibleNoteIds ? visibleNoteIds.has( note.id ) : isElementVisible( el );
                     } )
                     .map( ( note ) => (
-                    <NotesComponent
-                        key={note.id}
-                        note={note}
-                        container={notesContainerRef.current!.parentElement}
-                        setSelectedElement={setSelectedElement}
-                        onNoteDismissed={handleNoteDismissed}
-                    />
-                ) )}
+                        <NotesComponent
+                            key={ note.id }
+                            note={ note }
+                            container={ notesContainerRef.current!.parentElement }
+                            setSelectedElement={ setSelectedElement }
+                            onNoteDismissed={ handleNoteDismissed }
+                        />
+                    ) ) }
             </div>
         </>
     );
@@ -508,7 +522,7 @@ export const ShadowDOM : React.FC = () => {
     }, [] );
 
     return (
-        <ShadowToastProvider container={toastContainer}>
+        <ShadowToastProvider container={ toastContainer }>
             <ShadowDomContent />
         </ShadowToastProvider>
     );

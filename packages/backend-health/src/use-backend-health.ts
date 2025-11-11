@@ -1,6 +1,10 @@
 import { useEffect, useRef } from "react";
-import { checkBackendHealth, type BackendHealthFetcher } from "./check-backend-health";
-import { useBackendHealthStore } from "./store";
+
+import { useBackendHealthStore } from "@eye-note/backend-health/src/store";
+
+import { checkBackendHealth  } from "@eye-note/backend-health/src/check-backend-health";
+
+import type { BackendHealthFetcher } from "@eye-note/backend-health/src/check-backend-health";
 
 type UseBackendHealthOptions = {
     intervalMs ?: number;

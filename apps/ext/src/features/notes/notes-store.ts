@@ -1,10 +1,14 @@
-import type { ViewportPosition } from "@eye-note/definitions";
 import { create } from "zustand";
+
+import { getPageAnalyzer } from "@eye-note/ext/src/lib/page-analyzer";
+
+import { createDraftFromElement, rehydrateNotePosition } from "@eye-note/ext/src/features/notes/notes-utils";
+
+import { captureElementScreenshots } from "@eye-note/ext/src/utils/capture-element-screenshots";
+
+import type { ViewportPosition } from "@eye-note/definitions";
 import type { StoreApi } from "zustand";
-import type { Note } from "../../types";
-import { getPageAnalyzer } from "../../lib/page-analyzer";
-import { createDraftFromElement, rehydrateNotePosition } from "./notes-utils";
-import { captureElementScreenshots } from "../../utils/capture-element-screenshots";
+import type { Note } from "@eye-note/ext/src/types";
 
 type NotesState = {
     notes : Note[];

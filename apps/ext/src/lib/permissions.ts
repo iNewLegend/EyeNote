@@ -1,4 +1,6 @@
-import { GroupPermission, type GroupWithRoles } from "@eye-note/definitions";
+import { GroupPermission  } from "@eye-note/definitions";
+
+import type { GroupWithRoles } from "@eye-note/definitions";
 
 export interface UserPermissions {
     permissions : GroupPermission[];
@@ -11,7 +13,7 @@ export function getUserPermissions (
     userId : string
 ) : UserPermissions {
     const isOwner = group.ownerId === userId;
-    
+
     if ( isOwner ) {
         return {
             permissions: Object.values( GroupPermission ),
@@ -22,9 +24,9 @@ export function getUserPermissions (
 
     const userMemberRoles = group.memberRoles.filter( mr => mr.userId === userId );
     const roleIds = userMemberRoles.map( mr => mr.roleId );
-    
+
     const userRoles = group.roles.filter( role => roleIds.includes( role.id ) );
-    
+
     const permissions = new Set<GroupPermission>();
     userRoles.forEach( role => {
         role.permissions.forEach( permission => {
@@ -54,7 +56,7 @@ export function canManageRole (
     targetRoleId : string
 ) : boolean {
     const managerPermissions = getUserPermissions( group, managerUserId );
-    
+
     if ( !managerPermissions.permissions.includes( GroupPermission.MANAGE_ROLES ) ) {
         return false;
     }
@@ -64,7 +66,7 @@ export function canManageRole (
         return false;
     }
 
-    const managerRoles = group.roles.filter( role => 
+    const managerRoles = group.roles.filter( role =>
         managerPermissions.roleIds.includes( role.id )
     );
 

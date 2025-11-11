@@ -1,4 +1,4 @@
-import { cn } from "../lib/utils";
+import { cn } from "@eye-note/ui/src/lib/utils";
 
 type DowntimeNoticeProps = {
     title ?: string;
@@ -15,12 +15,12 @@ export function DowntimeNotice ( {
     className,
 } : DowntimeNoticeProps ) {
     return (
-        <div className={cn( "space-y-3", className )}>
+        <div className={ cn( "space-y-3", className ) }>
             <h2 className="text-lg font-semibold text-destructive">
-                {title}
+                { title }
             </h2>
             <p className="text-sm text-muted-foreground">
-                {description}
+                { description }
             </p>
         </div>
     );

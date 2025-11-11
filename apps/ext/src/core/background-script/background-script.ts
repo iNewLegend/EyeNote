@@ -1,5 +1,6 @@
 import { getAuthStatus, signInWithGoogle, signOutUser } from "@eye-note/auth/extension";
-import { pingHealth } from "../../lib/api-client";
+
+import { pingHealth } from "@eye-note/ext/src/lib/api-client";
 
 // Listen for extension installation or update
 chrome.runtime.onInstalled.addListener( ( details ) => {

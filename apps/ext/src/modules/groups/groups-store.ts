@@ -1,15 +1,5 @@
 import { create } from "zustand";
-import type { 
-    CreateGroupPayload, 
-    GroupRecord, 
-    UpdateGroupPayload,
-    GroupWithRoles,
-    GroupRoleRecord,
-    CreateGroupRolePayload,
-    UpdateGroupRolePayload,
-    AssignRolePayload,
-    RemoveRolePayload,
-} from "@eye-note/definitions";
+
 import {
     createGroup as createGroupApi,
     joinGroup as joinGroupApi,
@@ -21,12 +11,24 @@ import {
     updateGroupRole as updateGroupRoleApi,
     assignRole as assignRoleApi,
     removeRole as removeRoleApi,
-} from "./groups-api";
+} from "@eye-note/ext/src/modules/groups/groups-api";
 import {
     getStoredActiveGroupIds,
     setStoredActiveGroupIds,
     subscribeToActiveGroupIds,
-} from "./groups-storage";
+} from "@eye-note/ext/src/modules/groups/groups-storage";
+
+import type {
+    CreateGroupPayload,
+    GroupRecord,
+    UpdateGroupPayload,
+    GroupWithRoles,
+    GroupRoleRecord,
+    CreateGroupRolePayload,
+    UpdateGroupRolePayload,
+    AssignRolePayload,
+    RemoveRolePayload,
+} from "@eye-note/definitions";
 
 type GroupsState = {
     groups : GroupRecord[];
@@ -284,8 +286,8 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
                 ...state,
                 selectedGroupWithRoles: {
                     ...state.selectedGroupWithRoles,
-                    roles: state.selectedGroupWithRoles.roles.map( ( role ) => 
-                        role.id === updated.id ? updated : role 
+                    roles: state.selectedGroupWithRoles.roles.map( ( role ) =>
+                        role.id === updated.id ? updated : role
                     ),
                 },
             };

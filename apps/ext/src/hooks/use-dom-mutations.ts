@@ -1,13 +1,16 @@
 import { useEffect, useRef } from "react";
-import { getPageAnalyzer } from "../lib/page-analyzer";
+
 import {
     MUTATION_ATTRIBUTE_FILTER,
     MUTATION_DEBOUNCE_MS_DEFAULT,
     MUTATION_MAX_ROOT_SAMPLES_DEFAULT,
 } from "@eye-note/definitions";
-import { useNotesStore } from "../features/notes/notes-store";
-import { getElementPath } from "../utils/element-path";
-import { isElementInsidePlugin } from "../utils/is-element-visible";
+
+import { useNotesStore } from "@eye-note/ext/src/features/notes/notes-store";
+import { getElementPath } from "@eye-note/ext/src/utils/element-path";
+import { isElementInsidePlugin } from "@eye-note/ext/src/utils/is-element-visible";
+
+import { getPageAnalyzer } from "@eye-note/ext/src/lib/page-analyzer";
 
 type DomMutationsOptions = {
     debounceMs ?: number;
@@ -71,7 +74,7 @@ export function useDomMutations ( options : DomMutationsOptions = {} ) {
             if ( !el ) return;
             if ( isElementInsidePlugin( el ) ) return; // ignore our own DOM
             const tag = el.tagName?.toLowerCase?.();
-            const ignoredTags = new Set([ "html", "body", "head", "link", "style", "meta", "script", "noscript" ]);
+            const ignoredTags = new Set( [ "html", "body", "head", "link", "style", "meta", "script", "noscript" ] );
             if ( tag && ignoredTags.has( tag ) ) {
                 return;
             }
@@ -216,6 +219,5 @@ export function useDomMutations ( options : DomMutationsOptions = {} ) {
             observerRef.current = null;
             pending.current.clear();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ debounceMs, maxRootSamples ] );
 }

@@ -1,3 +1,5 @@
+import { apiRequest } from "@eye-note/ext/src/lib/api-client";
+
 import type {
     CreateGroupPayload,
     GroupRecord,
@@ -11,7 +13,6 @@ import type {
     AssignRolePayload,
     RemoveRolePayload,
 } from "@eye-note/definitions";
-import { apiRequest } from "../../lib/api-client";
 
 export async function listGroups () : Promise<GroupRecord[]> {
     const response = await apiRequest<ListGroupsResponse>( "/api/groups" );

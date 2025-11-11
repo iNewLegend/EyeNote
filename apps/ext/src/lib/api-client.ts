@@ -1,5 +1,6 @@
-import type { HealthResponse } from "@eye-note/definitions";
 import { getStoredAuth } from "@eye-note/auth/extension";
+
+import type { HealthResponse } from "@eye-note/definitions";
 
 const DEFAULT_BASE_URL = "http://localhost:3001";
 

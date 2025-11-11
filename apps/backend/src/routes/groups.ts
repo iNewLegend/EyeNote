@@ -1,6 +1,19 @@
 import { randomBytes } from "node:crypto";
+
 import { Types } from "mongoose";
 import { z } from "zod";
+
+import { RoleService } from "@eye-note/backend/src/services/role-service";
+
+import { GroupModel  } from "@eye-note/backend/src/models/group";
+
+import { GroupRoleModel  } from "@eye-note/backend/src/models/group-role";
+
+import type { GroupDocument } from "@eye-note/backend/src/models/group";
+import type { GroupMemberRoleDocument } from "@eye-note/backend/src/models/group-member-role";
+import type { GroupRoleDocument } from "@eye-note/backend/src/models/group-role";
+
+import type { FastifyInstance } from "fastify";
 import type {
     CreateGroupPayload,
     GroupRecord,
@@ -12,11 +25,6 @@ import type {
     AssignRolePayload,
     RemoveRolePayload,
 } from "@eye-note/definitions";
-import type { FastifyInstance } from "fastify";
-import { GroupModel, type GroupDocument } from "../models/group";
-import { GroupRoleModel, type GroupRoleDocument } from "../models/group-role";
-import { GroupMemberRoleModel, type GroupMemberRoleDocument } from "../models/group-member-role";
-import { RoleService } from "../services/role-service";
 
 const DEFAULT_GROUP_COLOR = "#6366f1";
 

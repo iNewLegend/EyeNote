@@ -55,10 +55,10 @@ export const QuickMenuDialog : React.FC<QuickMenuDialogProps> = ( {
     onSelect,
     items = DEFAULT_MENU_ITEMS,
 } ) => (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={ open } onOpenChange={ onOpenChange }>
         <DialogContent
-            container={dialogContainer ?? undefined}
-            className={dialogClassName}
+            container={ dialogContainer ?? undefined }
+            className={ dialogClassName }
         >
             <DialogHeader>
                 <DialogTitle>Quick Launch</DialogTitle>
@@ -67,31 +67,31 @@ export const QuickMenuDialog : React.FC<QuickMenuDialogProps> = ( {
                 </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-2">
-                {items.map( ( item ) => (
+                { items.map( ( item ) => (
                     <Button
-                        key={item.id}
+                        key={ item.id }
                         type="button"
                         variant="outline"
-                        className={cn(
+                        className={ cn(
                             "flex w-full items-start justify-between gap-3 rounded-md border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-muted",
                             item.disabled && "pointer-events-none opacity-60"
-                        )}
-                        onClick={() => onSelect( item.id )}
-                        disabled={item.disabled}
+                        ) }
+                        onClick={ () => onSelect( item.id ) }
+                        disabled={ item.disabled }
                     >
                         <span>
-                            <span className="block text-sm font-medium">{item.label}</span>
+                            <span className="block text-sm font-medium">{ item.label }</span>
                             <span className="mt-1 block text-xs text-muted-foreground">
-                                {item.description}
+                                { item.description }
                             </span>
                         </span>
-                        {item.shortcut ? (
+                        { item.shortcut ? (
                             <kbd className="rounded-md border bg-secondary px-2 py-1 text-[10px] font-mono">
-                                {item.shortcut}
+                                { item.shortcut }
                             </kbd>
-                        ) : null}
+                        ) : null }
                     </Button>
-                ) )}
+                ) ) }
             </div>
             <DialogFooter className="justify-end">
                 <DialogClose asChild>

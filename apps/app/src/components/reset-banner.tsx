@@ -35,8 +35,8 @@ export function ResetBanner ( {
             <Button
                 type="button"
                 variant="outline"
-                disabled={disabled}
-                onClick={handleClick}
+                disabled={ disabled }
+                onClick={ handleClick }
             >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Reset

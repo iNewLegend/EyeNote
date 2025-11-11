@@ -18,10 +18,10 @@ export const MARKER_ELEMENT_ID_DATA_ATTR = "data-eye-note-element-id";
 
 // Anchor hints
 export const ANCHOR_HINTS_DATA_ATTR_WHITELIST = [
-  "data-testid",
-  "data-test",
-  "data-qa",
-  "data-cy",
+    "data-testid",
+    "data-test",
+    "data-qa",
+    "data-cy",
 ] as const;
 
 // Custom event names

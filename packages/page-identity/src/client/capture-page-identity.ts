@@ -1,7 +1,9 @@
-import { DEFAULT_NODE_SAMPLE_LIMIT, DEFAULT_TOKEN_LIMIT } from "../shared/constants";
-import { simHash } from "../shared/hash";
-import type { CapturePageIdentityOptions, PageIdentity } from "../shared/types";
-import { normalizeUrl } from "../shared/url";
+import { DEFAULT_NODE_SAMPLE_LIMIT, DEFAULT_TOKEN_LIMIT } from "@eye-note/page-identity/src/shared/constants";
+import { simHash } from "@eye-note/page-identity/src/shared/hash";
+
+import { normalizeUrl } from "@eye-note/page-identity/src/shared/url";
+
+import type { CapturePageIdentityOptions, PageIdentity } from "@eye-note/page-identity/src/shared/types";
 
 export async function capturePageIdentity (
     options : CapturePageIdentityOptions = {}

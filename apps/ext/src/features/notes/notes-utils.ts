@@ -1,3 +1,11 @@
+import { ANCHOR_HINTS_DATA_ATTR_WHITELIST } from "@eye-note/definitions";
+
+import { isElementVisible } from "@eye-note/ext/src/utils/is-element-visible";
+
+import { getElementPath } from "@eye-note/ext/src/utils/element-path";
+
+import { getPageAnalyzer } from "@eye-note/ext/src/lib/page-analyzer";
+
 import type {
     CreateNotePayload,
     NoteRecord,
@@ -7,11 +15,7 @@ import type {
     ViewportPosition,
     Vector2D,
 } from "@eye-note/definitions";
-import type { Note } from "../../types";
-import { getPageAnalyzer } from "../../lib/page-analyzer";
-import { isElementVisible } from "../../utils/is-element-visible";
-import { ANCHOR_HINTS_DATA_ATTR_WHITELIST } from "@eye-note/definitions";
-import { getElementPath } from "../../utils/element-path";
+import type { Note } from "@eye-note/ext/src/types";
 
 const draftIdPrefix = "temp";
 

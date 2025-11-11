@@ -1,6 +1,6 @@
-import type { AuthSession, AuthUser } from "../shared";
+import { clearAuthSession, storeAuthSession } from "@eye-note/auth/src/app/auth-storage";
 
-import { clearAuthSession, storeAuthSession } from "./auth-storage";
+import type { AuthSession, AuthUser } from "@eye-note/auth/src/shared";
 
 const GOOGLE_AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_USERINFO_ENDPOINT = "https://www.googleapis.com/oauth2/v3/userinfo";

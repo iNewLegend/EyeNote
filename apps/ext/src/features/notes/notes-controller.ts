@@ -1,19 +1,22 @@
 import { useCallback, useEffect, useRef } from "react";
+
+import {
+    fetchNotesForPage,
+    persistDraftNote,
+    persistExistingNote,
+    deleteNoteRecord,
+} from "@eye-note/ext/src/features/notes/notes-api";
+
+import { useNotesStore } from "@eye-note/ext/src/features/notes/notes-store";
+
 import type {
     ListNotesQuery,
     PageIdentityPayload,
     PageIdentityResolution,
     UpdateNotePayload,
 } from "@eye-note/definitions";
-import type { Note } from "../../types";
-import { useNotesStore } from "./notes-store";
-import type { NotesStore } from "./notes-store";
-import {
-    fetchNotesForPage,
-    persistDraftNote,
-    persistExistingNote,
-    deleteNoteRecord,
-} from "./notes-api";
+import type { Note } from "@eye-note/ext/src/types";
+import type { NotesStore } from "@eye-note/ext/src/features/notes/notes-store";
 
 type NotesController = {
     loadNotes : ( params ?: ListNotesQuery ) => Promise<void>;

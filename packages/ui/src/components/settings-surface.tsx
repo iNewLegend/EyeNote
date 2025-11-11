@@ -2,8 +2,9 @@
 
 import * as React from "react";
 
-import { cn } from "../lib/utils";
-import type { SettingsDialogItem } from "./settings-dialog";
+import { cn } from "@eye-note/ui/src/lib/utils";
+
+import type { SettingsDialogItem } from "@eye-note/ui/src/components/settings-dialog";
 
 type SettingsSurfaceProps = {
     title : string;
@@ -28,7 +29,7 @@ export function SettingsSurface ( {
     headerSlot,
     contentClassName,
 } : SettingsSurfaceProps ) {
-    const [ internalSelection, setInternalSelection ] = React.useState( () => items[0]?.id );
+    const [ internalSelection, setInternalSelection ] = React.useState( () => items[ 0 ]?.id );
     const isControlled = selectedItemId !== undefined;
     const activeItemId = isControlled ? selectedItemId : internalSelection;
 
@@ -40,7 +41,7 @@ export function SettingsSurface ( {
         if ( hasActive ) {
             return;
         }
-        const fallbackId = items[0]?.id;
+        const fallbackId = items[ 0 ]?.id;
         if ( !fallbackId ) {
             return;
         }
@@ -63,45 +64,45 @@ export function SettingsSurface ( {
         [ isControlled, onSelectedItemChange ]
     );
 
-    const activeItem = items.find( ( item ) => item.id === activeItemId ) ?? items[0];
+    const activeItem = items.find( ( item ) => item.id === activeItemId ) ?? items[ 0 ];
 
     return (
         <div
-            className={cn(
+            className={ cn(
                 "flex flex-col gap-6 rounded-xl border border-border/60 bg-card/60 p-6 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/70",
                 className
-            )}
+            ) }
         >
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-1">
-                    <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
-                    {description ? (
-                        <p className="text-sm text-muted-foreground">{description}</p>
-                    ) : null}
+                    <h2 className="text-2xl font-semibold tracking-tight">{ title }</h2>
+                    { description ? (
+                        <p className="text-sm text-muted-foreground">{ description }</p>
+                    ) : null }
                 </div>
-                {headerSlot}
+                { headerSlot }
             </div>
 
-            {items.length === 0 ? (
+            { items.length === 0 ? (
                 <div className="flex h-40 items-center justify-center rounded-lg border border-dashed border-border/70 text-sm text-muted-foreground">
                     No settings available yet.
                 </div>
             ) : (
                 <div
-                    className={cn(
+                    className={ cn(
                         "flex flex-1 flex-col gap-6 md:flex-row md:items-start md:gap-8",
                         contentClassName
-                    )}
+                    ) }
                 >
                     <nav className="flex w-full shrink-0 flex-row gap-2 overflow-x-auto md:w-56 md:flex-col md:space-y-1 md:overflow-visible md:pr-2">
-                        {items.map( ( item ) => {
+                        { items.map( ( item ) => {
                             const isActive = item.id === activeItem?.id;
                             return (
                                 <button
-                                    key={item.id}
+                                    key={ item.id }
                                     type="button"
-                                    onClick={() => handleSelect( item.id, item.disabled )}
-                                    className={cn(
+                                    onClick={ () => handleSelect( item.id, item.disabled ) }
+                                    className={ cn(
                                         "flex w-full items-center justify-between rounded-lg border border-transparent px-3 py-2 text-left text-sm transition-colors",
                                         isActive
                                             ? "bg-secondary text-secondary-foreground"
@@ -109,42 +110,42 @@ export function SettingsSurface ( {
                                         item.disabled
                                             ? "cursor-not-allowed opacity-60"
                                             : "cursor-pointer"
-                                    )}
-                                    disabled={item.disabled}
+                                    ) }
+                                    disabled={ item.disabled }
                                 >
-                                    <span className="font-medium">{item.label}</span>
-                                    {item.disabled ? (
+                                    <span className="font-medium">{ item.label }</span>
+                                    { item.disabled ? (
                                         <span className="text-xs font-normal text-muted-foreground">
                                             Coming soon
                                         </span>
-                                    ) : null}
+                                    ) : null }
                                 </button>
                             );
-                        } )}
+                        } ) }
                     </nav>
 
                     <section className="flex-1 overflow-hidden rounded-lg border border-border/60 bg-background/80 p-6">
-                        {activeItem ? (
+                        { activeItem ? (
                             <div className="space-y-4">
                                 <div>
-                                    <h3 className="text-lg font-semibold">{activeItem.label}</h3>
-                                    {activeItem.description ? (
+                                    <h3 className="text-lg font-semibold">{ activeItem.label }</h3>
+                                    { activeItem.description ? (
                                         <p className="text-sm text-muted-foreground">
-                                            {activeItem.description}
+                                            { activeItem.description }
                                         </p>
-                                    ) : null}
+                                    ) : null }
                                 </div>
-                                <div className="space-y-4">{activeItem.content}</div>
+                                <div className="space-y-4">{ activeItem.content }</div>
                             </div>
-                        ) : null}
+                        ) : null }
                     </section>
                 </div>
-            )}
-            {footer === null ? null : (
+            ) }
+            { footer === null ? null : (
                 <div className="flex justify-end">
-                    {footer ?? null}
+                    { footer ?? null }
                 </div>
-            )}
+            ) }
         </div>
     );
 }

@@ -28,4 +28,4 @@ export function useEventListener<K extends keyof EventMap> (
             element.removeEventListener( eventName, handler as EventListener, options );
         };
     }, [ eventName, element, handler, options ] );
-} 
+}

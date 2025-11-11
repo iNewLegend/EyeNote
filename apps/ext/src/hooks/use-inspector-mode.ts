@@ -1,10 +1,15 @@
 import { useEffect, useCallback } from "react";
-import { useHighlightStore } from "../stores/highlight-store";
-import { useModeStore, AppMode } from "../stores/use-mode-store";
-import { usePreserveScroll } from "./use-preserve-scroll";
-import { useEventListener } from "./use-event-listener";
-import { useElementHighlight } from "./use-element-highlight";
+
 import { useAuthStore } from "@eye-note/auth/extension";
+
+import { useEventListener } from "@eye-note/ext/src/hooks/use-event-listener";
+
+import { useElementHighlight } from "@eye-note/ext/src/hooks/use-element-highlight";
+
+import { usePreserveScroll } from "@eye-note/ext/src/hooks/use-preserve-scroll";
+
+import { useHighlightStore } from "@eye-note/ext/src/stores/highlight-store";
+import { useModeStore, AppMode } from "@eye-note/ext/src/stores/use-mode-store";
 
 export const INSPECTOR_BLOCKED_EVENT = "eye-note-inspector-blocked";
 type InspectorBlockedReason = "backend-offline" | "unauthenticated";

@@ -27,19 +27,19 @@ export function CollaborationPreviewSection ( {
                 Coming soon
             </Badge>
             <div className="space-y-4 text-sm text-muted-foreground">
-                {!isAuthenticated ? (
+                { !isAuthenticated ? (
                     <SignInPrompt
-                        onGetStarted={onSignIn}
-                        isSigningIn={isLoading}
+                        onGetStarted={ onSignIn }
+                        isSigningIn={ isLoading }
                         getStartedLabel="Sign in with Google"
                         signingInLabel="Signing in..."
                         title="Sign in to preview collaboration tools."
                         description="Once you connect your account, you'll unlock the upcoming app experience for managing groups and invites."
                         variant="callout"
-                        showIcon={false}
-                        buttonProps={{ size: "sm" }}
+                        showIcon={ false }
+                        buttonProps={ { size: "sm" } }
                     />
-                ) : null}
+                ) : null }
                 <div className="space-y-2 text-foreground">
                     <div className="flex items-center gap-2 text-base font-semibold">
                         <Users className="h-4 w-4" />
@@ -51,26 +51,26 @@ export function CollaborationPreviewSection ( {
                     </p>
                 </div>
                 <ul className="space-y-3">
-                    {highlights.map( ( item ) => (
-                        <li key={item} className="flex items-start gap-2">
+                    { highlights.map( ( item ) => (
+                        <li key={ item } className="flex items-start gap-2">
                             <span className="mt-[6px] h-1.5 w-1.5 rounded-full bg-primary" />
-                            <span>{item}</span>
+                            <span>{ item }</span>
                         </li>
-                    ) )}
+                    ) ) }
                 </ul>
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                     <Button
                         type="button"
-                        disabled={!isAuthenticated}
-                        onClick={onNotify}
+                        disabled={ !isAuthenticated }
+                        onClick={ onNotify }
                     >
                         Notify me
                     </Button>
                     <Button
                         variant="outline"
                         type="button"
-                        disabled={!isAuthenticated}
-                        onClick={onLearnMore}
+                        disabled={ !isAuthenticated }
+                        onClick={ onLearnMore }
                     >
                         Learn more
                     </Button>

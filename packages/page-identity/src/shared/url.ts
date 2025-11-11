@@ -1,4 +1,4 @@
-import { DEFAULT_QUERY_PARAM_IGNORES } from "./constants";
+import { DEFAULT_QUERY_PARAM_IGNORES } from "@eye-note/page-identity/src/shared/constants";
 
 export type NormalizeUrlOptions = {
     ignoreQueryParams?: string[];
@@ -17,6 +17,7 @@ export function normalizeUrl ( rawUrl : string, options : NormalizeUrlOptions = 
 
     try {
         url = new URL( rawUrl, baseUrl );
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch ( error ) {
         return rawUrl;
     }

@@ -2,7 +2,6 @@
 
 import * as React from "react";
 
-import { cn } from "../lib/utils";
 import {
     Dialog,
     DialogClose,
@@ -11,8 +10,10 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "./ui/dialog";
-import { Button } from "./ui/button";
+} from "@eye-note/ui/src/components/ui/dialog";
+import { Button } from "@eye-note/ui/src/components/ui/button";
+
+import { cn } from "@eye-note/ui/src/lib/utils";
 
 type SettingsDialogItem = {
     id: string;
@@ -47,7 +48,7 @@ export function SettingsDialog ( {
     footer,
     contentClassName,
 } : SettingsDialogProps ) {
-    const [ internalSelection, setInternalSelection ] = React.useState( () => items[0]?.id );
+    const [ internalSelection, setInternalSelection ] = React.useState( () => items[ 0 ]?.id );
     const isControlled = selectedItemId !== undefined;
     const activeItemId = isControlled ? selectedItemId : internalSelection;
 
@@ -59,7 +60,7 @@ export function SettingsDialog ( {
         if ( hasActiveSelection ) {
             return;
         }
-        const fallbackId = items[0]?.id;
+        const fallbackId = items[ 0 ]?.id;
         if ( !fallbackId ) {
             return;
         }
@@ -82,36 +83,36 @@ export function SettingsDialog ( {
         [ isControlled, onSelectedItemChange ]
     );
 
-    const activeItem = items.find( ( item ) => item.id === activeItemId ) ?? items[0];
+    const activeItem = items.find( ( item ) => item.id === activeItemId ) ?? items[ 0 ];
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={ open } onOpenChange={ onOpenChange }>
             <DialogContent
-                container={dialogContainer ?? undefined}
-                className={cn(
+                container={ dialogContainer ?? undefined }
+                className={ cn(
                     "flex max-h-[85vh] w-[min(90vw,840px)] max-w-[840px] flex-col gap-6 overflow-hidden",
                     contentClassName
-                )}
+                ) }
             >
                 <DialogHeader>
-                    <DialogTitle>{title}</DialogTitle>
-                    {description ? <DialogDescription>{description}</DialogDescription> : null}
+                    <DialogTitle>{ title }</DialogTitle>
+                    { description ? <DialogDescription>{ description }</DialogDescription> : null }
                 </DialogHeader>
-                {items.length === 0 ? (
+                { items.length === 0 ? (
                     <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
                         No sections available.
                     </div>
                 ) : (
                     <div className="flex flex-1 gap-6 overflow-hidden">
                         <nav className="w-48 shrink-0 space-y-1 overflow-y-auto pr-2">
-                            {items.map( ( item ) => {
+                            { items.map( ( item ) => {
                                 const isActive = item.id === activeItem?.id;
                                 return (
                                     <button
-                                        key={item.id}
+                                        key={ item.id }
                                         type="button"
-                                        onClick={() => handleSelect( item.id, item.disabled )}
-                                        className={cn(
+                                        onClick={ () => handleSelect( item.id, item.disabled ) }
+                                        className={ cn(
                                             "w-full rounded-md border border-transparent px-3 py-2 text-left text-sm transition-colors",
                                             isActive
                                                 ? "bg-secondary text-secondary-foreground"
@@ -119,46 +120,46 @@ export function SettingsDialog ( {
                                             item.disabled
                                                 ? "cursor-not-allowed opacity-60"
                                                 : "cursor-pointer"
-                                        )}
-                                        disabled={item.disabled}
+                                        ) }
+                                        disabled={ item.disabled }
                                     >
-                                        <div className="font-medium">{item.label}</div>
-                                        {item.description ? (
+                                        <div className="font-medium">{ item.label }</div>
+                                        { item.description ? (
                                             <p className="mt-1 text-xs text-muted-foreground">
-                                                {item.description}
+                                                { item.description }
                                             </p>
-                                        ) : null}
+                                        ) : null }
                                     </button>
                                 );
-                            } )}
+                            } ) }
                         </nav>
                         <div className="w-px shrink-0 bg-border" />
                         <section className="flex-1 overflow-y-auto">
-                            {activeItem ? (
+                            { activeItem ? (
                                 <div className="space-y-4">
                                     <div>
-                                        <h3 className="text-lg font-semibold">{activeItem.label}</h3>
-                                        {activeItem.description ? (
+                                        <h3 className="text-lg font-semibold">{ activeItem.label }</h3>
+                                        { activeItem.description ? (
                                             <p className="text-sm text-muted-foreground">
-                                                {activeItem.description}
+                                                { activeItem.description }
                                             </p>
-                                        ) : null}
+                                        ) : null }
                                     </div>
-                                    <div className="space-y-4">{activeItem.content}</div>
+                                    <div className="space-y-4">{ activeItem.content }</div>
                                 </div>
-                            ) : null}
+                            ) : null }
                         </section>
                     </div>
-                )}
-                {footer === null ? null : (
+                ) }
+                { footer === null ? null : (
                     <DialogFooter className="justify-end">
-                        {footer ?? (
+                        { footer ?? (
                             <DialogClose asChild>
                                 <Button variant="outline">Close</Button>
                             </DialogClose>
-                        )}
+                        ) }
                     </DialogFooter>
-                )}
+                ) }
             </DialogContent>
         </Dialog>
     );

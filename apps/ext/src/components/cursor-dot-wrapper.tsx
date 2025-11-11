@@ -1,6 +1,8 @@
-import { useModeStore, AppMode } from "../stores/use-mode-store";
-import { CursorDot } from "./cursor-dot";
-import { useCursorPosition } from "../hooks/use-cursor-position";
+import { useCursorPosition } from "@eye-note/ext/src/hooks/use-cursor-position";
+
+import { CursorDot } from "@eye-note/ext/src/components/cursor-dot";
+
+import { useModeStore, AppMode } from "@eye-note/ext/src/stores/use-mode-store";
 
 export const CursorDotWrapper = () => {
     const isInspectorMode = useModeStore( ( state ) => state.isMode( AppMode.INSPECTOR_MODE ) );
@@ -11,5 +13,5 @@ export const CursorDotWrapper = () => {
 
     const shouldShowCursor = isInspectorMode && !isNotesMode;
 
-    return <CursorDot visible={shouldShowCursor} />;
+    return <CursorDot visible={ shouldShowCursor } />;
 };

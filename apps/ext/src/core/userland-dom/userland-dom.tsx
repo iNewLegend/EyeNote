@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { CursorDotWrapper } from "../../components/cursor-dot-wrapper";
-import { HighlightOverlay } from "../../components/highlight-overlay";
-import { useModeStore, AppMode } from "../../stores/use-mode-store";
-import { useHighlightStore } from "../../stores/highlight-store";
-import { useElementInspector, InspectionEvent } from "../../hooks/use-element-inspector";
+
+import { CursorDotWrapper } from "@eye-note/ext/src/components/cursor-dot-wrapper";
+import { HighlightOverlay } from "@eye-note/ext/src/components/highlight-overlay";
+import { useModeStore, AppMode } from "@eye-note/ext/src/stores/use-mode-store";
+import { useHighlightStore } from "@eye-note/ext/src/stores/highlight-store";
+
+import { useElementInspector } from "@eye-note/ext/src/hooks/use-element-inspector";
+
+import type { InspectionEvent } from "@eye-note/ext/src/hooks/use-element-inspector";
 
 // Extend Window interface to include our custom property
 declare global {
@@ -42,16 +46,16 @@ export const UserlandDOM : React.FC = () => {
         const highlightStore = useHighlightStore.getState();
 
         switch ( event.type ) {
-            case 'inspection:highlight':
+            case "inspection:highlight":
                 highlightStore.addHighlight( event.element );
                 break;
-            case 'inspection:unhighlight':
+            case "inspection:unhighlight":
                 highlightStore.removeHighlight( event.element );
                 break;
-            case 'inspection:hover':
+            case "inspection:hover":
                 highlightStore.setHoveredElement( event.element );
                 break;
-            case 'inspection:clear':
+            case "inspection:clear":
                 highlightStore.clearAllHighlights();
                 break;
         }
@@ -59,8 +63,8 @@ export const UserlandDOM : React.FC = () => {
 
     // Define excluded selectors
     const excludeSelectors = useMemo( () => [
-        `#eye-note-shadow-dom`,
-        `.notes-plugin`
+        "#eye-note-shadow-dom",
+        ".notes-plugin"
     ], [] );
 
     // Use the simplified element inspector hook with event-based interface
@@ -78,13 +82,13 @@ export const UserlandDOM : React.FC = () => {
     // Setup window properties for legacy support
     useEffect( () => {
         // Only add to window if needed for compatibility with legacy code
-        if ( typeof window !== 'undefined' ) {
+        if ( typeof window !== "undefined" ) {
             window.updateInspectionBounds = updateInspectionBounds;
         }
 
         return () => {
             // Clean up window property if it exists
-            if ( typeof window !== 'undefined' && window.updateInspectionBounds ) {
+            if ( typeof window !== "undefined" && window.updateInspectionBounds ) {
                 delete window.updateInspectionBounds;
             }
             cleanup();
@@ -99,7 +103,7 @@ export const UserlandDOM : React.FC = () => {
     return (
         <>
             <CursorDotWrapper />
-            <HighlightOverlay style={overlayStyle} visible={isVisible} />
+            <HighlightOverlay style={ overlayStyle } visible={ isVisible } />
         </>
     );
 };

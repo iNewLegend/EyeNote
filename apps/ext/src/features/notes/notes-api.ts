@@ -1,3 +1,9 @@
+import { capturePageIdentity } from "@eye-note/page-identity";
+
+import { createPayloadFromDraft, mapRecordToNote } from "@eye-note/ext/src/features/notes/notes-utils";
+
+import { apiRequest } from "@eye-note/ext/src/lib/api-client";
+
 import type {
     ListNotesResponse,
     NoteRecord,
@@ -5,10 +11,7 @@ import type {
     PageIdentityResolution,
     UpdateNotePayload,
 } from "@eye-note/definitions";
-import type { Note } from "../../types";
-import { apiRequest } from "../../lib/api-client";
-import { createPayloadFromDraft, mapRecordToNote } from "./notes-utils";
-import { capturePageIdentity } from "@eye-note/page-identity";
+import type { Note } from "@eye-note/ext/src/types";
 
 type FetchNotesArgs = {
     url : string;

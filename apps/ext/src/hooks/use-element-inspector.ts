@@ -1,14 +1,15 @@
 import { useRef, useCallback, useEffect } from "react";
-import { useHighlightStore } from "../stores/highlight-store";
-import { useModeStore, AppMode } from "../stores/use-mode-store";
+
+import { useHighlightStore } from "@eye-note/ext/src/stores/highlight-store";
+import { useModeStore, AppMode } from "@eye-note/ext/src/stores/use-mode-store";
 
 type InspectionBoundsUpdater = ( element : Element | null ) => void;
 
-export type InspectionEvent = 
-  | { type : 'inspection:highlight'; element : HTMLElement }
-  | { type : 'inspection:unhighlight'; element : HTMLElement }
-  | { type : 'inspection:hover'; element : HTMLElement | null }
-  | { type : 'inspection:clear' };
+export type InspectionEvent =
+  | { type : "inspection:highlight"; element : HTMLElement }
+  | { type : "inspection:unhighlight"; element : HTMLElement }
+  | { type : "inspection:hover"; element : HTMLElement | null }
+  | { type : "inspection:clear" };
 
 export type InspectionEventHandler = ( event : InspectionEvent ) => void;
 
@@ -43,9 +44,9 @@ export function useElementInspector ( {
         if ( inspectedElementRef.current && element !== inspectedElementRef.current ) {
             inspectedElementRef.current.style.cursor = "";
             // Emit unhighlight event for previous element
-            onInspectionEvent( { 
-                type: 'inspection:unhighlight', 
-                element: inspectedElementRef.current 
+            onInspectionEvent( {
+                type: "inspection:unhighlight",
+                element: inspectedElementRef.current
             } );
         }
 
@@ -56,7 +57,7 @@ export function useElementInspector ( {
         if ( element ) {
             element.style.cursor = "none";
             // Emit highlight event for new element
-            onInspectionEvent( { type: 'inspection:highlight', element } );
+            onInspectionEvent( { type: "inspection:highlight", element } );
             updateInspectionBounds( element );
         } else {
             // Clear the overlay when element is null
@@ -77,26 +78,26 @@ export function useElementInspector ( {
                         return;
                     }
                 }
-                
+
                 // Emit hover event
                 if ( hoveredElement instanceof HTMLElement ) {
-                    onInspectionEvent( { type: 'inspection:hover', element: hoveredElement } );
-                    
+                    onInspectionEvent( { type: "inspection:hover", element: hoveredElement } );
+
                     // Update the inspected element
                     updateInspectedElement( hoveredElement );
                 }
             }
         } else if ( inspectedElementRef.current ) {
             // Clean up when inspector becomes inactive
-            onInspectionEvent( { type: 'inspection:hover', element: null } );
-            onInspectionEvent( { type: 'inspection:clear' } );
+            onInspectionEvent( { type: "inspection:hover", element: null } );
+            onInspectionEvent( { type: "inspection:clear" } );
             updateInspectedElement( null );
         }
     }, [
         isInspectorActive,
         hoveredElement,
-        excludeSelectors, 
-        onInspectionEvent, 
+        excludeSelectors,
+        onInspectionEvent,
         updateInspectedElement
     ] );
 
@@ -104,7 +105,7 @@ export function useElementInspector ( {
     const cleanup = useCallback( () => {
         if ( inspectedElementRef.current ) {
             inspectedElementRef.current.style.cursor = "";
-            onInspectionEvent( { type: 'inspection:clear' } );
+            onInspectionEvent( { type: "inspection:clear" } );
             inspectedElementRef.current = null;
         }
     }, [ onInspectionEvent ] );
@@ -113,4 +114,4 @@ export function useElementInspector ( {
         inspectedElementRef,
         cleanup
     };
-} 
+}

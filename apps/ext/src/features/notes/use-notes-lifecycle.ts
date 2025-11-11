@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+
 import type { PageIdentity } from "@eye-note/page-identity";
 
 type NotesLifecycleArgs = {

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import {
     capturePageIdentity,
-    comparePageIdentities,
-    type IdentityComparisonResult,
-    type PageIdentity,
+    comparePageIdentities
+
 } from "@eye-note/page-identity";
+
+import type { IdentityComparisonResult, PageIdentity } from "@eye-note/page-identity";
 
 type PageIdentityState = {
     identity?: PageIdentity;

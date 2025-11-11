@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { cn } from "@eye-note/ui";
-import { useCursorStore } from "../stores/use-cursor-store";
+
+import { useCursorStore } from "@eye-note/ext/src/stores/use-cursor-store";
 
 interface CursorDotProps {
     /**
@@ -32,8 +33,8 @@ export const CursorDot : React.FC<CursorDotProps> = ( { color = "#7c3aed", visib
     return (
         <>
             <div
-                ref={cursorDotRef}
-                className={cn(
+                ref={ cursorDotRef }
+                className={ cn(
                     "fixed w-2 h-2",
                     "rounded-full",
                     "pointer-events-none -translate-x-1/2 -translate-y-1/2",
@@ -41,7 +42,7 @@ export const CursorDot : React.FC<CursorDotProps> = ( { color = "#7c3aed", visib
                     "transition-[opacity,visibility] duration-200 ease-out",
                     "drop-shadow-[0_0_4px_rgba(72,4,173,0.3)]",
                     visible ? "opacity-100 visible" : "opacity-0 invisible"
-                )}
+                ) }
                 style={
                     {
                         backgroundColor: color,
@@ -51,21 +52,21 @@ export const CursorDot : React.FC<CursorDotProps> = ( { color = "#7c3aed", visib
                     } as React.CSSProperties
                 }
             >
-                {visible && (
+                { visible && (
                     <div
-                        className={cn(
+                        className={ cn(
                             "absolute w-[120%] h-[120%] -left-[10%] -top-[10%]",
                             "rounded-full opacity-80 pointer-events-none",
                             "animate-cursor"
-                        )}
-                        style={{
+                        ) }
+                        style={ {
                             backgroundColor: "var(--pulse-color)",
-                        }}
+                        } }
                     />
-                )}
+                ) }
             </div>
             <style>
-                {`
+                { `
                 @keyframes cursor-ping {
                     0% {
                         transform: scale(1);
@@ -76,7 +77,7 @@ export const CursorDot : React.FC<CursorDotProps> = ( { color = "#7c3aed", visib
                         opacity: 0;
                     }
                 }
-                `}
+                ` }
             </style>
         </>
     );

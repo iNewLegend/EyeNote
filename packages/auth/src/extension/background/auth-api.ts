@@ -1,6 +1,6 @@
-import type { AuthSession, AuthUser } from "../../shared";
+import { BACKGROUND_AUTH_CONFIG } from "@eye-note/auth/src/extension/background/auth-config";
 
-import { BACKGROUND_AUTH_CONFIG } from "./auth-config";
+import type { AuthSession, AuthUser } from "@eye-note/auth/src/shared";
 
 const manifest = chrome.runtime.getManifest();
 const oauthClientId = BACKGROUND_AUTH_CONFIG.googleClientId || manifest.oauth2?.client_id || "";

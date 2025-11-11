@@ -2,8 +2,10 @@ import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { Button, Label, Switch, cn } from "@eye-note/ui";
 import { useAuthStore } from "@eye-note/auth/extension";
-import { useGroupsStore } from "../groups-store";
-import { RoleManagementPanel } from "../../../components/role-management";
+
+import { useGroupsStore } from "@eye-note/ext/src/modules/groups/groups-store";
+import { RoleManagementPanel } from "@eye-note/ext/src/components/role-management";
+
 import type { UpdateGroupPayload } from "@eye-note/definitions";
 
 type GroupManagerPanelProps = {
@@ -192,16 +194,16 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
     if ( managingRolesForGroupId ) {
         return (
             <RoleManagementPanel
-                groupId={managingRolesForGroupId}
-                onClose={() => setManagingRolesForGroupId( null )}
+                groupId={ managingRolesForGroupId }
+                onClose={ () => setManagingRolesForGroupId( null ) }
             />
         );
     }
 
     return (
-        <div className={cn( "space-y-5", className )}>
+        <div className={ cn( "space-y-5", className ) }>
             <div className="space-y-3">
-                <form onSubmit={handleCreateGroup} className="space-y-2">
+                <form onSubmit={ handleCreateGroup } className="space-y-2">
                     <Label
                         htmlFor="group-name"
                         className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
@@ -212,27 +214,27 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
                         <input
                             id="group-name"
                             type="text"
-                            value={newGroupName}
-                            onChange={( event ) => setNewGroupName( event.target.value )}
+                            value={ newGroupName }
+                            onChange={ ( event ) => setNewGroupName( event.target.value ) }
                             placeholder="Team name"
                             className="flex-1 rounded-md border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/70"
-                            disabled={isCreatingGroup}
+                            disabled={ isCreatingGroup }
                         />
                         <input
                             aria-label="Group color"
                             type="color"
-                            value={newGroupColor}
-                            onChange={( event ) => setNewGroupColor( event.target.value )}
+                            value={ newGroupColor }
+                            onChange={ ( event ) => setNewGroupColor( event.target.value ) }
                             className="h-10 w-12 cursor-pointer rounded-md border border-border"
-                            disabled={isCreatingGroup}
+                            disabled={ isCreatingGroup }
                         />
-                        <Button type="submit" disabled={isCreatingGroup}>
-                            {isCreatingGroup ? "Creating..." : "Create"}
+                        <Button type="submit" disabled={ isCreatingGroup }>
+                            { isCreatingGroup ? "Creating..." : "Create" }
                         </Button>
                     </div>
                 </form>
 
-                <form onSubmit={handleJoinGroup} className="space-y-2">
+                <form onSubmit={ handleJoinGroup } className="space-y-2">
                     <Label
                         htmlFor="invite-code"
                         className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
@@ -243,27 +245,27 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
                         <input
                             id="invite-code"
                             type="text"
-                            value={inviteCodeInput}
-                            onChange={( event ) => setInviteCodeInput( event.target.value )}
+                            value={ inviteCodeInput }
+                            onChange={ ( event ) => setInviteCodeInput( event.target.value ) }
                             placeholder="Enter code"
                             className="flex-1 rounded-md border border-border bg-background/80 px-3 py-2 text-sm uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/70"
-                            disabled={isJoiningGroup}
+                            disabled={ isJoiningGroup }
                         />
-                        <Button type="submit" variant="outline" disabled={isJoiningGroup}>
-                            {isJoiningGroup ? "Joining..." : "Join"}
+                        <Button type="submit" variant="outline" disabled={ isJoiningGroup }>
+                            { isJoiningGroup ? "Joining..." : "Join" }
                         </Button>
                     </div>
                 </form>
             </div>
 
-            {groupsError && (
+            { groupsError && (
                 <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-                    {groupsError}
+                    { groupsError }
                 </div>
-            )}
+            ) }
 
             <div className="space-y-3">
-                {groupsLoading && sortedGroups.length === 0 ? (
+                { groupsLoading && sortedGroups.length === 0 ? (
                     <div className="text-sm text-muted-foreground">
                         Loading your groups…
                     </div>
@@ -275,75 +277,75 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
                 ) : (
                     sortedGroups.map( ( group ) => (
                         <div
-                            key={group.id}
+                            key={ group.id }
                             className="space-y-3 rounded-md border border-border/60 bg-secondary/40 p-3"
                         >
                             <div className="flex items-start justify-between gap-3">
                                 <div className="flex flex-1 items-start gap-3">
                                     <span
                                         className="mt-1 h-3 w-3 rounded-full border border-border"
-                                        style={{ backgroundColor: group.color }}
+                                        style={ { backgroundColor: group.color } }
                                         aria-hidden
                                     />
                                     <div className="space-y-1">
                                         <p className="text-sm font-semibold text-foreground">
-                                            {group.name}
+                                            { group.name }
                                         </p>
                                         <p className="text-xs text-muted-foreground">
-                                            {group.memberCount} member{group.memberCount === 1 ? "" : "s"}
-                                            {group.ownerId === authUser?.id ? " • You own this group" : ""}
+                                            { group.memberCount } member{ group.memberCount === 1 ? "" : "s" }
+                                            { group.ownerId === authUser?.id ? " • You own this group" : "" }
                                         </p>
                                     </div>
                                 </div>
                                 <Switch
-                                    aria-label={`Toggle ${ group.name }`}
-                                    checked={activeGroupSet.has( group.id )}
-                                    onCheckedChange={( checked ) => {
+                                    aria-label={ `Toggle ${ group.name }` }
+                                    checked={ activeGroupSet.has( group.id ) }
+                                    onCheckedChange={ ( checked ) => {
                                         void handleToggleGroup( group.id, checked );
-                                    }}
+                                    } }
                                 />
                             </div>
-                            {group.ownerId === authUser?.id && (
+                            { group.ownerId === authUser?.id && (
                                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                     <label className="flex items-center gap-2">
                                         <span>Marker color</span>
                                         <input
                                             type="color"
-                                            value={group.color}
-                                            onChange={( event ) => {
+                                            value={ group.color }
+                                            onChange={ ( event ) => {
                                                 void handleUpdateGroup( group.id, {
                                                     color: event.target.value,
                                                 } );
-                                            }}
+                                            } }
                                             className="h-8 w-10 cursor-pointer rounded-md border border-border"
-                                            disabled={updatingGroupId === group.id}
+                                            disabled={ updatingGroupId === group.id }
                                         />
                                     </label>
-                                    {updatingGroupId === group.id && <span>Saving…</span>}
+                                    { updatingGroupId === group.id && <span>Saving…</span> }
                                     <Button
                                         type="button"
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => setManagingRolesForGroupId( group.id )}
+                                        onClick={ () => setManagingRolesForGroupId( group.id ) }
                                         className="ml-auto"
                                     >
                                         Manage Roles
                                     </Button>
                                 </div>
-                            )}
+                            ) }
                             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                                 <div className="flex flex-wrap items-center gap-2">
                                     <span>Invite code:</span>
                                     <code className="rounded border border-border/60 bg-background/80 px-2 py-1 text-[10px] uppercase tracking-wider">
-                                        {group.inviteCode}
+                                        { group.inviteCode }
                                     </code>
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => {
+                                        onClick={ () => {
                                             void handleCopyInviteCode( group.inviteCode );
-                                        }}
+                                        } }
                                     >
                                         Copy
                                     </Button>
@@ -353,17 +355,17 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
                                     variant="ghost"
                                     size="sm"
                                     className="text-destructive hover:text-destructive"
-                                    disabled={group.ownerId === authUser?.id || leavingGroupId === group.id}
-                                    onClick={() => {
+                                    disabled={ group.ownerId === authUser?.id || leavingGroupId === group.id }
+                                    onClick={ () => {
                                         void handleLeaveGroup( group.id, group.name, group.ownerId );
-                                    }}
+                                    } }
                                 >
-                                    {leavingGroupId === group.id ? "Leaving..." : "Leave"}
+                                    { leavingGroupId === group.id ? "Leaving..." : "Leave" }
                                 </Button>
                             </div>
                         </div>
                     ) )
-                )}
+                ) }
             </div>
         </div>
     );

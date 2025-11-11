@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Note } from "../types";
-import { isElementInsidePlugin } from "../utils/is-element-visible";
+
 import { MARKER_IO_ROOT_MARGIN, MARKER_IO_THRESHOLD } from "@eye-note/definitions";
+
+import { isElementInsidePlugin } from "@eye-note/ext/src/utils/is-element-visible";
+
+import type { Note } from "@eye-note/ext/src/types";
 
 type Options = {
     rootMargin ?: string;

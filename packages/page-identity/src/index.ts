@@ -1,3 +1,5 @@
+/* eslint-disable no-restricted-imports */
+
 export type {
     PageIdentity,
     IdentityComparisonOptions,

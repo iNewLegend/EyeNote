@@ -1,5 +1,6 @@
 import { Button, Dialog, DialogContent } from "@eye-note/ui";
-import type { Note } from "../../../types";
+
+import type { Note } from "@eye-note/ext/src/types";
 
 type NoteScreenshot = NonNullable<Note["screenshots"]>[ number ];
 
@@ -30,38 +31,38 @@ export function NoteImageViewer ( {
 
     return (
         <Dialog
-            open={open}
-            onOpenChange={( nextOpen ) => {
+            open={ open }
+            onOpenChange={ ( nextOpen ) => {
                 if ( !nextOpen ) {
                     onClose();
                 }
-            }}
+            } }
         >
             <DialogContent
-                {...( container ? { container } : {} )}
+                { ...( container ? { container } : {} ) }
                 className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 bg-black/95 border-none"
-                onPointerDownOutside={onClose}
+                onPointerDownOutside={ onClose }
             >
-                {screenshot && (
+                { screenshot && (
                     <div className="relative w-full h-full flex items-center justify-center">
                         <img
-                            src={screenshot.dataUrl}
+                            src={ screenshot.dataUrl }
                             alt={ `Element capture at ${ screenshot.zoom }x zoom` }
                             className="max-w-full max-h-full object-contain"
                         />
                         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-sm px-4 py-2 rounded-md backdrop-blur-sm">
                             <span className="font-medium">{ `${ screenshot.zoom }x zoom` }</span>
-                            {hasMultipleScreenshots && positionLabel ? (
-                                <span className="ml-2 text-muted-foreground">{positionLabel}</span>
-                            ) : null}
+                            { hasMultipleScreenshots && positionLabel ? (
+                                <span className="ml-2 text-muted-foreground">{ positionLabel }</span>
+                            ) : null }
                         </div>
-                        {hasMultipleScreenshots ? (
+                        { hasMultipleScreenshots ? (
                             <>
                                 <Button
                                     variant="outline"
                                     size="icon"
                                     className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/70 hover:bg-black/90 border-white/20 text-white backdrop-blur-sm"
-                                    onClick={onPrevious}
+                                    onClick={ onPrevious }
                                 >
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -81,7 +82,7 @@ export function NoteImageViewer ( {
                                     variant="outline"
                                     size="icon"
                                     className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/70 hover:bg-black/90 border-white/20 text-white backdrop-blur-sm"
-                                    onClick={onNext}
+                                    onClick={ onNext }
                                 >
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -98,12 +99,12 @@ export function NoteImageViewer ( {
                                     </svg>
                                 </Button>
                             </>
-                        ) : null}
+                        ) : null }
                         <Button
                             variant="outline"
                             size="icon"
                             className="absolute top-4 right-4 bg-black/70 hover:bg-black/90 border-white/20 text-white backdrop-blur-sm"
-                            onClick={onClose}
+                            onClick={ onClose }
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -120,7 +121,7 @@ export function NoteImageViewer ( {
                             </svg>
                         </Button>
                     </div>
-                )}
+                ) }
             </DialogContent>
         </Dialog>
     );

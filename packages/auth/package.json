@@ -6,6 +6,7 @@
     "main": "./src/shared/index.ts",
     "types": "./src/shared/index.ts",
     "exports": {
+        "./src/*": "./src/*",
         ".": "./src/shared/index.ts",
         "./shared": "./src/shared/index.ts",
         "./app": "./src/app/index.ts",
@@ -25,5 +26,8 @@
         "google-auth-library": "^9.0.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0"
+    },
+    "devDependencies": {
+        "@eye-note/auth": "workspace:*"
     }
 }

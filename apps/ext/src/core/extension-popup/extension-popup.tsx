@@ -14,15 +14,17 @@ import {
     SignInPrompt,
     Toaster,
 } from "@eye-note/ui";
-import "./extension-popup.css";
+
 import { useAuthStore, useAuthStatusEffects } from "@eye-note/auth/extension";
 import { useBackendHealthStore } from "@eye-note/backend-health";
-import { useBackendHealthBridge } from "../../hooks/use-backend-health-bridge";
+import { Menu, Users } from "lucide-react";
+
+import "@eye-note/ext/src/core/extension-popup/extension-popup.css";
+import { useBackendHealthBridge } from "@eye-note/ext/src/hooks/use-backend-health-bridge";
 import {
     useGroupsBootstrap,
     useGroupsStore,
-} from "../../modules/groups";
-import { Menu, Users } from "lucide-react";
+} from "@eye-note/ext/src/modules/groups";
 
 export function ExtensionPopup () {
     const [ isSigningIn, setIsSigningIn ] = useState( false );
@@ -61,7 +63,7 @@ export function ExtensionPopup () {
             toast( "Signed out", {
                 description: "You have been successfully signed out",
             } );
-        } catch ( error ) {
+        } catch {
             toast( "Error", {
                 description: "Failed to sign out. Please try again.",
             } );
@@ -157,7 +159,7 @@ export function ExtensionPopup () {
             toast( "Welcome to EyeNote", {
                 description: "You are now signed in.",
             } );
-        } catch ( error ) {
+        } catch {
             toast( "Error", {
                 description: "Failed to sign in. Please try again.",
             } );
@@ -237,28 +239,28 @@ export function ExtensionPopup () {
                             <CardTitle className="text-xl font-bold bg-gradient-to-r from-primary/90 to-primary bg-clip-text text-transparent">
                                 EyeNote
                             </CardTitle>
-                            {!isBackendDown && isAuthenticated && authUser && (
-                                <CardDescription className="text-sm">{authUser.name}</CardDescription>
-                            )}
+                            { !isBackendDown && isAuthenticated && authUser && (
+                                <CardDescription className="text-sm">{ authUser.name }</CardDescription>
+                            ) }
                         </div>
-                        {!isBackendDown && isAuthenticated && (
+                        { !isBackendDown && isAuthenticated && (
                             <div className="flex items-center gap-2">
-                                {authUser?.picture && (
+                                { authUser?.picture && (
                                     <img
-                                        src={authUser.picture}
-                                        alt={authUser.name}
+                                        src={ authUser.picture }
+                                        alt={ authUser.name }
                                         className="w-8 h-8 rounded-full ring-1 ring-border"
                                     />
-                                )}
-                                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                                ) }
+                                <Button variant="ghost" size="sm" onClick={ handleSignOut }>
                                     Sign Out
                                 </Button>
                             </div>
-                        )}
+                        ) }
                     </div>
                 </CardHeader>
 
-                {isBackendDown ? (
+                { isBackendDown ? (
                     <CardContent className="flex-1 flex items-center justify-center p-6 text-center">
                         <DowntimeNotice className="text-center" />
                     </CardContent>
@@ -276,7 +278,7 @@ export function ExtensionPopup () {
                                 <Button
                                     variant="outline"
                                     className="w-full justify-between rounded-full"
-                                    onClick={handleOpenQuickMenuDialog}
+                                    onClick={ handleOpenQuickMenuDialog }
                                 >
                                     <span>Menu</span>
                                     <Menu className="h-4 w-4" />
@@ -284,7 +286,7 @@ export function ExtensionPopup () {
                                 <Button
                                     variant="outline"
                                     className="w-full justify-between rounded-full"
-                                    onClick={handleOpenGroupManager}
+                                    onClick={ handleOpenGroupManager }
                                 >
                                     <span>Manage Groups</span>
                                     <Users className="h-4 w-4" />
@@ -302,7 +304,7 @@ export function ExtensionPopup () {
                             </div>
                             <form
                                 className="space-y-3 rounded-lg border border-border/60 p-4"
-                                onSubmit={handleCreateGroup}
+                                onSubmit={ handleCreateGroup }
                             >
                                 <div className="space-y-2">
                                     <Label htmlFor="popup-create-group-name" className="text-sm font-medium">
@@ -310,20 +312,20 @@ export function ExtensionPopup () {
                                     </Label>
                                     <Input
                                         id="popup-create-group-name"
-                                        value={newGroupName}
-                                        onChange={( event ) => setNewGroupName( event.target.value )}
+                                        value={ newGroupName }
+                                        onChange={ ( event ) => setNewGroupName( event.target.value ) }
                                         placeholder="Acme Product Team"
                                         autoComplete="off"
-                                        maxLength={60}
+                                        maxLength={ 60 }
                                     />
                                 </div>
-                                <Button type="submit" className="w-full" disabled={isCreatingGroup}>
-                                    {isCreatingGroup ? "Creating..." : "Create"}
+                                <Button type="submit" className="w-full" disabled={ isCreatingGroup }>
+                                    { isCreatingGroup ? "Creating..." : "Create" }
                                 </Button>
                             </form>
                             <form
                                 className="space-y-3 rounded-lg border border-border/60 p-4"
-                                onSubmit={handleJoinGroup}
+                                onSubmit={ handleJoinGroup }
                             >
                                 <div className="space-y-2">
                                     <Label htmlFor="popup-join-group-code" className="text-sm font-medium">
@@ -331,15 +333,15 @@ export function ExtensionPopup () {
                                     </Label>
                                     <Input
                                         id="popup-join-group-code"
-                                        value={inviteCodeInput}
-                                        onChange={( event ) => setInviteCodeInput( event.target.value )}
+                                        value={ inviteCodeInput }
+                                        onChange={ ( event ) => setInviteCodeInput( event.target.value ) }
                                         placeholder="EN-XXXXXX"
                                         autoComplete="off"
-                                        maxLength={24}
+                                        maxLength={ 24 }
                                     />
                                 </div>
-                                <Button type="submit" className="w-full" disabled={isJoiningGroup}>
-                                    {isJoiningGroup ? "Joining..." : "Join"}
+                                <Button type="submit" className="w-full" disabled={ isJoiningGroup }>
+                                    { isJoiningGroup ? "Joining..." : "Join" }
                                 </Button>
                             </form>
                         </div>
@@ -356,27 +358,27 @@ export function ExtensionPopup () {
                                 <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                     Active groups
                                 </h3>
-                                {activeGroups.length === 0 ? (
+                                { activeGroups.length === 0 ? (
                                     <div className="text-sm text-muted-foreground">
                                         No active groups right now. Use the in-page manager to enable
                                         groups for your session.
                                     </div>
                                 ) : (
                                     <div className="flex flex-wrap gap-2">
-                                        {activeGroups.map( ( group ) => (
+                                        { activeGroups.map( ( group ) => (
                                             <span
-                                                key={group.id}
+                                                key={ group.id }
                                                 className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-secondary/40 px-3 py-1 text-xs"
                                             >
                                                 <span
                                                     className="h-2 w-2 rounded-full border border-border/60"
-                                                    style={{ backgroundColor: group.color }}
+                                                    style={ { backgroundColor: group.color } }
                                                 />
-                                                {group.name}
+                                                { group.name }
                                             </span>
-                                        ) )}
+                                        ) ) }
                                     </div>
-                                )}
+                                ) }
                             </div>
                         </div>
 
@@ -400,10 +402,10 @@ export function ExtensionPopup () {
                                     </svg>
                                 </div>
                                 <p className="text-sm text-primary-foreground/80">
-                                    Hold{" "}
+                                    Hold{ " " }
                                     <kbd className="px-1.5 py-0.5 text-[10px] font-mono border rounded-md bg-muted">
                                         SHIFT
-                                    </kbd>{" "}
+                                    </kbd>{ " " }
                                     + Click to create a note on any webpage element.
                                 </p>
                             </div>
@@ -411,10 +413,10 @@ export function ExtensionPopup () {
                     </CardContent>
                 ) : (
                     <SignInPrompt
-                        onGetStarted={handleGetStarted}
-                        isSigningIn={isSigningIn}
+                        onGetStarted={ handleGetStarted }
+                        isSigningIn={ isSigningIn }
                     />
-                )}
+                ) }
             </Card>
 
         </>
@@ -437,8 +439,8 @@ try {
 
     root.render(
         <React.StrictMode>
-                <ExtensionPopup />
-                <Toaster />
+            <ExtensionPopup />
+            <Toaster />
         </React.StrictMode>
     );
 

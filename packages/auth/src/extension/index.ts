@@ -1,3 +1,5 @@
+/* eslint-disable no-restricted-imports */
+
 export { getStoredAuth, type StoredAuth } from "./auth-storage";
 export * from "./stores";
 export * from "./hooks";

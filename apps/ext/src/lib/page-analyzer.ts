@@ -1,14 +1,16 @@
-import type {
-    ElementLocationSnapshot,
-    SerializedDOMRect,
-    ViewportPosition,
-} from "@eye-note/definitions";
-import { getElementPath, findElementByPath } from "../utils/element-path";
 import {
     EYE_NOTE_ROOT_CONTAINER_ID,
     EYE_NOTE_SHADOW_CONTAINER_ID,
     EYE_NOTE_USERLAND_CONTAINER_ID,
     NOTES_PLUGIN_SELECTOR,
+} from "@eye-note/definitions";
+
+import { getElementPath, findElementByPath } from "@eye-note/ext/src/utils/element-path";
+
+import type {
+    ElementLocationSnapshot,
+    SerializedDOMRect,
+    ViewportPosition,
 } from "@eye-note/definitions";
 
 export interface AnalyzeElementOptions {
@@ -64,7 +66,7 @@ export class PageAnalyzer {
     private elementCache : WeakMap<Element, ElementLocationSnapshot>;
     private pathCache : Map<string, ElementLocationSnapshot>;
 
-    constructor () {
+    public constructor () {
         this.elementCache = new WeakMap();
         this.pathCache = new Map();
     }
@@ -72,7 +74,7 @@ export class PageAnalyzer {
     /**
      * Scan the current document (or a specific subtree) and refresh the page map.
      */
-    analyzePage ( root ?: ParentNode ) : Map<string, ElementLocationSnapshot> {
+    public analyzePage ( root ?: ParentNode ) : Map<string, ElementLocationSnapshot> {
         if ( typeof document === "undefined" ) {
             return this.pathCache;
         }
@@ -111,7 +113,7 @@ export class PageAnalyzer {
      * Build and cache a snapshot for a specific element. Optionally accepts the
      * pointer position to record the exact click location within the element.
      */
-    analyzeElement ( element : Element, options : AnalyzeElementOptions = {} ) : ElementLocationSnapshot {
+    public analyzeElement ( element : Element, options : AnalyzeElementOptions = {} ) : ElementLocationSnapshot {
         if ( shouldIgnoreElement( element ) ) {
             throw new Error( "Cannot analyze EyeNote internal elements." );
         }
@@ -122,7 +124,7 @@ export class PageAnalyzer {
     /**
      * Retrieve the latest cached snapshot for an element or build one on demand.
      */
-    getSnapshotForElement ( element : Element ) : ElementLocationSnapshot | undefined {
+    public getSnapshotForElement ( element : Element ) : ElementLocationSnapshot | undefined {
         const cached = this.elementCache.get( element );
         if ( cached ) {
             return cached;
@@ -139,14 +141,14 @@ export class PageAnalyzer {
      * Retrieve a cached snapshot by path. Consumers can combine this with
      * findElementByPath to rehydrate elements after navigation.
      */
-    getSnapshotByPath ( elementPath : string ) : ElementLocationSnapshot | undefined {
+    public getSnapshotByPath ( elementPath : string ) : ElementLocationSnapshot | undefined {
         return this.pathCache.get( elementPath );
     }
 
     /**
      * Convenience helper to rehydrate an element from a stored snapshot.
      */
-    findElementFromSnapshot ( snapshot : ElementLocationSnapshot ) : Element | null {
+    public findElementFromSnapshot ( snapshot : ElementLocationSnapshot ) : Element | null {
         return findElementByPath( snapshot.elementPath );
     }
 

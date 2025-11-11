@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 
-import { useAppAuthStore } from "./use-app-auth-store";
+import { useAppAuthStore } from "@eye-note/auth/src/app/use-app-auth-store";
 
 export function useAppAuth () {
     const {

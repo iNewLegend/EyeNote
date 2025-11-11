@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import type { AuthUser } from "../../shared";
+
+import type { AuthUser } from "@eye-note/auth/src/shared";
 
 interface AuthStore {
     user : AuthUser | null;

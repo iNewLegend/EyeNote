@@ -2,9 +2,10 @@
 
 import { SignInPrompt } from "@eye-note/ui";
 
-import type { AppSettings } from "../hooks/use-dashboard-settings";
-import { ResetBanner } from "./reset-banner";
-import { SettingToggle } from "./setting-toggle";
+import { ResetBanner } from "@eye-note/app/src/components/reset-banner";
+import { SettingToggle } from "@eye-note/app/src/components/setting-toggle";
+
+import type { AppSettings } from "@eye-note/app/src/hooks/use-dashboard-settings";
 
 type AppSettingDescriptor = {
     key : keyof AppSettings;
@@ -33,30 +34,30 @@ export function GeneralSettingsSection ( {
 } : GeneralSettingsSectionProps ) {
     return (
         <div className="space-y-4">
-            {!isAuthenticated ? (
+            { !isAuthenticated ? (
                 <SignInPrompt
-                    onGetStarted={onSignIn}
-                    isSigningIn={isLoading}
+                    onGetStarted={ onSignIn }
+                    isSigningIn={ isLoading }
                     getStartedLabel="Sign in with Google"
                     signingInLabel="Signing in..."
                     title="Sign in to manage overlay settings"
                     description="Connect your Google account to sync EyeNote preferences across the extension and app."
                     variant="callout"
-                    showIcon={false}
+                    showIcon={ false }
                 />
-            ) : null}
-            {descriptors.map( ( descriptor ) => (
+            ) : null }
+            { descriptors.map( ( descriptor ) => (
                 <SettingToggle
-                    key={descriptor.key as string}
-                    id={`settings-${ String( descriptor.key ) }`}
-                    label={descriptor.label}
-                    description={descriptor.description}
-                    checked={settings[ descriptor.key ]}
-                    onCheckedChange={( next ) => onToggle( descriptor.key, next )}
-                    disabled={!isAuthenticated}
+                    key={ descriptor.key as string }
+                    id={ `settings-${ String( descriptor.key ) }` }
+                    label={ descriptor.label }
+                    description={ descriptor.description }
+                    checked={ settings[ descriptor.key ] }
+                    onCheckedChange={ ( next ) => onToggle( descriptor.key, next ) }
+                    disabled={ !isAuthenticated }
                 />
-            ) )}
-            <ResetBanner onReset={onReset} disabled={!isAuthenticated} />
+            ) ) }
+            <ResetBanner onReset={ onReset } disabled={ !isAuthenticated } />
         </div>
     );
 }

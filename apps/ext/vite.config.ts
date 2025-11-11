@@ -1,7 +1,8 @@
+import { resolve } from "path";
+
 import { getBaseConfig } from "@eye-note/workspace/vite/config";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { resolve } from "path";
 import { config as loadEnv } from "dotenv";
 
 loadEnv( { path: resolve( __dirname, "..", "..", ".env" ) } );

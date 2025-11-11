@@ -1,3 +1,5 @@
+/* eslint-disable no-restricted-imports */
+
 export { BACKGROUND_AUTH_CONFIG } from "./auth-config";
 export {
     extensionSignInWithGoogle as signInWithGoogle,

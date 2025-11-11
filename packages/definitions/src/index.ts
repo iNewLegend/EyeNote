@@ -1,3 +1,5 @@
+/* eslint-disable no-restricted-imports */
+
 export interface Vector2D {
     x : number;
     y : number;

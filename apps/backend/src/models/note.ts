@@ -1,4 +1,6 @@
-import { Schema, model, models, type Document, type Model } from "mongoose";
+import { Schema, model, models   } from "mongoose";
+
+import type { Document, Model } from "mongoose";
 import type { NoteBase, SerializedDOMRect, Vector2D, ElementScreenshot } from "@eye-note/definitions";
 
 export interface NoteDocument extends NoteBase, Document {

@@ -1,10 +1,14 @@
 import * as React from "react";
 
-import { cn } from "../lib/utils";
-import { Button, type ButtonProps } from "./ui/button";
-import { CardContent } from "./ui/card";
+import defaultIcon from "@eye-note/ui/src/assets/icon.svg";
 
-import defaultIcon from "../assets/icon.svg";
+import { CardContent } from "@eye-note/ui/src/components/ui/card";
+
+import { Button  } from "@eye-note/ui/src/components/ui/button";
+
+import { cn } from "@eye-note/ui/src/lib/utils";
+
+import type { ButtonProps } from "@eye-note/ui/src/components/ui/button";
 
 type SignInPromptVariant = "card" | "callout";
 
@@ -47,35 +51,35 @@ export function SignInPrompt ( {
     const iconWrapperClassName = isCallout ? "w-fit" : "mx-auto w-fit";
 
     return (
-        <Wrapper className={cn( wrapperClassName, className )}>
-            <div className={cn( containerClassName, contentClassName )}>
+        <Wrapper className={ cn( wrapperClassName, className ) }>
+            <div className={ cn( containerClassName, contentClassName ) }>
                 <div className="space-y-6">
-                    {showIcon ? (
-                        <div className={iconWrapperClassName}>
+                    { showIcon ? (
+                        <div className={ iconWrapperClassName }>
                             <img
-                                src={defaultIcon}
-                                alt={iconAlt}
+                                src={ defaultIcon }
+                                alt={ iconAlt }
                                 className="w-24 h-24 animate-in zoom-in duration-500"
                                 loading="lazy"
                             />
                         </div>
-                    ) : null}
+                    ) : null }
                     <div className="space-y-2">
-                        <h3 className={cn( "text-xl font-semibold", isCallout ? "text-left" : undefined )}>
-                            {title}
+                        <h3 className={ cn( "text-xl font-semibold", isCallout ? "text-left" : undefined ) }>
+                            { title }
                         </h3>
-                        <p className={cn( "text-sm text-muted-foreground", isCallout ? "text-left" : undefined )}>
-                            {description}
+                        <p className={ cn( "text-sm text-muted-foreground", isCallout ? "text-left" : undefined ) }>
+                            { description }
                         </p>
                     </div>
                 </div>
                 <Button
-                    size={buttonSize}
-                    onClick={onGetStarted}
-                    disabled={isSigningIn}
-                    {...restButtonProps}
+                    size={ buttonSize }
+                    onClick={ onGetStarted }
+                    disabled={ isSigningIn }
+                    { ...restButtonProps }
                 >
-                    {isSigningIn ? signingInLabel : getStartedLabel}
+                    { isSigningIn ? signingInLabel : getStartedLabel }
                 </Button>
             </div>
         </Wrapper>

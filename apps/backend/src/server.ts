@@ -1,12 +1,14 @@
 import { pathToFileURL } from "url";
+
 import Fastify from "fastify";
 import cors from "@fastify/cors";
-import { appConfig } from "./config";
-import { mongoPlugin } from "./plugins/mongo";
-import { authPlugin } from "./plugins/auth";
-import { notesRoutes } from "./routes/notes";
-import { healthRoutes } from "./routes/health";
-import { groupsRoutes } from "./routes/groups";
+
+import { appConfig } from "@eye-note/backend/src/config";
+import { mongoPlugin } from "@eye-note/backend/src/plugins/mongo";
+import { authPlugin } from "@eye-note/backend/src/plugins/auth";
+import { notesRoutes } from "@eye-note/backend/src/routes/notes";
+import { healthRoutes } from "@eye-note/backend/src/routes/health";
+import { groupsRoutes } from "@eye-note/backend/src/routes/groups";
 
 export async function buildServer () {
     const fastify = Fastify( {
@@ -52,8 +54,8 @@ async function start () {
     }
 }
 
-const executedViaCli = process.argv[1]
-    ? pathToFileURL( process.argv[1] ).href === import.meta.url
+const executedViaCli = process.argv[ 1 ]
+    ? pathToFileURL( process.argv[ 1 ] ).href === import.meta.url
     : false;
 
 if ( executedViaCli ) {

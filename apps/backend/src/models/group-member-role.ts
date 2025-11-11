@@ -1,4 +1,6 @@
-import { Schema, model, models, type Document, type Model } from "mongoose";
+import { Schema, model, models   } from "mongoose";
+
+import type { Document, Model } from "mongoose";
 
 export interface GroupMemberRoleDocument extends Document {
     userId : string;
@@ -21,8 +23,8 @@ const groupMemberRoleSchema = new Schema<GroupMemberRoleDocument>(
     }
 );
 
-groupMemberRoleSchema.index({ userId: 1, groupId: 1 });
-groupMemberRoleSchema.index({ roleId: 1, groupId: 1 });
+groupMemberRoleSchema.index( { userId: 1, groupId: 1 } );
+groupMemberRoleSchema.index( { roleId: 1, groupId: 1 } );
 
 export const GroupMemberRoleModel : Model<GroupMemberRoleDocument> =
     models.GroupMemberRole || model<GroupMemberRoleDocument>( "GroupMemberRole", groupMemberRoleSchema );

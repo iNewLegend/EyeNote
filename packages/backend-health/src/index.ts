@@ -1,3 +1,5 @@
+/* eslint-disable no-restricted-imports */
+
 export type { BackendHealthStatus } from "./store";
 export { useBackendHealthStore } from "./store";
 export { checkBackendHealth } from "./check-backend-health";

@@ -1,5 +1,6 @@
-import type { IdentityComparisonOptions, IdentityComparisonResult, PageIdentity } from "../shared/types";
-import { compareIdentities } from "../shared/similarity";
+import { compareIdentities } from "@eye-note/page-identity/src/shared/similarity";
+
+import type { IdentityComparisonOptions, IdentityComparisonResult, PageIdentity } from "@eye-note/page-identity/src/shared/types";
 
 export function comparePageIdentities (
     previousIdentity : PageIdentity,

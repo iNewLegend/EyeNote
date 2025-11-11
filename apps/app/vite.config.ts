@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig( () => {
     return {
         ... getBaseConfig( {
-            hostEnvPrefix: 'APP'
+            hostEnvPrefix: "APP"
         } ),
         plugins: [ react() ],
     };

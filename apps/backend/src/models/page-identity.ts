@@ -1,4 +1,6 @@
-import { Schema, model, models, type Document, type Model } from "mongoose";
+import { Schema, model, models   } from "mongoose";
+
+import type { Document, Model } from "mongoose";
 
 export interface PageIdentityDocument extends Document {
     normalizedUrl : string;

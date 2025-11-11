@@ -5,7 +5,11 @@
     "type": "module",
     "main": "./src/index.ts",
     "types": "./src/index.ts",
+    "devDependencies": {
+        "@eye-note/page-identity": "workspace:*"
+    },
     "exports": {
+        "./src/*": "./src/*",
         ".": "./src/index.ts",
         "./server": "./src/server/index.ts",
         "./server/*": "./src/server/*.ts",

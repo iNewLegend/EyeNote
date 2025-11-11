@@ -1,5 +1,6 @@
-import { useCallback } from 'react';
-import { useHighlightStore } from "../stores/highlight-store";
+import { useCallback } from "react";
+
+import { useHighlightStore } from "@eye-note/ext/src/stores/highlight-store";
 
 /**
  * Generic hook to handle element highlighting logic
@@ -32,4 +33,4 @@ export function useElementHighlight () {
     return {
         handleElementHighlight
     };
-} 
+}

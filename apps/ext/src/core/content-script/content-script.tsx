@@ -1,14 +1,14 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 
-import { getPageAnalyzer } from "../../lib/page-analyzer";
+import { getPageAnalyzer } from "@eye-note/ext/src/lib/page-analyzer";
 
-import { ShadowDOM } from "../shadow-dom/shadow-dom";
-import { UserlandDOM } from "../userland-dom/userland-dom";
-import { useModeStore, AppMode } from "../../stores/use-mode-store";
+import { ShadowDOM } from "@eye-note/ext/src/core/shadow-dom/shadow-dom";
+import { UserlandDOM } from "@eye-note/ext/src/core/userland-dom/userland-dom";
+import { useModeStore, AppMode } from "@eye-note/ext/src/stores/use-mode-store";
 
-import shadowDOMStyles from "../shadow-dom/shadow-dom.css?inline";
-import userlandDOMStyles from "../userland-dom/userland-dom.css?inline";
+import shadowDOMStyles from "@eye-note/ext/src/core/shadow-dom/shadow-dom.css?inline";
+import userlandDOMStyles from "@eye-note/ext/src/core/userland-dom/userland-dom.css?inline";
 
 const DOM_IDS = {
     SHADOW_CONTAINER: "eye-note-shadow-dom",

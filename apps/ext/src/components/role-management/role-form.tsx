@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { CheckedState } from "@radix-ui/react-checkbox";
+
 import {
     Button,
     Card,
@@ -11,7 +11,10 @@ import {
     Label,
     Textarea,
 } from "@eye-note/ui";
-import { GroupPermission, type CreateGroupRolePayload, type UpdateGroupRolePayload } from "@eye-note/definitions";
+import { GroupPermission   } from "@eye-note/definitions";
+
+import type { CreateGroupRolePayload, UpdateGroupRolePayload } from "@eye-note/definitions";
+import type { CheckedState } from "@radix-ui/react-checkbox";
 
 interface RoleFormProps {
     initialData ?: Partial<CreateGroupRolePayload>;
@@ -22,14 +25,14 @@ interface RoleFormProps {
 }
 
 const permissionLabels : Record<GroupPermission, string> = {
-    [GroupPermission.MANAGE_GROUP]: "Manage Group",
-    [GroupPermission.MANAGE_ROLES]: "Manage Roles",
-    [GroupPermission.MANAGE_MEMBERS]: "Manage Members",
-    [GroupPermission.MODERATE_CONTENT]: "Moderate Content",
-    [GroupPermission.CREATE_NOTES]: "Create Notes",
-    [GroupPermission.EDIT_NOTES]: "Edit Notes",
-    [GroupPermission.DELETE_NOTES]: "Delete Notes",
-    [GroupPermission.VIEW_NOTES]: "View Notes",
+    [ GroupPermission.MANAGE_GROUP ]: "Manage Group",
+    [ GroupPermission.MANAGE_ROLES ]: "Manage Roles",
+    [ GroupPermission.MANAGE_MEMBERS ]: "Manage Members",
+    [ GroupPermission.MODERATE_CONTENT ]: "Moderate Content",
+    [ GroupPermission.CREATE_NOTES ]: "Create Notes",
+    [ GroupPermission.EDIT_NOTES ]: "Edit Notes",
+    [ GroupPermission.DELETE_NOTES ]: "Delete Notes",
+    [ GroupPermission.VIEW_NOTES ]: "View Notes",
 };
 
 const permissionGroups = [
@@ -54,11 +57,11 @@ const permissionGroups = [
 ];
 
 export function RoleForm ( { initialData, onSubmit, onCancel, isLoading = false, title } : RoleFormProps ) {
-    const [formData, setFormData] = useState( {
+    const [ formData, setFormData ] = useState( {
         name: initialData?.name || "",
         description: initialData?.description || "",
         color: initialData?.color || "#6366f1",
-        permissions: initialData?.permissions || [GroupPermission.VIEW_NOTES],
+        permissions: initialData?.permissions || [ GroupPermission.VIEW_NOTES ],
     } );
 
     const handlePermissionChange = ( permission : GroupPermission, checked : boolean ) => {
@@ -78,16 +81,16 @@ export function RoleForm ( { initialData, onSubmit, onCancel, isLoading = false,
     return (
         <Card>
             <CardHeader>
-                <CardTitle>{title}</CardTitle>
+                <CardTitle>{ title }</CardTitle>
             </CardHeader>
             <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={ handleSubmit } className="space-y-6">
                     <div className="space-y-2">
                         <Label htmlFor="name">Role Name</Label>
                         <Input
                             id="name"
-                            value={formData.name}
-                            onChange={( event : React.ChangeEvent<HTMLInputElement> ) =>
+                            value={ formData.name }
+                            onChange={ ( event : React.ChangeEvent<HTMLInputElement> ) =>
                                 setFormData( ( prev ) => ( { ...prev, name: event.target.value } ) )
                             }
                             placeholder="Enter role name"
@@ -99,12 +102,12 @@ export function RoleForm ( { initialData, onSubmit, onCancel, isLoading = false,
                         <Label htmlFor="description">Description</Label>
                         <Textarea
                             id="description"
-                            value={formData.description}
-                            onChange={( event : React.ChangeEvent<HTMLTextAreaElement> ) =>
+                            value={ formData.description }
+                            onChange={ ( event : React.ChangeEvent<HTMLTextAreaElement> ) =>
                                 setFormData( ( prev ) => ( { ...prev, description: event.target.value } ) )
                             }
                             placeholder="Enter role description"
-                            rows={3}
+                            rows={ 3 }
                         />
                     </div>
 
@@ -114,15 +117,15 @@ export function RoleForm ( { initialData, onSubmit, onCancel, isLoading = false,
                             <Input
                                 id="color"
                                 type="color"
-                                value={formData.color}
-                                onChange={( event : React.ChangeEvent<HTMLInputElement> ) =>
+                                value={ formData.color }
+                                onChange={ ( event : React.ChangeEvent<HTMLInputElement> ) =>
                                     setFormData( ( prev ) => ( { ...prev, color: event.target.value } ) )
                                 }
                                 className="w-16 h-10 p-1"
                             />
                             <Input
-                                value={formData.color}
-                                onChange={( event : React.ChangeEvent<HTMLInputElement> ) =>
+                                value={ formData.color }
+                                onChange={ ( event : React.ChangeEvent<HTMLInputElement> ) =>
                                     setFormData( ( prev ) => ( { ...prev, color: event.target.value } ) )
                                 }
                                 placeholder="#6366f1"
@@ -133,37 +136,37 @@ export function RoleForm ( { initialData, onSubmit, onCancel, isLoading = false,
 
                     <div className="space-y-4">
                         <Label>Permissions</Label>
-                        {permissionGroups.map( ( group ) => (
-                            <div key={group.title} className="space-y-3">
+                        { permissionGroups.map( ( group ) => (
+                            <div key={ group.title } className="space-y-3">
                                 <h4 className="text-sm font-medium text-muted-foreground">
-                                    {group.title}
+                                    { group.title }
                                 </h4>
                                 <div className="grid grid-cols-1 gap-3">
-                                    {group.permissions.map( ( permission ) => (
-                                        <div key={permission} className="flex items-center space-x-2">
+                                    { group.permissions.map( ( permission ) => (
+                                        <div key={ permission } className="flex items-center space-x-2">
                                             <Checkbox
-                                                id={permission}
-                                                checked={formData.permissions.includes( permission )}
-                                                onCheckedChange={( checkedValue : CheckedState ) =>
+                                                id={ permission }
+                                                checked={ formData.permissions.includes( permission ) }
+                                                onCheckedChange={ ( checkedValue : CheckedState ) =>
                                                     handlePermissionChange( permission, checkedValue === true )
                                                 }
                                             />
-                                            <Label htmlFor={permission} className="text-sm">
-                                                {permissionLabels[permission]}
+                                            <Label htmlFor={ permission } className="text-sm">
+                                                { permissionLabels[ permission ] }
                                             </Label>
                                         </div>
-                                    ) )}
+                                    ) ) }
                                 </div>
                             </div>
-                        ) )}
+                        ) ) }
                     </div>
 
                     <div className="flex justify-end gap-3">
-                        <Button type="button" variant="outline" onClick={onCancel}>
+                        <Button type="button" variant="outline" onClick={ onCancel }>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading ? "Saving..." : "Save Role"}
+                        <Button type="submit" disabled={ isLoading }>
+                            { isLoading ? "Saving..." : "Save Role" }
                         </Button>
                     </div>
                 </form>

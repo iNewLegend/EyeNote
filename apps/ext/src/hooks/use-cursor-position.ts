@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { useCursorStore } from "../stores/use-cursor-store";
+
+import { useCursorStore } from "@eye-note/ext/src/stores/use-cursor-store";
 
 export const useCursorPosition = () => {
     useEffect( () => {

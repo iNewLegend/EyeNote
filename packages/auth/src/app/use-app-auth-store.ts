@@ -1,15 +1,16 @@
 import { create } from "zustand";
-import type { AuthUser } from "../shared";
 
 import {
     clearAuthSession,
     loadAuthSession,
     storeAuthSession,
-} from "./auth-storage";
+} from "@eye-note/auth/src/app/auth-storage";
 import {
     appSignInWithGoogle,
     appSignOut,
-} from "./google-oauth";
+} from "@eye-note/auth/src/app/google-oauth";
+
+import type { AuthUser } from "@eye-note/auth/src/shared";
 
 type AuthState = {
     user : AuthUser | null;

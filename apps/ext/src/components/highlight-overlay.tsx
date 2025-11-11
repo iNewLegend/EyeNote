@@ -25,5 +25,5 @@ export const HighlightOverlay : React.FC<HighlightOverlayProps> = ( {
         ...style,
     };
 
-    return <div id={id} style={baseStyle} className={className} />;
+    return <div id={ id } style={ baseStyle } className={ className } />;
 };

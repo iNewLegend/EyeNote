@@ -1,8 +1,10 @@
 import * as fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { resolve } from "path";
+
 import { config as loadEnv } from "dotenv";
-import { defineConfig } from "vite";
+
+import type { defineConfig } from "vite";
 
 type TReturn = ReturnType<typeof defineConfig>;
 
@@ -11,7 +13,7 @@ const currentPath = fileURLToPath( import.meta.url ),
 
 // Check env path exists
 if ( !fs.existsSync( envPath ) ) {
-    throw new Error( `Environment file not found at: ${ envPath }` )
+    throw new Error( `Environment file not found at: ${ envPath }` );
 }
 
 loadEnv( { path:  envPath } );

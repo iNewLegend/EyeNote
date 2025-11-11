@@ -10,10 +10,16 @@ import {
     TabsList,
     TabsTrigger,
 } from "@eye-note/ui";
-import { useGroupsStore } from "../../modules/groups/groups-store";
-import { RoleList } from "./role-list";
-import { RoleForm } from "./role-form";
-import { GroupPermission, type GroupRoleRecord, type CreateGroupRolePayload, type UpdateGroupRolePayload } from "@eye-note/definitions";
+
+import { GroupPermission    } from "@eye-note/definitions";
+
+import { RoleForm } from "@eye-note/ext/src/components/role-management/role-form";
+
+import { RoleList } from "@eye-note/ext/src/components/role-management/role-list";
+
+import { useGroupsStore } from "@eye-note/ext/src/modules/groups/groups-store";
+
+import type { GroupRoleRecord, CreateGroupRolePayload, UpdateGroupRolePayload } from "@eye-note/definitions";
 
 interface RoleManagementPanelProps {
     groupId : string;
@@ -31,14 +37,14 @@ export function RoleManagementPanel ( { groupId, onClose } : RoleManagementPanel
         clearSelectedGroup,
     } = useGroupsStore();
 
-    const [activeTab, setActiveTab] = useState( "roles" );
-    const [editingRole, setEditingRole] = useState<GroupRoleRecord | null>( null );
-    const [isSubmitting, setIsSubmitting] = useState( false );
+    const [ activeTab, setActiveTab ] = useState( "roles" );
+    const [ editingRole, setEditingRole ] = useState<GroupRoleRecord | null>( null );
+    const [ isSubmitting, setIsSubmitting ] = useState( false );
 
     useEffect( () => {
         fetchGroupWithRoles( groupId );
         return () => clearSelectedGroup();
-    }, [groupId, fetchGroupWithRoles, clearSelectedGroup] );
+    }, [ groupId, fetchGroupWithRoles, clearSelectedGroup ] );
 
     const handleCreateRole = async ( data : CreateGroupRolePayload | UpdateGroupRolePayload ) => {
         setIsSubmitting( true );
@@ -100,10 +106,10 @@ export function RoleManagementPanel ( { groupId, onClose } : RoleManagementPanel
             <Card>
                 <CardContent className="p-6">
                     <div className="text-center text-destructive">
-                        Error: {rolesError}
+                        Error: { rolesError }
                     </div>
                     <div className="flex justify-center mt-4">
-                        <Button onClick={onClose}>Close</Button>
+                        <Button onClick={ onClose }>Close</Button>
                     </div>
                 </CardContent>
             </Card>
@@ -120,7 +126,7 @@ export function RoleManagementPanel ( { groupId, onClose } : RoleManagementPanel
         );
     }
 
-    const canManageRoles = selectedGroupWithRoles.roles.some( role => 
+    const canManageRoles = selectedGroupWithRoles.roles.some( role =>
         role.permissions.includes( GroupPermission.MANAGE_ROLES )
     );
 
@@ -128,18 +134,18 @@ export function RoleManagementPanel ( { groupId, onClose } : RoleManagementPanel
         <Card className="w-full max-w-4xl mx-auto">
             <CardHeader>
                 <div className="flex items-center justify-between">
-                    <CardTitle>Role Management - {selectedGroupWithRoles.name}</CardTitle>
-                    <Button variant="outline" onClick={onClose}>
+                    <CardTitle>Role Management - { selectedGroupWithRoles.name }</CardTitle>
+                    <Button variant="outline" onClick={ onClose }>
                         Close
                     </Button>
                 </div>
             </CardHeader>
             <CardContent>
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <Tabs value={ activeTab } onValueChange={ setActiveTab }>
                     <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="roles">Roles</TabsTrigger>
                         <TabsTrigger value="create">Create Role</TabsTrigger>
-                        <TabsTrigger value="edit" disabled={!editingRole}>
+                        <TabsTrigger value="edit" disabled={ !editingRole }>
                             Edit Role
                         </TabsTrigger>
                     </TabsList>
@@ -148,39 +154,39 @@ export function RoleManagementPanel ( { groupId, onClose } : RoleManagementPanel
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
                                 <h3 className="text-lg font-semibold">Group Roles</h3>
-                                {canManageRoles && (
-                                    <Button onClick={() => setActiveTab( "create" )}>
+                                { canManageRoles && (
+                                    <Button onClick={ () => setActiveTab( "create" ) }>
                                         Create Role
                                     </Button>
-                                )}
+                                ) }
                             </div>
                             <RoleList
-                                roles={selectedGroupWithRoles.roles}
-                                onEditRole={canManageRoles ? handleEditRole : undefined}
-                                canManageRoles={canManageRoles}
+                                roles={ selectedGroupWithRoles.roles }
+                                onEditRole={ canManageRoles ? handleEditRole : undefined }
+                                canManageRoles={ canManageRoles }
                             />
                         </div>
                     </TabsContent>
 
                     <TabsContent value="create" className="mt-6">
                         <RoleForm
-                            onSubmit={handleCreateRole}
-                            onCancel={() => setActiveTab( "roles" )}
-                            isLoading={isSubmitting}
+                            onSubmit={ handleCreateRole }
+                            onCancel={ () => setActiveTab( "roles" ) }
+                            isLoading={ isSubmitting }
                             title="Create New Role"
                         />
                     </TabsContent>
 
                     <TabsContent value="edit" className="mt-6">
-                        {editingRole && (
+                        { editingRole && (
                             <RoleForm
-                                initialData={editingRole}
-                                onSubmit={handleUpdateRole}
-                                onCancel={handleCancelEdit}
-                                isLoading={isSubmitting}
-                                title={`Edit Role: ${editingRole.name}`}
+                                initialData={ editingRole }
+                                onSubmit={ handleUpdateRole }
+                                onCancel={ handleCancelEdit }
+                                isLoading={ isSubmitting }
+                                title={ `Edit Role: ${ editingRole.name }` }
                             />
-                        )}
+                        ) }
                     </TabsContent>
                 </Tabs>
             </CardContent>

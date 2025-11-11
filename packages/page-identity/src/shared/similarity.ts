@@ -1,5 +1,6 @@
-import type { IdentityComparisonOptions, IdentityComparisonResult, PageIdentity } from "./types";
-import { DEFAULT_MAX_CONTENT_DISTANCE, DEFAULT_MIN_LAYOUT_SIMILARITY } from "./constants";
+import { DEFAULT_MAX_CONTENT_DISTANCE, DEFAULT_MIN_LAYOUT_SIMILARITY } from "@eye-note/page-identity/src/shared/constants";
+
+import type { IdentityComparisonOptions, IdentityComparisonResult, PageIdentity } from "@eye-note/page-identity/src/shared/types";
 
 function toBigInt ( value : bigint | string ) : bigint {
     if ( typeof value === "bigint" ) {

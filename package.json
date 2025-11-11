@@ -2,6 +2,7 @@
     "name": "eye-note",
     "version": "1.0.0",
     "private": true,
+    "type": "module",
     "workspaces": [
         "apps/*",
         "packages/*"
@@ -11,8 +12,8 @@
         "ext:dev": "pnpm --filter @eye-note/ext dev",
         "ext:launch-chrome": "bash scripts/launch-chrome-extension.sh",
         "backend:dev": "pnpm --filter @eye-note/backend dev",
-        "lint": "eslint ./apps --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-        "lint:fix": "eslint ./apps --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
         "type-check": "pnpm -r exec tsc --noEmit"
     },
     "packageManager": "pnpm@8.15.1",

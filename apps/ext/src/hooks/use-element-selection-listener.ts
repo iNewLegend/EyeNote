@@ -1,7 +1,9 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 
-import { useModeStore, AppMode } from "../stores/use-mode-store";
-import { useHighlightStore } from "../stores/highlight-store";
+import { useModeStore, AppMode } from "@eye-note/ext/src/stores/use-mode-store";
+import { useHighlightStore } from "@eye-note/ext/src/stores/highlight-store";
+
+import type React from "react";
 
 export function useElementSelectionListener (
     setLocalSelectedElement : React.Dispatch<React.SetStateAction<HTMLElement | null>>

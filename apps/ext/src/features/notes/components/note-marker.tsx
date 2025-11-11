@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { Note } from "../../../types";
+import type { Note } from "@eye-note/ext/src/types";
 
 interface NoteMarkerProps {
     note : Note;
@@ -10,12 +10,12 @@ interface NoteMarkerProps {
 export function NoteMarker ( { note, style, onClick } : NoteMarkerProps ) {
     return (
         <div
-            style={style}
-            data-note-id={note.id}
-            data-has-element={note.highlightedElement ? "1" : "0"}
-            data-pending={note.isPendingSync ? "1" : "0"}
-            className={`note-marker${ note.isPendingSync ? " is-pending" : "" }`}
-            onClick={onClick}
+            style={ style }
+            data-note-id={ note.id }
+            data-has-element={ note.highlightedElement ? "1" : "0" }
+            data-pending={ note.isPendingSync ? "1" : "0" }
+            className={ `note-marker${ note.isPendingSync ? " is-pending" : "" }` }
+            onClick={ onClick }
         />
     );
 }

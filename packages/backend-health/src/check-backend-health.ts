@@ -1,5 +1,5 @@
-import { resolveBackendUrl } from "./resolve-backend-url";
-import { useBackendHealthStore } from "./store";
+import { resolveBackendUrl } from "@eye-note/backend-health/src/resolve-backend-url";
+import { useBackendHealthStore } from "@eye-note/backend-health/src/store";
 
 type BackendHealthCheckResult = {
     healthy : boolean;

@@ -1,11 +1,12 @@
+import { compareIdentities } from "@eye-note/page-identity/src/shared/similarity";
+import { DEFAULT_MAX_CONTENT_DISTANCE } from "@eye-note/page-identity/src/shared/constants";
+
 import type {
     IdentityComparisonOptions,
     PageIdentity,
     PageIdentityCandidate,
     RankedIdentityMatch,
-} from "../shared/types";
-import { compareIdentities } from "../shared/similarity";
-import { DEFAULT_MAX_CONTENT_DISTANCE } from "../shared/constants";
+} from "@eye-note/page-identity/src/shared/types";
 
 export function rankIdentityMatches (
     fingerprint : PageIdentity,

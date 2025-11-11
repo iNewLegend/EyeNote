@@ -1,12 +1,16 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState  } from "react";
+
 import { createPortal } from "react-dom";
 
-import { cn } from "../../lib/utils";
-import eyeNoteIconImport from "../../assets/icon.svg";
+import eyeNoteIconImport from "@eye-note/ui/src/assets/icon.svg";
 
-const eyeNoteIconUrl = (() => {
+import { cn } from "@eye-note/ui/src/lib/utils";
+
+import type { ReactNode } from "react";
+
+const eyeNoteIconUrl = ( () => {
     if ( typeof chrome !== "undefined" && typeof chrome.runtime?.getURL === "function" ) {
         const normalized = eyeNoteIconImport.startsWith( "/" )
             ? eyeNoteIconImport.slice( 1 )
@@ -14,7 +18,7 @@ const eyeNoteIconUrl = (() => {
         return chrome.runtime.getURL( normalized );
     }
     return eyeNoteIconImport;
-})();
+} )();
 
 type ShadowToastTone = "default" | "success" | "danger";
 
@@ -56,7 +60,6 @@ const toneClassMap : Record<ShadowToastTone, string> = {
 function generateToastId () {
     return Math.random().toString( 36 ).slice( 2, 10 );
 }
-
 
 export function ShadowToastProvider ( {
     children,
@@ -119,28 +122,28 @@ export function ShadowToastProvider ( {
 
     const content = (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-toast flex flex-col gap-2 p-4">
-            {toasts.map( ( toast ) => (
+            { toasts.map( ( toast ) => (
                 <div
-                    key={toast.id}
-                    className={cn(
+                    key={ toast.id }
+                    className={ cn(
                         "pointer-events-auto w-full rounded-lg border px-4 py-3 text-sm font-medium shadow-lg transition-all animate-in fade-in slide-in-from-bottom-6",
                         toneClassMap[ toast.tone ]
-                    )}
+                    ) }
                 >
                     <div className="flex items-center gap-3">
                         <img
-                            src={eyeNoteIconUrl}
+                            src={ eyeNoteIconUrl }
                             alt="EyeNote logo"
                             className="h-8 w-8"
                             loading="lazy"
                             decoding="async"
                         />
                         <div className="flex-1 text-center leading-snug">
-                            {toast.message}
+                            { toast.message }
                         </div>
                     </div>
                 </div>
-            ) )}
+            ) ) }
         </div>
     );
 
@@ -150,9 +153,9 @@ export function ShadowToastProvider ( {
             : content;
 
     return (
-        <ShadowToastContext.Provider value={contextValue}>
-            {children}
-            {viewport}
+        <ShadowToastContext.Provider value={ contextValue }>
+            { children }
+            { viewport }
         </ShadowToastContext.Provider>
     );
 }

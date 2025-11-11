@@ -10,11 +10,11 @@ export function InteractionBlocker ( { isVisible, className } : InteractionBlock
 
     return (
         <div
-            className={cn(
+            className={ cn(
                 "fixed inset-0 w-full h-full pointer-events-none z-[2147483646]",
                 className
-            )}
+            ) }
             data-testid="eye-note-interaction-blocker"
         />
     );
-} 
+}

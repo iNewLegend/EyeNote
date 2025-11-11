@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { initializeGroupsStore, useGroupsStore } from "../groups-store";
+
+import { initializeGroupsStore, useGroupsStore } from "@eye-note/ext/src/modules/groups/groups-store";
 
 interface UseGroupsBootstrapArgs {
     isAuthenticated : boolean;
