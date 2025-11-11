@@ -9,12 +9,16 @@
         "zustand": "^5.0.3"
     },
     "devDependencies": {
-        "@eye-note/backend-health": "workspace:*"
+        "@eye-note/backend-health": "workspace:*",
+        "@types/node": "^20.10.0"
     },
     "peerDependencies": {
         "react": "^18.2.0"
     },
     "exports": {
-        "./src/*": "./src/*"
+        ".": "./src/index.ts",
+        "./src/*": "./src/*.ts",
+        "./src/*.ts": "./src/*.ts",
+        "./src/*.tsx": "./src/*.tsx"
     }
 }

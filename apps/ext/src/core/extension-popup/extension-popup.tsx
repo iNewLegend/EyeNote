@@ -17,6 +17,7 @@ import {
 
 import { useAuthStore, useAuthStatusEffects } from "@eye-note/auth/extension";
 import { useBackendHealthStore } from "@eye-note/backend-health";
+import type { GroupRecord } from "@eye-note/definitions";
 import { Menu, Users } from "lucide-react";
 
 import "@eye-note/ext/src/core/extension-popup/extension-popup.css";
@@ -24,6 +25,7 @@ import { useBackendHealthBridge } from "@eye-note/ext/src/hooks/use-backend-heal
 import {
     useGroupsBootstrap,
     useGroupsStore,
+    type GroupsStore,
 } from "@eye-note/ext/src/modules/groups";
 
 export function ExtensionPopup () {
@@ -35,10 +37,10 @@ export function ExtensionPopup () {
     const signInUser = useAuthStore( ( state ) => state.signIn );
     const backendHealthStatus = useBackendHealthStore( ( state ) => state.status );
     const isBackendHealthy = backendHealthStatus === "healthy";
-    const groups = useGroupsStore( ( state ) => state.groups );
-    const activeGroupIds = useGroupsStore( ( state ) => state.activeGroupIds );
-    const createGroup = useGroupsStore( ( state ) => state.createGroup );
-    const joinGroupByCode = useGroupsStore( ( state ) => state.joinGroupByCode );
+    const groups = useGroupsStore( ( state : GroupsStore ) => state.groups );
+    const activeGroupIds = useGroupsStore( ( state : GroupsStore ) => state.activeGroupIds );
+    const createGroup = useGroupsStore( ( state : GroupsStore ) => state.createGroup );
+    const joinGroupByCode = useGroupsStore( ( state : GroupsStore ) => state.joinGroupByCode );
     const [ newGroupName, setNewGroupName ] = useState( "" );
     const [ inviteCodeInput, setInviteCodeInput ] = useState( "" );
     const [ isCreatingGroup, setIsCreatingGroup ] = useState( false );
@@ -72,7 +74,7 @@ export function ExtensionPopup () {
 
     const activeGroups = useMemo( () => {
         const activeSet = new Set( activeGroupIds );
-        return groups.filter( ( group ) => activeSet.has( group.id ) );
+        return groups.filter( ( group : GroupRecord ) => activeSet.has( group.id ) );
     }, [ activeGroupIds, groups ] );
 
     const sendMessageToActiveTab = async ( payload : { type : string } ) => {

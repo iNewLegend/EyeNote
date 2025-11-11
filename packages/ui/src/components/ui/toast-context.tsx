@@ -120,7 +120,7 @@ function toast( { ...props } : Toast ) {
             ...props,
             id,
             open: true,
-            onOpenChange: ( open ) => {
+            onOpenChange: ( open : boolean ) => {
                 props.onOpenChange?.( open );
                 if ( !open ) {
                     dispatch( { type: "DISMISS_TOAST", toastId: id } );

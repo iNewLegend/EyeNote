@@ -306,7 +306,7 @@ export function NotesComponent ( {
                 note={ note }
                 container={ container }
                 open={ Boolean( note.isEditing ) }
-                onOpenChange={ ( open ) => handleOpenChange( open ) }
+                onOpenChange={ ( open : boolean ) => handleOpenChange( open ) }
                 groupColor={ groupColor }
                 groupLabel={ groupLabel }
                 screenshots={ screenshots }

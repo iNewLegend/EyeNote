@@ -16,7 +16,7 @@
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true,
         "baseUrl": ".",
-        "types": ["vite/client"]
+        "types": ["vite/client", "chrome"]
     },
     "include": ["src/**/*.ts", "src/**/*.tsx"],
     "references": [

@@ -151,7 +151,7 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
                 .exec();
 
             const payload : ListGroupsResponse = {
-                groups: groups.map( ( group ) => serializeGroup( group ) ),
+                groups: groups.map( ( group : GroupDocument ) => serializeGroup( group ) ),
             };
 
             reply.code( 200 ).send( payload );
@@ -276,7 +276,7 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
                 return;
             }
 
-            const nextMemberIds = group.memberIds.filter( ( id ) => id !== userId );
+            const nextMemberIds = group.memberIds.filter( ( id : string ) => id !== userId );
 
             if ( nextMemberIds.length === group.memberIds.length ) {
                 reply.code( 200 ).send( {
@@ -451,7 +451,7 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
             const payload = bodyParseResult.data as CreateGroupRolePayload;
 
             const existingRoles = await RoleService.getGroupRoles( groupId );
-            const nextPosition = Math.max( ...existingRoles.map( r => r.position ), 0 ) + 1;
+            const nextPosition = Math.max( ...existingRoles.map( ( r : GroupRoleDocument ) => r.position ), 0 ) + 1;
 
             const created = await GroupRoleModel.create( {
                 name: payload.name,

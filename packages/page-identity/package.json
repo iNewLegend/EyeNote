@@ -9,14 +9,19 @@
         "@eye-note/page-identity": "workspace:*"
     },
     "exports": {
-        "./src/*": "./src/*",
+        "./src/*": "./src/*.ts",
+        "./src/*.ts": "./src/*.ts",
+        "./src/*.tsx": "./src/*.tsx",
         ".": "./src/index.ts",
         "./server": "./src/server/index.ts",
         "./server/*": "./src/server/*.ts",
         "./shared": "./src/shared/index.ts",
         "./shared/*": "./src/shared/*.ts",
         "./client": "./src/client/index.ts",
-        "./client/*": "./src/client/*.ts"
+        "./client/*": "./src/client/*.ts",
+        "./src/shared/similarity": "./src/shared/similarity.ts",
+        "./src/shared/constants": "./src/shared/constants.ts",
+        "./src/shared/types": "./src/shared/types.ts"
     },
     "scripts": {
         "build": "tsc -p tsconfig.json",

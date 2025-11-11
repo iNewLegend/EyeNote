@@ -93,7 +93,7 @@ export async function resolvePageIdentity (
     if ( candidates.length > 0 ) {
         const ranked = rankIdentityMatches(
             payload,
-            candidates.map( ( doc ) => ( {
+            candidates.map( ( doc : PageIdentityDocument ) => ( {
                 id: doc._id.toHexString(),
                 identity: mapDocumentToIdentityPayload( doc ),
             } ) )
@@ -109,7 +109,7 @@ export async function resolvePageIdentity (
 
             if ( topMatch.isMatch ) {
                 bestMatchDocument = candidates.find(
-                    ( doc ) => doc._id.toHexString() === topMatch.id
+                    ( doc : PageIdentityDocument ) => doc._id.toHexString() === topMatch.id
                 );
 
                 bestMatchScore = topMatch.score;

@@ -79,7 +79,7 @@ export class RoleService {
             } ) )
         );
 
-        const ownerRole = roles.find( role => role.name === "Owner" );
+        const ownerRole = roles.find( ( role : GroupRoleDocument ) => role.name === "Owner" );
         if ( ownerRole ) {
             await GroupMemberRoleModel.create( {
                 userId: ownerId,
@@ -103,7 +103,7 @@ export class RoleService {
             groupId,
         } );
 
-        const roleIds = memberRoles.map( mr => mr.roleId );
+        const roleIds = memberRoles.map( ( mr : GroupMemberRoleDocument ) => mr.roleId );
 
         const roles = await GroupRoleModel.find( {
             _id: { $in: roleIds },
@@ -117,8 +117,8 @@ export class RoleService {
                 permissions.add( permission );
             } );
         } else {
-            roles.forEach( role => {
-                role.permissions.forEach( permission => {
+            roles.forEach( ( role : GroupRoleDocument ) => {
+                role.permissions.forEach( ( permission : GroupPermission ) => {
                     permissions.add( permission );
                 } );
             } );
@@ -167,7 +167,7 @@ export class RoleService {
         } ).select( "position" );
 
         const highestManagerPosition = Math.max(
-            ...managerRolePositions.map( role => role.position ),
+            ...managerRolePositions.map( ( role : { position : number } ) => role.position ),
             managerRoles.isOwner ? 1000 : 0
         );
 

@@ -53,7 +53,7 @@ export function GeneralSettingsSection ( {
                     label={ descriptor.label }
                     description={ descriptor.description }
                     checked={ settings[ descriptor.key ] }
-                    onCheckedChange={ ( next ) => onToggle( descriptor.key, next ) }
+                    onCheckedChange={ ( next : boolean ) => onToggle( descriptor.key, next ) }
                     disabled={ !isAuthenticated }
                 />
             ) ) }

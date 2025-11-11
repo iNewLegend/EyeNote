@@ -14,7 +14,8 @@
         "react-dom": "^18.2.0"
     },
     "devDependencies": {
-        "@eye-note/ui": "workspace:*"
+        "@eye-note/ui": "workspace:*",
+        "@types/chrome": "^0.0.304"
     },
     "dependencies": {
         "@radix-ui/react-checkbox": "^1.3.3",
@@ -33,6 +34,28 @@
         "tailwind-merge": "^3.0.1"
     },
     "exports": {
-        "./src/*": "./src/*"
+        ".": "./src/index.ts",
+        "./src/*": "./src/*.ts",
+        "./src/*.ts": "./src/*.ts",
+        "./src/*.tsx": "./src/*.tsx",
+        "./src/components/downtime-notice": "./src/components/downtime-notice.tsx",
+        "./src/components/settings-dialog": "./src/components/settings-dialog.tsx",
+        "./src/components/settings-surface": "./src/components/settings-surface.tsx",
+        "./src/components/sign-in-prompt": "./src/components/sign-in-prompt.tsx",
+        "./src/components/ui/badge": "./src/components/ui/badge.tsx",
+        "./src/components/ui/button": "./src/components/ui/button.tsx",
+        "./src/components/ui/card": "./src/components/ui/card.tsx",
+        "./src/components/ui/checkbox": "./src/components/ui/checkbox.tsx",
+        "./src/components/ui/dialog": "./src/components/ui/dialog.tsx",
+        "./src/components/ui/input": "./src/components/ui/input.tsx",
+        "./src/components/ui/label": "./src/components/ui/label.tsx",
+        "./src/components/ui/shadow-toast": "./src/components/ui/shadow-toast.tsx",
+        "./src/components/ui/sheet": "./src/components/ui/sheet.tsx",
+        "./src/components/ui/sonner": "./src/components/ui/sonner.tsx",
+        "./src/components/ui/switch": "./src/components/ui/switch.tsx",
+        "./src/components/ui/tabs": "./src/components/ui/tabs.tsx",
+        "./src/components/ui/textarea": "./src/components/ui/textarea.tsx",
+        "./src/components/ui/toast": "./src/components/ui/toast.tsx",
+        "./src/components/ui/toast-context": "./src/components/ui/toast-context.tsx"
     }
 }

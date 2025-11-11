@@ -30,7 +30,16 @@
         "vite": "^5.1.0"
     },
     "exports": {
-        "./src/*": "./src/*"
+        "./src/*": "./src/*.ts",
+        "./src/*.ts": "./src/*.ts",
+        "./src/*.tsx": "./src/*.tsx",
+        "./src/app": "./src/app.tsx",
+        "./src/components/collaboration-preview-section": "./src/components/collaboration-preview-section.tsx",
+        "./src/components/general-settings-section": "./src/components/general-settings-section.tsx",
+        "./src/components/header": "./src/components/header.tsx",
+        "./src/components/reset-banner": "./src/components/reset-banner.tsx",
+        "./src/components/setting-toggle": "./src/components/setting-toggle.tsx",
+        "./src/pages/auth-callback": "./src/pages/auth-callback.tsx"
     },
     "packageManager": "pnpm@8.15.1"
 }

@@ -32,6 +32,22 @@
         "pino-pretty": "^10.2.3"
     },
     "exports": {
-        "./src/*": "./src/*"
+        "./src/*": "./src/*.ts",
+        "./src/*.ts": "./src/*.ts",
+        "./src/*.tsx": "./src/*.tsx",
+        "./src/config": "./src/config.ts",
+        "./src/plugins/mongo": "./src/plugins/mongo.ts",
+        "./src/plugins/auth": "./src/plugins/auth.ts",
+        "./src/routes/notes": "./src/routes/notes.ts",
+        "./src/routes/health": "./src/routes/health.ts",
+        "./src/routes/groups": "./src/routes/groups.ts",
+        "./src/server": "./src/server.ts",
+        "./src/services/role-service": "./src/services/role-service.ts",
+        "./src/services/page-identity-service": "./src/services/page-identity-service.ts",
+        "./src/models/note": "./src/models/note.ts",
+        "./src/models/group": "./src/models/group.ts",
+        "./src/models/group-role": "./src/models/group-role.ts",
+        "./src/models/group-member-role": "./src/models/group-member-role.ts",
+        "./src/models/page-identity": "./src/models/page-identity.ts"
     }
 }

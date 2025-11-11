@@ -5,7 +5,6 @@ import {
     DowntimeNotice,
     SettingsSurface,
     SignInPrompt,
-
     Toaster,
     toast
 } from "@eye-note/ui";

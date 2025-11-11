@@ -325,7 +325,7 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
             // No legacy backfill path by design (fresh dataset only)
 
             reply.send( {
-                notes: docs.map( ( doc ) => serializeNote( doc as NoteLean ) ),
+                notes: docs.map( ( doc : NoteLean ) => serializeNote( doc as NoteLean ) ),
                 identity: identityResolution,
             } );
         },
@@ -359,7 +359,7 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
                 .exec();
 
             return {
-                notes: docs.map( ( doc ) => serializeNote( doc as NoteLean ) ),
+                notes: docs.map( ( doc : NoteLean ) => serializeNote( doc as NoteLean ) ),
             };
         },
     } );

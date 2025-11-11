@@ -1,9 +1,31 @@
 ---
-description: 
+description: Never use relative imports - always use workspace imports
 globs: 
 alwaysApply: true
 ---
 
 # Never use relative imports
 
-always use imports that are in workspace eg '@vertix.gg/flow/'.
+Always use workspace imports instead of relative paths.
+
+## Examples
+
+✅ Correct - Workspace imports:
+```typescript
+import { Button } from "@eye-note/ui";
+import { useAppAuth } from "@eye-note/auth/app";
+import { resolveBackendUrl } from "@eye-note/backend-health/src/resolve-backend-url";
+```
+
+❌ Incorrect - Relative imports:
+```typescript
+import { Button } from "../ui";
+import { useAppAuth } from "./use-app-auth-store";
+import { resolveBackendUrl } from "./resolve-backend-url";
+```
+
+## Rule
+
+- Never use relative imports (`./`, `../`)
+- Always use workspace package imports (`@eye-note/<package>/...`)
+- This applies to both cross-package and intra-package imports

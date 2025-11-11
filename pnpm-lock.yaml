@@ -329,6 +329,9 @@ importers:
       '@eye-note/backend-health':
         specifier: workspace:*
         version: 'link:'
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.24
 
   packages/definitions: {}
 
@@ -392,6 +395,9 @@ importers:
       '@eye-note/ui':
         specifier: workspace:*
         version: 'link:'
+      '@types/chrome':
+        specifier: ^0.0.304
+        version: 0.0.304
 
   packages/workspace:
     dependencies:

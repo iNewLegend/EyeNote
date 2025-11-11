@@ -6,12 +6,15 @@
     "main": "./src/shared/index.ts",
     "types": "./src/shared/index.ts",
     "exports": {
-        "./src/*": "./src/*",
+        "./src/*": "./src/*.ts",
+        "./src/*.ts": "./src/*.ts",
+        "./src/*.tsx": "./src/*.tsx",
         ".": "./src/shared/index.ts",
         "./shared": "./src/shared/index.ts",
         "./app": "./src/app/index.ts",
         "./backend": "./src/backend/index.ts",
-        "./extension": "./src/extension/index.ts"
+        "./extension": "./src/extension/index.ts",
+        "./src/shared": "./src/shared/index.ts"
     },
     "scripts": {
         "build": "tsc -p tsconfig.json",

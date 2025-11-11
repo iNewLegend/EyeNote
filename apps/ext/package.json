@@ -61,7 +61,24 @@
         "wait-on": "^8.0.2"
     },
     "exports": {
-        "./src/*": "./src/*"
+        "./src/*": "./src/*.ts",
+        "./src/*.ts": "./src/*.ts",
+        "./src/*.tsx": "./src/*.tsx",
+        "./src/components/cursor-dot": "./src/components/cursor-dot.tsx",
+        "./src/components/cursor-dot-wrapper": "./src/components/cursor-dot-wrapper.tsx",
+        "./src/components/role-management/role-form": "./src/components/role-management/role-form.tsx",
+        "./src/components/role-management/role-list": "./src/components/role-management/role-list.tsx",
+        "./src/core/shadow-dom/shadow-dom": "./src/core/shadow-dom/shadow-dom.tsx",
+        "./src/core/userland-dom/userland-dom": "./src/core/userland-dom/userland-dom.tsx",
+        "./src/modules/groups": "./src/modules/groups/index.ts",
+        "./src/components/interaction-blocker": "./src/components/interaction-blocker.tsx",
+        "./src/components/quick-menu-dialog": "./src/components/quick-menu-dialog.tsx",
+        "./src/features/notes/notes-component": "./src/features/notes/notes-component.tsx",
+        "./src/components/highlight-overlay": "./src/components/highlight-overlay.tsx",
+        "./src/features/notes/components/note-marker": "./src/features/notes/components/note-marker.tsx",
+        "./src/features/notes/components/note-image-viewer": "./src/features/notes/components/note-image-viewer.tsx",
+        "./src/features/notes/components/note-sheet": "./src/features/notes/components/note-sheet.tsx",
+        "./src/components/role-management": "./src/components/role-management/index.ts"
     },
     "packageManager": "pnpm@8.15.1"
 }
