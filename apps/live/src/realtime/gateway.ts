@@ -9,6 +9,8 @@ import {
     getAccessErrorStatus,
     getNoteChatMessageModel,
     serializeNoteChatMessage,
+    createNoteChatMessageNotifications,
+    serializeNotification,
 } from "@eye-note/backend-models";
 
 const NoteChatMessageModel = getNoteChatMessageModel();
@@ -70,6 +72,10 @@ export async function registerRealtimeGateway ( fastify : FastifyInstance ) {
             socketId: socket.id,
             userId: socket.data.userId,
         }, "Realtime client connected" );
+
+        if ( typeof socket.data.userId === "string" ) {
+            socket.join( `user:${ socket.data.userId }` );
+        }
 
         socket.on( "note:join", async ( payload : { noteId ?: string }, ack ?: AckFn ) => {
             const noteId = payload?.noteId;
@@ -144,6 +150,23 @@ export async function registerRealtimeGateway ( fastify : FastifyInstance ) {
                 const record = serializeNoteChatMessage( doc );
                 io.to( `note:${ access.noteId }` ).emit( "note:message", record );
                 io.to( `group:${ access.groupId }` ).emit( "note:message", record );
+
+                try {
+                    const notifications = await createNoteChatMessageNotifications( {
+                        messageId: record.id,
+                        groupId: record.groupId ?? access.groupId,
+                        noteId: record.noteId,
+                        actorId: socket.data.userId,
+                        noteOwnerId: access.ownerId,
+                        content: record.content,
+                    } );
+
+                    notifications.forEach( ( notification ) => {
+                        io.to( `user:${ notification.userId }` ).emit( "notification", serializeNotification( notification ) );
+                    } );
+                } catch ( error ) {
+                    fastify.log.error( { err: error }, "Failed to create realtime chat notifications" );
+                }
 
                 ack?.( { ok: true } );
             }

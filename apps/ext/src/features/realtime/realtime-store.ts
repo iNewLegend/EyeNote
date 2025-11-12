@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import { io, type Socket } from "socket.io-client";
-import type { NoteChatMessageRecord } from "@eye-note/definitions";
+import type { NoteChatMessageRecord, NotificationRecord } from "@eye-note/definitions";
 import { getRealtimeBaseUrl } from "../../lib/api-client";
 import { postNoteChatMessage, requestRealtimeToken } from "../notes/chat-api";
 import { useNoteChatStore } from "../notes/chat-store";
+import { useNotificationsStore } from "../notifications/notifications-store";
 import type { Note } from "../../types";
 
 type RealtimeStatus = "disconnected" | "connecting" | "connected" | "error";
@@ -120,8 +121,8 @@ export const useRealtimeStore = create<RealtimeStore>( ( set, get ) => ( {
                 console.info( "[EyeNote] Group notification", payload );
             } );
 
-            socket.on( "notification", ( payload ) => {
-                console.info( "[EyeNote] Notification", payload );
+            socket.on( "notification", ( payload : NotificationRecord ) => {
+                useNotificationsStore.getState().receiveNotification( payload );
             } );
 
             set( ( prev ) => ( {

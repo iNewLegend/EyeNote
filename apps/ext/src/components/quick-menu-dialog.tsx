@@ -15,7 +15,7 @@ import {
 const dialogClassName =
     "max-h-[85vh] overflow-y-auto w-[min(90vw,480px)] max-w-[480px] space-y-6";
 
-type QuickMenuItemId = "groups" | "settings";
+type QuickMenuItemId = "groups" | "settings" | "notifications";
 
 type QuickMenuItem = {
     id: QuickMenuItemId;
@@ -31,6 +31,12 @@ const DEFAULT_MENU_ITEMS : QuickMenuItem[] = [
         label: "Groups",
         description: "Manage collaboration groups, invites, and member roles.",
         shortcut: "Shift + G",
+    },
+    {
+        id: "notifications",
+        label: "Notifications",
+        description: "Review unread alerts from your groups.",
+        shortcut: "Shift + N",
     },
     {
         id: "settings",

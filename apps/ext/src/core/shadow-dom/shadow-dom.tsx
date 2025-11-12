@@ -5,7 +5,12 @@ import { NotesComponent } from "../../features/notes/notes-component";
 import { useInspectorMode } from "../../hooks/use-inspector-mode";
 import { isElementVisible } from "../../utils/is-element-visible";
 import { useDomMutations } from "../../hooks/use-dom-mutations";
-import { EVENT_OPEN_GROUP_MANAGER, EVENT_OPEN_QUICK_MENU, EVENT_OPEN_SETTINGS_DIALOG } from "@eye-note/definitions";
+import {
+    EVENT_OPEN_GROUP_MANAGER,
+    EVENT_OPEN_NOTIFICATIONS_PANEL,
+    EVENT_OPEN_QUICK_MENU,
+    EVENT_OPEN_SETTINGS_DIALOG,
+} from "@eye-note/definitions";
 import { useMarkerVirtualization } from "../../hooks/use-marker-virtualization";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { InteractionBlocker } from "../../components/interaction-blocker";
@@ -24,6 +29,9 @@ import { useExtensionSettings, type ExtensionSettings } from "../../hooks/use-ex
 import { QuickMenuDialog } from "../../components/quick-menu-dialog";
 import { useRealtimeBootstrap } from "../../features/realtime/hooks/use-realtime-bootstrap";
 import { REALTIME_FAILURE_EVENT } from "../../features/realtime/realtime-store";
+import { useNotificationsBootstrap } from "../../features/notifications/hooks/use-notifications-bootstrap";
+import { useNotificationsStore } from "../../features/notifications/notifications-store";
+import { NotificationCenter } from "../../features/notifications/components/notification-center";
 import {
     Label,
     SettingsDialog,
@@ -59,6 +67,7 @@ const ShadowDomContent : React.FC = () => {
     const [ isProcessingNoteDismissal, setIsProcessingNoteDismissal ] = useState( false );
     const [ currentUrl, setCurrentUrl ] = useState( () => window.location.href );
     const [ isQuickMenuOpen, setIsQuickMenuOpen ] = useState( false );
+    const [ isNotificationsOpen, setIsNotificationsOpen ] = useState( false );
     const [ isSettingsDialogOpen, setIsSettingsDialogOpen ] = useState( false );
     const [ activeSettingsSection, setActiveSettingsSection ] = useState<SettingsSectionId>( "general" );
     const [ , setLocalSelectedElement ] = useState<HTMLElement | null>( null );
@@ -73,8 +82,26 @@ const ShadowDomContent : React.FC = () => {
     const inspectorToastTimeoutsRef = useRef<Record<string, number | null>>( {} );
     const dialogContainer = notesContainerRef.current?.parentElement ?? null;
     const visibleNoteIds = useMarkerVirtualization( notes, { rootMargin: "200px" } );
+    const unreadNotificationCount = useNotificationsStore( ( state ) => state.unreadCount );
 
     useRealtimeBootstrap();
+    useNotificationsBootstrap();
+
+    useEffect( () => {
+        if ( typeof chrome === "undefined" || !chrome.runtime?.sendMessage ) {
+            return;
+        }
+
+        const count = settings.showUnreadBadge ? unreadNotificationCount : 0;
+        chrome.runtime
+            .sendMessage( {
+                type: "UPDATE_BADGE",
+                count,
+            } )
+            .catch( () => {
+                // Ignore background messaging failures (popup closed, etc.)
+            } );
+    }, [ settings.showUnreadBadge, unreadNotificationCount ] );
 
     const lastKnownUrlRef = useUrlListener( setCurrentUrl );
     useGroupsBootstrap( {
@@ -226,13 +253,22 @@ const ShadowDomContent : React.FC = () => {
                 disabled: !canManageGroups,
             },
             {
+                id: "notifications" as const,
+                label: "Notifications",
+                description:
+                    unreadNotificationCount > 0
+                        ? `${ unreadNotificationCount } unread alert${ unreadNotificationCount === 1 ? "" : "s" }`
+                        : "Review recent alerts from your groups.",
+                shortcut: "Shift + N",
+            },
+            {
                 id: "settings" as const,
                 label: "Settings",
                 description: "Adjust overlay preferences without leaving the page.",
                 shortcut: "Shift + S",
             },
         ],
-        [ canManageGroups ]
+        [ canManageGroups, unreadNotificationCount ]
     );
 
     useEffect( () => {
@@ -305,6 +341,17 @@ const ShadowDomContent : React.FC = () => {
             window.removeEventListener( EVENT_OPEN_GROUP_MANAGER, handler as EventListener );
         };
     }, [ canManageGroups ] );
+
+    useEffect( () => {
+        const handler = () => {
+            setIsNotificationsOpen( true );
+        };
+
+        window.addEventListener( EVENT_OPEN_NOTIFICATIONS_PANEL, handler as EventListener );
+        return () => {
+            window.removeEventListener( EVENT_OPEN_NOTIFICATIONS_PANEL, handler as EventListener );
+        };
+    }, [] );
 
     useEffect( () => {
         const handler = () => {
@@ -477,9 +524,18 @@ const ShadowDomContent : React.FC = () => {
                             }
                             return;
                         }
+                        if ( item === "notifications" ) {
+                            setIsNotificationsOpen( true );
+                            return;
+                        }
                         setActiveSettingsSection( "general" );
                         setIsSettingsDialogOpen( true );
                     }}
+                />
+                <NotificationCenter
+                    open={isNotificationsOpen}
+                    onOpenChange={setIsNotificationsOpen}
+                    container={dialogContainer}
                 />
                 <SettingsDialog
                     open={isSettingsDialogOpen}

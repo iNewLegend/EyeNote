@@ -2,6 +2,7 @@
 
 ## Notes overlay
 - Prevented the extension NoteSheet from endlessly refetching `/api/notes/:id/chat/messages` when a note has no chat history by tracking per-note chat initialization in the store so the initial load only fires once per session.
+- Added an end-to-end notifications system: Mongo-backed notification records, Fastify `/api/notifications` listing + read endpoints, live gateway broadcasts, and an extension notification center with realtime updates and Chrome badge sync.
 
 # 2025-11-11
 

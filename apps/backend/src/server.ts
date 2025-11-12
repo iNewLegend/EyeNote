@@ -9,6 +9,7 @@ import { healthRoutes } from "./routes/health";
 import { groupsRoutes } from "./routes/groups";
 import { noteChatRoutes } from "./routes/note-chat";
 import { realtimeRoutes } from "./routes/realtime";
+import { notificationsRoutes } from "./routes/notifications";
 
 export async function buildServer () {
     const fastify = Fastify( {
@@ -37,6 +38,7 @@ export async function buildServer () {
     await fastify.register( groupsRoutes );
     await fastify.register( noteChatRoutes );
     await fastify.register( realtimeRoutes );
+    await fastify.register( notificationsRoutes );
 
     return fastify;
 }

@@ -4,6 +4,7 @@ import type { NoteChatMessageRecord } from "@eye-note/definitions";
 import { NoteChatMessageModel, type NoteChatMessageDocument } from "../models/note-chat-message";
 import { ensureNoteGroupAccess, getAccessErrorStatus } from "../services/note-chat-access";
 import { serializeNoteChatMessage } from "../services/note-chat-serialization";
+import { createNoteChatMessageNotifications } from "@eye-note/backend-models";
 
 const noteParamsSchema = z.object( {
     noteId: z.string().min( 1 ),
@@ -125,7 +126,20 @@ export async function noteChatRoutes ( fastify : FastifyInstance ) {
                     clientMessageId: payload.clientMessageId ?? null,
                 } );
 
-                reply.code( 201 ).send( serializeNoteChatMessage( doc as NoteChatMessageDocument ) );
+                const record = serializeNoteChatMessage( doc as NoteChatMessageDocument );
+
+                void createNoteChatMessageNotifications( {
+                    messageId: record.id,
+                    groupId: record.groupId ?? access.groupId,
+                    noteId: record.noteId,
+                    actorId: request.user!.id,
+                    noteOwnerId: access.ownerId,
+                    content: record.content,
+                } ).catch( ( error : unknown ) => {
+                    fastify.log.error( { err: error }, "Failed to generate chat notifications" );
+                } );
+
+                reply.code( 201 ).send( record );
             } catch ( error ) {
                 fastify.log.error( { err: error }, "Failed to create note chat message" );
                 reply.status( 500 ).send( { error: "chat_message_create_failed" } );

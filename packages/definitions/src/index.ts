@@ -82,6 +82,39 @@ export interface ListNoteChatMessagesResponse {
     hasMore : boolean;
 }
 
+export type NotificationType = "note_chat_message";
+
+export interface NotificationMetadata {
+    noteId ?: string;
+    groupId ?: string;
+    messageId ?: string;
+    senderId ?: string;
+    snippet ?: string;
+}
+
+export interface NotificationRecord {
+    id : string;
+    type : NotificationType;
+    title : string;
+    body ?: string | null;
+    data ?: NotificationMetadata;
+    isRead : boolean;
+    readAt ?: string | null;
+    createdAt : string;
+    updatedAt : string;
+}
+
+export interface ListNotificationsResponse {
+    notifications : NotificationRecord[];
+    nextCursor ?: string;
+    hasMore : boolean;
+    unreadCount : number;
+}
+
+export interface MarkNotificationsReadPayload {
+    notificationIds : string[];
+}
+
 export interface RealtimeTokenRequestPayload {
     activeGroupIds ?: string[];
 }
