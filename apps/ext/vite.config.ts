@@ -61,7 +61,7 @@ export default defineConfig( ( { mode } ) => {
             ...commonConfig.build,
             rollupOptions: {
                 input: {
-                    popup: resolve( __dirname, "src/core/extension-popup/extension-popup.tsx" ),
+                    popup: resolve( __dirname, "src/core/extension-popup/extension-popup-mount.tsx" ),
                     "background-script": resolve(
                         __dirname,
                         "src/core/background-script/background-script.ts"
