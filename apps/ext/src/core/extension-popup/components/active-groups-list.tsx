@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { useGroupsStore } from "../../../modules/groups";
 
 export function ActiveGroupsList () {
@@ -39,4 +39,3 @@ export function ActiveGroupsList () {
         </div>
     );
 }
-

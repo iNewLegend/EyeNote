@@ -1,7 +1,8 @@
 import { create } from "zustand";
-import type { 
-    CreateGroupPayload, 
-    GroupRecord, 
+import type {
+    CreateGroupPayload,
+    GroupRecord,
+    JoinGroupResponse,
     UpdateGroupPayload,
     GroupWithRoles,
     GroupRoleRecord,
@@ -9,6 +10,7 @@ import type {
     UpdateGroupRolePayload,
     AssignRolePayload,
     RemoveRolePayload,
+    GroupInviteRecord,
 } from "@eye-note/definitions";
 import {
     createGroup as createGroupApi,
@@ -21,6 +23,7 @@ import {
     updateGroupRole as updateGroupRoleApi,
     assignRole as assignRoleApi,
     removeRole as removeRoleApi,
+    createGroupInvite as createGroupInviteApi,
 } from "./groups-api";
 import {
     getStoredActiveGroupIds,
@@ -45,14 +48,14 @@ type GroupsActions = {
     fetchGroups : () => Promise<void>;
     createGroup : ( payload : CreateGroupPayload ) => Promise<GroupRecord>;
     joinGroupByCode : ( inviteCode : string ) => Promise<{
-        group : GroupRecord;
-        joined : boolean;
+        response : JoinGroupResponse;
     }>;
     leaveGroup : ( groupId : string ) => Promise<void>;
     updateGroup : ( groupId : string, payload : UpdateGroupPayload ) => Promise<GroupRecord>;
     setGroupActive : ( groupId : string, isActive : boolean ) => Promise<void>;
     setActiveGroupIds : ( groupIds : string[] ) => Promise<void>;
     fetchGroupWithRoles : ( groupId : string ) => Promise<void>;
+    createGroupInvite : ( groupId : string, email : string, expiresInHours ?: number ) => Promise<GroupInviteRecord>;
     createGroupRole : ( groupId : string, payload : CreateGroupRolePayload ) => Promise<GroupRoleRecord>;
     updateGroupRole : ( groupId : string, roleId : string, payload : UpdateGroupRolePayload ) => Promise<GroupRoleRecord>;
     assignRole : ( groupId : string, payload : AssignRolePayload ) => Promise<void>;
@@ -188,26 +191,34 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
     },
     async joinGroupByCode ( inviteCode ) {
         const response = await joinGroupApi( { inviteCode: inviteCode.trim() } );
-        const { group, joined } = response;
 
-        set( ( state ) => {
-            const nextGroups = state.groups.some( ( existing ) => existing.id === group.id )
-                ? state.groups.map( ( existing ) => ( existing.id === group.id ? group : existing ) )
-                : [ group, ...state.groups ];
+        if ( response.joined ) {
+            const { group } = response;
+            set( ( state ) => {
+                const nextGroups = state.groups.some( ( existing ) => existing.id === group.id )
+                    ? state.groups.map( ( existing ) => ( existing.id === group.id ? group : existing ) )
+                    : [ group, ...state.groups ];
 
-            return {
-                ...state,
-                groups: nextGroups,
-            };
-        } );
+                return {
+                    ...state,
+                    groups: nextGroups,
+                };
+            } );
 
-        const current = get().activeGroupIds.filter( ( id ) => id !== group.id );
-        await get().setActiveGroupIds( [ ...current, group.id ] );
+            const current = get().activeGroupIds.filter( ( id ) => id !== group.id );
+            await get().setActiveGroupIds( [ ...current, group.id ] );
+        }
 
         return {
-            group,
-            joined,
+            response,
         };
+    },
+    async createGroupInvite ( groupId, email, expiresInHours ) {
+        const invite = await createGroupInviteApi( groupId, {
+            email,
+            ...( expiresInHours ? { expiresInHours } : {} ),
+        } );
+        return invite;
     },
     async leaveGroup ( groupId ) {
         await leaveGroupApi( groupId );

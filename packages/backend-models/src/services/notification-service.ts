@@ -8,6 +8,7 @@ export function serializeNotification ( doc : NotificationDocument ) : Notificat
         : ( ( doc._id as { toString : () => string } ).toString() );
     return {
         id,
+        userId: doc.userId,
         type: doc.type,
         title: doc.title,
         body: doc.body ?? null,
@@ -116,6 +117,63 @@ export async function createNoteChatMessageNotifications ( params : NoteChatNoti
             snippet,
         },
         sourceId: params.messageId,
+    } );
+}
+
+interface GroupJoinRequestNotificationParams {
+    requestId : string;
+    groupId : string;
+    groupName : string;
+    requesterId : string;
+    requesterName ?: string;
+    managerUserIds : string[];
+}
+
+export async function createGroupJoinRequestNotifications ( params : GroupJoinRequestNotificationParams ) : Promise<NotificationDocument[]> {
+    const title = `${ params.requesterName ?? "Someone" } requested to join ${ params.groupName }`;
+    const body = `${ params.groupName } has a new join request.`;
+
+    return createNotifications( {
+        recipients: params.managerUserIds.filter( ( id ) => id !== params.requesterId ),
+        type: "group_join_request",
+        title,
+        body,
+        data: {
+            groupId: params.groupId,
+            requestId: params.requestId,
+            requesterId: params.requesterId,
+            requesterName: params.requesterName,
+        },
+        sourceId: params.requestId,
+    } );
+}
+
+interface GroupJoinDecisionNotificationParams {
+    requestId : string;
+    groupId : string;
+    groupName : string;
+    requesterId : string;
+    decision : "approved" | "rejected";
+    processedBy : string;
+}
+
+export async function createGroupJoinDecisionNotification ( params : GroupJoinDecisionNotificationParams ) : Promise<NotificationDocument[]> {
+    const body = params.decision === "approved"
+        ? `You're now a member of ${ params.groupName }`
+        : `Your request to join ${ params.groupName } was declined.`;
+
+    return createNotifications( {
+        recipients: [ params.requesterId ],
+        type: "group_join_decision",
+        title: params.decision === "approved" ? "Request approved" : "Request declined",
+        body,
+        data: {
+            groupId: params.groupId,
+            requestId: params.requestId,
+            decision: params.decision,
+            processedBy: params.processedBy,
+        },
+        sourceId: params.requestId,
     } );
 }
 

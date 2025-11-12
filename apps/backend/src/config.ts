@@ -27,6 +27,7 @@ const envSchema = z.object( {
     REALTIME_JWT_TTL_SECONDS: z
         .preprocess( ( value ) => ( value ? Number( value ) : undefined ), z.number().int().min( 60 ).max( 86400 ) )
         .default( 600 ),
+    REALTIME_BASE_URL: z.string().default( "http://localhost:3010" ),
 } );
 
 const env = envSchema.parse( {
@@ -39,6 +40,7 @@ const env = envSchema.parse( {
     AUTH_DISABLED: process.env.AUTH_DISABLED,
     REALTIME_JWT_SECRET: process.env.REALTIME_JWT_SECRET,
     REALTIME_JWT_TTL_SECONDS: process.env.REALTIME_JWT_TTL_SECONDS,
+    REALTIME_BASE_URL: process.env.REALTIME_BASE_URL,
 } );
 
 const isAuthDisabled = env.AUTH_DISABLED === "true" || !env.GOOGLE_CLIENT_ID;
@@ -58,6 +60,7 @@ export const appConfig = {
     realtime: {
         jwtSecret: env.REALTIME_JWT_SECRET,
         tokenTtlSeconds: env.REALTIME_JWT_TTL_SECONDS,
+        baseUrl: env.REALTIME_BASE_URL.replace(/\/$/, ""),
     },
 };
 

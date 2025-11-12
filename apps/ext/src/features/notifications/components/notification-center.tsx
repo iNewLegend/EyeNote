@@ -10,7 +10,10 @@ import {
     SheetTitle,
     cn,
 } from "@eye-note/ui";
+import { useState, useCallback } from "react";
+import { toast } from "sonner";
 import { useNotificationsStore } from "../notifications-store";
+import { approveJoinRequest, rejectJoinRequest } from "../../../modules/groups/groups-api";
 
 interface NotificationCenterProps {
     open : boolean;
@@ -31,6 +34,36 @@ export function NotificationCenter ( { open, onOpenChange, container } : Notific
     const initialized = useNotificationsStore( ( state ) => state.initialized );
     const bootstrap = useNotificationsStore( ( state ) => state.bootstrap );
     const pending = useNotificationsStore( ( state ) => state.pending );
+    const [ actioningId, setActioningId ] = useState<string | null>( null );
+
+    const handleJoinRequestDecision = useCallback( async (
+        notification : NotificationRecord,
+        decision : "approve" | "reject"
+    ) => {
+        const groupId = notification.data?.groupId;
+        const requestId = notification.data?.requestId;
+
+        if ( !groupId || !requestId ) {
+            return;
+        }
+
+        setActioningId( notification.id );
+        const action = decision === "approve" ? approveJoinRequest : rejectJoinRequest;
+        try {
+            await action( groupId, requestId );
+            await markAsRead( notification.id );
+            toast( decision === "approve" ? "Request approved" : "Request declined", {
+                description: decision === "approve"
+                    ? "The requester will be notified immediately."
+                    : "They'll be notified of your decision.",
+            } );
+        } catch ( error ) {
+            const message = error instanceof Error ? error.message : "Failed to update request";
+            toast( "Unable to update", { description: message } );
+        } finally {
+            setActioningId( null );
+        }
+    }, [ markAsRead ] );
 
     useEffect( () => {
         if ( open && !initialized ) {
@@ -74,14 +107,28 @@ export function NotificationCenter ( { open, onOpenChange, container } : Notific
                     ) : isEmpty ? (
                         <EmptyState />
                     ) : (
-                        notifications.map( ( notification ) => (
-                            <NotificationCard
-                                key={notification.id}
-                                notification={notification}
-                                isPending={Boolean( pending[ notification.id ] )}
-                                onMarkAsRead={markAsRead}
-                            />
-                        ) )
+                        notifications.map( ( notification ) => {
+                            const isJoinRequest =
+                                notification.type === "group_join_request" &&
+                                notification.data?.groupId &&
+                                notification.data?.requestId;
+
+                            return (
+                                <NotificationCard
+                                    key={notification.id}
+                                    notification={notification}
+                                    isPending={Boolean( pending[ notification.id ] )}
+                                    onMarkAsRead={markAsRead}
+                                    onApproveJoinRequest={isJoinRequest
+                                        ? () => handleJoinRequestDecision( notification, "approve" )
+                                        : undefined}
+                                    onRejectJoinRequest={isJoinRequest
+                                        ? () => handleJoinRequestDecision( notification, "reject" )
+                                        : undefined}
+                                    isActionLoading={actioningId === notification.id}
+                                />
+                            );
+                        } )
                     )}
                 </div>
                 {hasMore ? (
@@ -104,11 +151,29 @@ interface NotificationCardProps {
     notification : NotificationRecord;
     isPending : boolean;
     onMarkAsRead : ( id : string ) => Promise<void>;
+    onApproveJoinRequest ?: () => Promise<void> | void;
+    onRejectJoinRequest ?: () => Promise<void> | void;
+    isActionLoading ?: boolean;
 }
 
-function NotificationCard ( { notification, isPending, onMarkAsRead } : NotificationCardProps ) {
+function NotificationCard ( {
+    notification,
+    isPending,
+    onMarkAsRead,
+    onApproveJoinRequest,
+    onRejectJoinRequest,
+    isActionLoading,
+} : NotificationCardProps ) {
     const isUnread = !notification.isRead;
     const timestamp = formatTimestamp( notification.createdAt );
+    const requesterName = notification.data?.requesterName;
+    const isJoinRequest = notification.type === "group_join_request";
+    const isDecision = notification.type === "group_join_decision";
+    const joinDecisionLabel = isDecision && notification.data?.decision === "approved"
+        ? "You have access"
+        : isDecision && notification.data?.decision === "rejected"
+            ? "Request declined"
+            : null;
 
     return (
         <div
@@ -125,18 +190,50 @@ function NotificationCard ( { notification, isPending, onMarkAsRead } : Notifica
                             {notification.body}
                         </p>
                     ) : null}
+                    {isJoinRequest && requesterName ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            {requesterName} is waiting for approval.
+                        </p>
+                    ) : null}
+                    {joinDecisionLabel ? (
+                        <p className="mt-1 text-xs text-muted-foreground">{joinDecisionLabel}</p>
+                    ) : null}
                 </div>
                 <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground">
                     <span>{timestamp}</span>
                     {isUnread ? <Badge variant="secondary">New</Badge> : null}
                 </div>
             </div>
-            <div className="mt-3 flex gap-2">
-                {isUnread ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+                {isJoinRequest && onApproveJoinRequest ? (
                     <Button
                         size="sm"
                         variant="secondary"
-                        disabled={isPending}
+                        disabled={isActionLoading}
+                        onClick={() => {
+                            void onApproveJoinRequest();
+                        }}
+                    >
+                        {isActionLoading ? "Updating…" : "Approve"}
+                    </Button>
+                ) : null}
+                {isJoinRequest && onRejectJoinRequest ? (
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={isActionLoading}
+                        onClick={() => {
+                            void onRejectJoinRequest();
+                        }}
+                    >
+                        {isActionLoading ? "Updating…" : "Decline"}
+                    </Button>
+                ) : null}
+                {isUnread ? (
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={isPending || isActionLoading}
                         onClick={() => {
                             void onMarkAsRead( notification.id );
                         }}

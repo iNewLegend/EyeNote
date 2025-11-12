@@ -5,18 +5,33 @@ import type {
     CreateGroupPayload,
     GroupRecord,
     JoinGroupPayload,
+    JoinGroupResponse,
     ListGroupsResponse,
     GroupWithRoles,
     CreateGroupRolePayload,
     UpdateGroupRolePayload,
     AssignRolePayload,
     RemoveRolePayload,
+    GroupJoinRequestRecord,
+    GroupJoinRequestStatus,
+    GroupInviteRecord,
+    CreateGroupInvitePayload,
+    ReviewJoinRequestResponse,
 } from "@eye-note/definitions";
+import { GroupPermission } from "@eye-note/definitions";
 import type { FastifyInstance } from "fastify";
 import { GroupModel, type GroupDocument } from "../models/group";
 import { GroupRoleModel, type GroupRoleDocument } from "../models/group-role";
 import { GroupMemberRoleModel, type GroupMemberRoleDocument } from "../models/group-member-role";
+import { GroupJoinRequestModel, type GroupJoinRequestDocument } from "../models/group-join-request";
+import { GroupInviteModel, type GroupInviteDocument } from "../models/group-invite";
 import { RoleService } from "../services/role-service";
+import {
+    createGroupJoinRequestNotifications,
+    createGroupJoinDecisionNotification,
+    serializeNotification,
+} from "@eye-note/backend-models";
+import { broadcastNotifications } from "../services/notification-bus";
 
 const DEFAULT_GROUP_COLOR = "#6366f1";
 
@@ -59,6 +74,11 @@ const leaveGroupParamsSchema = z.object( {
     groupId: z.string().min( 1 ),
 } );
 
+const requestParamsSchema = z.object( {
+    groupId: z.string().min( 1 ),
+    requestId: z.string().min( 1 ),
+} );
+
 function slugify ( input : string ) : string {
     return input
         .toLowerCase()
@@ -93,6 +113,14 @@ async function generateUniqueInviteCode () : Promise<string> {
         candidate = randomBytes( 4 ).toString( "hex" );
     }
 
+    return candidate;
+}
+
+async function generateOneTimeInviteCode () : Promise<string> {
+    let candidate = randomBytes( 6 ).toString( "hex" ).toUpperCase();
+    while ( await GroupInviteModel.exists( { code: candidate } ) ) {
+        candidate = randomBytes( 6 ).toString( "hex" ).toUpperCase();
+    }
     return candidate;
 }
 
@@ -133,6 +161,84 @@ function serializeGroupMemberRole ( doc : GroupMemberRoleDocument ) {
         assignedAt: doc.assignedAt.toISOString(),
         assignedBy: doc.assignedBy,
     };
+}
+
+function serializeJoinRequest ( doc : GroupJoinRequestDocument ) : GroupJoinRequestRecord {
+    return {
+        id: toHexId( doc._id ),
+        groupId: doc.groupId,
+        groupName: doc.groupName,
+        userId: doc.userId,
+        userName: doc.userName ?? undefined,
+        inviteCode: doc.inviteCode,
+        status: doc.status,
+        processedBy: doc.processedBy ?? undefined,
+        processedAt: doc.processedAt ? doc.processedAt.toISOString() : undefined,
+        createdAt: doc.createdAt.toISOString(),
+        updatedAt: doc.updatedAt.toISOString(),
+    };
+}
+
+function serializeGroupInvite ( doc : GroupInviteDocument ) : GroupInviteRecord {
+    return {
+        id: toHexId( doc._id ),
+        groupId: doc.groupId,
+        email: doc.email,
+        code: doc.code,
+        status: doc.status,
+        expiresAt: doc.expiresAt ? doc.expiresAt.toISOString() : null,
+        usedAt: doc.usedAt ? doc.usedAt.toISOString() : null,
+        usedBy: doc.usedBy ?? null,
+        createdAt: doc.createdAt.toISOString(),
+        updatedAt: doc.updatedAt.toISOString(),
+    };
+}
+
+async function resolveGroupManagerUserIds ( groupId : string ) : Promise<string[]> {
+    const group = await GroupModel.findById( groupId ).lean<{
+        ownerId : string;
+    }>();
+
+    if ( !group ) {
+        return [];
+    }
+
+    const roles = await GroupRoleModel.find( { groupId } ).exec();
+
+    const managerRoleIds = roles
+        .filter( ( role ) => role.permissions.includes( GroupPermission.MANAGE_MEMBERS ) || role.permissions.includes( GroupPermission.MANAGE_GROUP ) )
+        .map( ( role ) => role._id.toHexString() );
+
+    if ( managerRoleIds.length === 0 ) {
+        return [ group.ownerId ];
+    }
+
+    const assignedManagers = await GroupMemberRoleModel.find( {
+        groupId,
+        roleId: { $in: managerRoleIds },
+    } )
+        .select( [ "userId" ] )
+        .exec();
+
+    const recipients = new Set<string>( [ group.ownerId ] );
+    assignedManagers.forEach( ( member ) => recipients.add( member.userId ) );
+    return Array.from( recipients );
+}
+
+async function canManageJoinRequests ( groupId : string, userId : string ) : Promise<boolean> {
+    const group = await GroupModel.findById( groupId ).lean<{
+        ownerId : string;
+    }>();
+
+    if ( !group ) {
+        return false;
+    }
+
+    if ( group.ownerId === userId ) {
+        return true;
+    }
+
+    return RoleService.hasPermission( groupId, userId, GroupPermission.MANAGE_MEMBERS );
 }
 
 export async function groupsRoutes ( fastify : FastifyInstance ) {
@@ -198,6 +304,72 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
 
     fastify.route( {
         method: "POST",
+        url: "/api/groups/:groupId/invitations",
+        preHandler: fastify.authenticate,
+        handler: async ( request, reply ) => {
+            const paramsParseResult = leaveGroupParamsSchema.safeParse( request.params );
+
+            if ( !paramsParseResult.success ) {
+                reply.code( 400 ).send( { error: "invalid_group_id" } );
+                return;
+            }
+
+            const { groupId } = paramsParseResult.data;
+
+            if ( !Types.ObjectId.isValid( groupId ) ) {
+                reply.code( 400 ).send( { error: "invalid_group_id" } );
+                return;
+            }
+
+            const bodyParseResult = createInviteSchema.safeParse( request.body );
+
+            if ( !bodyParseResult.success ) {
+                reply.code( 400 ).send( {
+                    error: "invalid_body",
+                    details: bodyParseResult.error.flatten(),
+                } );
+                return;
+            }
+
+            const group = await GroupModel.findById( groupId ).exec();
+
+            if ( !group ) {
+                reply.code( 404 ).send( { error: "group_not_found" } );
+                return;
+            }
+
+            if ( !( await canManageJoinRequests( groupId, request.user!.id ) ) ) {
+                reply.code( 403 ).send( { error: "insufficient_permissions" } );
+                return;
+            }
+
+            const { email, expiresInHours } = bodyParseResult.data as CreateGroupInvitePayload;
+            const code = await generateOneTimeInviteCode();
+            const expiresAt = expiresInHours
+                ? new Date( Date.now() + expiresInHours * 60 * 60 * 1000 )
+                : null;
+
+            const invite = await GroupInviteModel.create( {
+                groupId,
+                email: email.toLowerCase(),
+                code,
+                status: "pending",
+                expiresAt,
+            } );
+
+            fastify.log.info( {
+                event: "group.invite.create",
+                groupId,
+                email,
+                inviteCode: code,
+            }, "Group invite created" );
+
+            reply.code( 201 ).send( { invite: serializeGroupInvite( invite as GroupInviteDocument ) } );
+        },
+    } );
+
+    fastify.route( {
+        method: "POST",
         url: "/api/groups/join",
         preHandler: fastify.authenticate,
         handler: async ( request, reply ) => {
@@ -224,21 +396,129 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
 
             const userId = request.user!.id;
 
-            if ( group.memberIds.includes( userId ) ) {
-                reply.code( 200 ).send( {
+            const groupId = toHexId( group._id );
+            const trimmedCode = payload.inviteCode.trim();
+
+            const invite = await GroupInviteModel.findOne( { code: trimmedCode } ).exec();
+
+            if ( invite ) {
+                if ( invite.groupId !== groupId ) {
+                    reply.code( 404 ).send( { error: "invite_not_found" } );
+                    return;
+                }
+
+                if ( invite.status !== "pending" ) {
+                    reply.code( 410 ).send( { error: "invite_used" } );
+                    return;
+                }
+
+                if ( invite.expiresAt && invite.expiresAt.getTime() < Date.now() ) {
+                    reply.code( 410 ).send( { error: "invite_expired" } );
+                    return;
+                }
+
+                const inviteEmail = invite.email.toLowerCase();
+                const userEmail = request.user?.email?.toLowerCase();
+
+                if ( inviteEmail && userEmail && inviteEmail !== userEmail ) {
+                    reply.code( 403 ).send( { error: "invite_email_mismatch" } );
+                    return;
+                }
+
+                if ( !group.memberIds.includes( userId ) ) {
+                    group.memberIds.push( userId );
+                    await group.save();
+                }
+
+                invite.status = "used";
+                invite.usedAt = new Date();
+                invite.usedBy = userId;
+                await invite.save();
+
+                const response : JoinGroupResponse = {
                     group: serializeGroup( group ),
-                    joined: false,
-                } );
+                    joined: true,
+                    requiresApproval: false,
+                };
+                reply.code( 200 ).send( response );
                 return;
             }
 
-            group.memberIds.push( userId );
-            await group.save();
+            if ( group.memberIds.includes( userId ) ) {
+                const response : JoinGroupResponse = {
+                    group: serializeGroup( group ),
+                    joined: false,
+                    requiresApproval: false,
+                };
+                reply.code( 200 ).send( response );
+                return;
+            }
 
-            reply.code( 200 ).send( {
+            const userName = request.user?.name ?? undefined;
+
+            let joinRequest = await GroupJoinRequestModel.findOne( {
+                groupId,
+                userId,
+            } ).exec();
+
+            if ( joinRequest && joinRequest.status === "pending" ) {
+                const response : JoinGroupResponse = {
+                    group: serializeGroup( group ),
+                    joined: false,
+                    requiresApproval: true,
+                    request: serializeJoinRequest( joinRequest ),
+                };
+                reply.code( 200 ).send( response );
+                return;
+            }
+
+            if ( joinRequest ) {
+                joinRequest.status = "pending";
+                joinRequest.processedAt = null;
+                joinRequest.processedBy = null;
+                joinRequest.groupName = group.name;
+                joinRequest.inviteCode = trimmedCode;
+                joinRequest.userName = userName ?? null;
+                await joinRequest.save();
+            } else {
+                joinRequest = await GroupJoinRequestModel.create( {
+                    groupId,
+                    groupName: group.name,
+                    userId,
+                    userName: userName ?? null,
+                    inviteCode: trimmedCode,
+                    status: "pending" satisfies GroupJoinRequestStatus,
+                } );
+            }
+
+            const serializedRequest = serializeJoinRequest( joinRequest );
+
+            try {
+                const managerUserIds = await resolveGroupManagerUserIds( groupId );
+                const notificationDocs = await createGroupJoinRequestNotifications( {
+                    requestId: serializedRequest.id,
+                    groupId,
+                    groupName: group.name,
+                    requesterId: userId,
+                    requesterName: userName,
+                    managerUserIds,
+                } );
+                if ( notificationDocs.length > 0 ) {
+                    const serialized = notificationDocs.map( ( doc ) => serializeNotification( doc ) );
+                    void broadcastNotifications( serialized );
+                }
+            } catch ( error ) {
+                fastify.log.error( { err: error }, "Failed to broadcast join request notification" );
+            }
+
+            const response : JoinGroupResponse = {
                 group: serializeGroup( group ),
-                joined: true,
-            } );
+                joined: false,
+                requiresApproval: true,
+                request: serializedRequest,
+            };
+
+            reply.code( 200 ).send( response );
         },
     } );
 
@@ -292,6 +572,169 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
                 group: serializeGroup( group ),
                 left: true,
             } );
+        },
+    } );
+
+    fastify.route( {
+        method: "POST",
+        url: "/api/groups/:groupId/requests/:requestId/approve",
+        preHandler: fastify.authenticate,
+        handler: async ( request, reply ) => {
+            const paramsParse = requestParamsSchema.safeParse( request.params );
+
+            if ( !paramsParse.success ) {
+                reply.code( 400 ).send( { error: "invalid_request_params" } );
+                return;
+            }
+
+            const { groupId, requestId } = paramsParse.data;
+
+            if ( !Types.ObjectId.isValid( groupId ) || !Types.ObjectId.isValid( requestId ) ) {
+                reply.code( 400 ).send( { error: "invalid_request_params" } );
+                return;
+            }
+
+            if ( !( await canManageJoinRequests( groupId, request.user!.id ) ) ) {
+                reply.code( 403 ).send( { error: "insufficient_permissions" } );
+                return;
+            }
+
+            const joinRequest = await GroupJoinRequestModel.findOne( {
+                _id: requestId,
+                groupId,
+            } ).exec();
+
+            if ( !joinRequest ) {
+                reply.code( 404 ).send( { error: "join_request_not_found" } );
+                return;
+            }
+
+            if ( joinRequest.status !== "pending" ) {
+                reply.code( 409 ).send( { error: "join_request_already_processed" } );
+                return;
+            }
+
+            const group = await GroupModel.findById( groupId ).exec();
+
+            if ( !group ) {
+                reply.code( 404 ).send( { error: "group_not_found" } );
+                return;
+            }
+
+            if ( !group.memberIds.includes( joinRequest.userId ) ) {
+                group.memberIds.push( joinRequest.userId );
+                await group.save();
+            }
+
+            joinRequest.status = "approved" satisfies GroupJoinRequestStatus;
+            joinRequest.processedBy = request.user!.id;
+            joinRequest.processedAt = new Date();
+            await joinRequest.save();
+
+            const serializedRequest = serializeJoinRequest( joinRequest );
+
+            try {
+                const notificationDocs = await createGroupJoinDecisionNotification( {
+                    requestId: serializedRequest.id,
+                    groupId,
+                    groupName: group.name,
+                    requesterId: joinRequest.userId,
+                    decision: "approved",
+                    processedBy: request.user!.id,
+                } );
+                if ( notificationDocs.length > 0 ) {
+                    const serialized = notificationDocs.map( ( doc ) => serializeNotification( doc ) );
+                    void broadcastNotifications( serialized );
+                }
+            } catch ( error ) {
+                fastify.log.error( { err: error }, "Failed to broadcast join approval notification" );
+            }
+
+            const response : ReviewJoinRequestResponse = {
+                request: serializedRequest,
+                group: serializeGroup( group ),
+            };
+
+            reply.code( 200 ).send( response );
+        },
+    } );
+
+    fastify.route( {
+        method: "POST",
+        url: "/api/groups/:groupId/requests/:requestId/reject",
+        preHandler: fastify.authenticate,
+        handler: async ( request, reply ) => {
+            const paramsParse = requestParamsSchema.safeParse( request.params );
+
+            if ( !paramsParse.success ) {
+                reply.code( 400 ).send( { error: "invalid_request_params" } );
+                return;
+            }
+
+            const { groupId, requestId } = paramsParse.data;
+
+            if ( !Types.ObjectId.isValid( groupId ) || !Types.ObjectId.isValid( requestId ) ) {
+                reply.code( 400 ).send( { error: "invalid_request_params" } );
+                return;
+            }
+
+            if ( !( await canManageJoinRequests( groupId, request.user!.id ) ) ) {
+                reply.code( 403 ).send( { error: "insufficient_permissions" } );
+                return;
+            }
+
+            const joinRequest = await GroupJoinRequestModel.findOne( {
+                _id: requestId,
+                groupId,
+            } ).exec();
+
+            if ( !joinRequest ) {
+                reply.code( 404 ).send( { error: "join_request_not_found" } );
+                return;
+            }
+
+            if ( joinRequest.status !== "pending" ) {
+                reply.code( 409 ).send( { error: "join_request_already_processed" } );
+                return;
+            }
+
+            joinRequest.status = "rejected" satisfies GroupJoinRequestStatus;
+            joinRequest.processedBy = request.user!.id;
+            joinRequest.processedAt = new Date();
+            await joinRequest.save();
+
+            const group = await GroupModel.findById( groupId ).exec();
+
+            if ( !group ) {
+                reply.code( 404 ).send( { error: "group_not_found" } );
+                return;
+            }
+
+            const serializedRequest = serializeJoinRequest( joinRequest );
+
+            try {
+                const notificationDocs = await createGroupJoinDecisionNotification( {
+                    requestId: serializedRequest.id,
+                    groupId,
+                    groupName: group.name,
+                    requesterId: joinRequest.userId,
+                    decision: "rejected",
+                    processedBy: request.user!.id,
+                } );
+                if ( notificationDocs.length > 0 ) {
+                    const serialized = notificationDocs.map( ( doc ) => serializeNotification( doc ) );
+                    void broadcastNotifications( serialized );
+                }
+            } catch ( error ) {
+                fastify.log.error( { err: error }, "Failed to broadcast join rejection notification" );
+            }
+
+            const response : ReviewJoinRequestResponse = {
+                request: serializedRequest,
+                group: serializeGroup( group ),
+            };
+
+            reply.code( 200 ).send( response );
         },
     } );
 
@@ -690,3 +1133,7 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
         },
     } );
 }
+const createInviteSchema = z.object( {
+    email: z.string().email(),
+    expiresInHours: z.number().int().min( 1 ).max( 720 ).optional(),
+} );

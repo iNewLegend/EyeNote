@@ -82,7 +82,7 @@ export interface ListNoteChatMessagesResponse {
     hasMore : boolean;
 }
 
-export type NotificationType = "note_chat_message";
+export type NotificationType = "note_chat_message" | "group_join_request" | "group_join_decision";
 
 export interface NotificationMetadata {
     noteId ?: string;
@@ -90,10 +90,16 @@ export interface NotificationMetadata {
     messageId ?: string;
     senderId ?: string;
     snippet ?: string;
+    requestId ?: string;
+    requesterId ?: string;
+    requesterName ?: string;
+    decision ?: "approved" | "rejected";
+    processedBy ?: string;
 }
 
 export interface NotificationRecord {
     id : string;
+    userId : string;
     type : NotificationType;
     title : string;
     body ?: string | null;
@@ -172,8 +178,54 @@ export interface JoinGroupPayload {
     inviteCode : string;
 }
 
+export type GroupJoinRequestStatus = "pending" | "approved" | "rejected";
+
+export interface GroupJoinRequestRecord {
+    id : string;
+    groupId : string;
+    groupName : string;
+    userId : string;
+    userName ?: string;
+    inviteCode : string;
+    status : GroupJoinRequestStatus;
+    processedBy ?: string | null;
+    processedAt ?: string | null;
+    createdAt : string;
+    updatedAt : string;
+}
+
+export interface JoinGroupResponse {
+    group : GroupRecord;
+    joined : boolean;
+    requiresApproval : boolean;
+    request ?: GroupJoinRequestRecord;
+}
+
+export interface GroupInviteRecord {
+    id : string;
+    groupId : string;
+    email : string;
+    code : string;
+    status : "pending" | "used";
+    expiresAt ?: string | null;
+    usedAt ?: string | null;
+    usedBy ?: string | null;
+    createdAt : string;
+    updatedAt : string;
+}
+
+export interface CreateGroupInvitePayload {
+    email : string;
+    expiresInHours ?: number;
+}
+
 export interface ListGroupsResponse {
     groups : GroupRecord[];
+}
+
+export interface ReviewJoinRequestResponse {
+    request : GroupJoinRequestRecord;
+    group : GroupRecord;
 }
 
 export interface ListNotesQuery {

@@ -1,4 +1,3 @@
-import React from "react";
 
 export function HelpTip () {
     return (
@@ -32,4 +31,3 @@ export function HelpTip () {
         </div>
     );
 }
-

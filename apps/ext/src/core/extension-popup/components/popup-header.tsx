@@ -1,4 +1,3 @@
-import React from "react";
 import { Button, CardDescription, CardHeader, CardTitle } from "@eye-note/ui";
 import { useAuthStore } from "@eye-note/auth/extension";
 
@@ -40,4 +39,3 @@ export function PopupHeader ( { isBackendDown, isAuthenticated, onSignOut }: Pop
         </CardHeader>
     );
 }
-

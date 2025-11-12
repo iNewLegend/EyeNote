@@ -5,6 +5,7 @@ import {
     markAllNotificationsRead,
     markNotificationRead,
 } from "./notifications-api";
+import { useGroupsStore } from "../../modules/groups/groups-store";
 
 interface NotificationsState {
     items : NotificationRecord[];
@@ -140,6 +141,12 @@ export const useNotificationsStore = create<NotificationsState & NotificationsAc
                 unreadCount: calculateUnreadCount( nextItems ),
             };
         } );
+
+        if ( notification.type === "group_join_decision" && notification.data?.decision === "approved" ) {
+            void useGroupsStore.getState().fetchGroups().catch( ( error ) => {
+                console.warn( "[EyeNote] Failed to refresh groups after join decision", error );
+            } );
+        }
     },
     async markAsRead ( notificationId ) {
         if ( get().pending[ notificationId ] ) {

@@ -4,6 +4,7 @@ import { liveConfig } from "./config";
 import { mongoPlugin } from "./plugins/mongo";
 import { healthRoutes } from "./routes/health";
 import { registerRealtimeGateway } from "./realtime/gateway";
+import { notificationRoutes } from "./routes/notifications";
 
 export async function buildLiveServer () {
     const fastify = Fastify( {
@@ -27,6 +28,8 @@ export async function buildLiveServer () {
 
     await fastify.register( mongoPlugin );
     await fastify.register( healthRoutes );
+    fastify.decorate( "liveConfig", liveConfig );
+    await fastify.register( notificationRoutes );
     await registerRealtimeGateway( fastify );
 
     return fastify;

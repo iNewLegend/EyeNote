@@ -22,6 +22,7 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
     const leaveGroup = useGroupsStore( ( state ) => state.leaveGroup );
     const setGroupActive = useGroupsStore( ( state ) => state.setGroupActive );
     const updateGroup = useGroupsStore( ( state ) => state.updateGroup );
+    const createGroupInvite = useGroupsStore( ( state ) => state.createGroupInvite );
 
     const [ newGroupName, setNewGroupName ] = useState( "" );
     const [ newGroupColor, setNewGroupColor ] = useState( "#6366f1" );
@@ -31,6 +32,8 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
     const [ leavingGroupId, setLeavingGroupId ] = useState<string | null>( null );
     const [ updatingGroupId, setUpdatingGroupId ] = useState<string | null>( null );
     const [ managingRolesForGroupId, setManagingRolesForGroupId ] = useState<string | null>( null );
+    const [ inviteEmailInputs, setInviteEmailInputs ] = useState<Record<string, string>>( {} );
+    const [ invitingGroupId, setInvitingGroupId ] = useState<string | null>( null );
 
     const sortedGroups = useMemo(
         () => groups.slice().sort( ( a, b ) => a.name.localeCompare( b.name ) ),
@@ -56,11 +59,11 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
 
             try {
                 setIsCreatingGroup( true );
-                const group = await createGroup( { name, color: newGroupColor } );
+                await createGroup( { name, color: newGroupColor } );
                 setNewGroupName( "" );
                 setNewGroupColor( "#6366f1" );
                 toast( "Group created", {
-                    description: `Share invite code ${ group.inviteCode } with teammates.`,
+                    description: "Use the invite form below to send teammates a single-use code.",
                 } );
                 onClose?.();
             } catch ( error ) {
@@ -90,14 +93,27 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
 
             try {
                 setIsJoiningGroup( true );
-                const { group, joined } = await joinGroupByCode( inviteCode );
+                const { response } = await joinGroupByCode( inviteCode );
                 setInviteCodeInput( "" );
-                toast( joined ? "Joined group" : "Already a member", {
-                    description: joined
-                        ? `You're ready to collaborate in ${ group.name }.`
-                        : `You're already part of ${ group.name }.`,
+
+                if ( response.joined ) {
+                    toast( "Joined group", {
+                        description: `You're ready to collaborate in ${ response.group.name }`,
+                    } );
+                    onClose?.();
+                    return;
+                }
+
+                if ( response.requiresApproval ) {
+                    toast( "Request sent", {
+                        description: `We'll notify you when ${ response.group.name } approves your request.`,
+                    } );
+                    return;
+                }
+
+                toast( "Already a member", {
+                    description: `You're already part of ${ response.group.name }.`,
                 } );
-                onClose?.();
             } catch ( error ) {
                 const message = error instanceof Error ? error.message : "Failed to join group";
                 toast( "Error", {
@@ -152,26 +168,6 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
         [ authUser?.id, leaveGroup ]
     );
 
-    const handleCopyInviteCode = useCallback( async ( inviteCode : string ) => {
-        if ( typeof navigator === "undefined" || !navigator.clipboard ) {
-            toast( "Clipboard unavailable", {
-                description: "Copy the invite code manually.",
-            } );
-            return;
-        }
-
-        try {
-            await navigator.clipboard.writeText( inviteCode );
-            toast( "Invite code copied", {
-                description: "Share it with teammates to bring them into the group.",
-            } );
-        } catch {
-            toast( "Error", {
-                description: "Unable to copy the invite code. Copy it manually instead.",
-            } );
-        }
-    }, [] );
-
     const handleUpdateGroup = useCallback( async ( groupId : string, payload : UpdateGroupPayload ) => {
         try {
             setUpdatingGroupId( groupId );
@@ -188,6 +184,37 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
             setUpdatingGroupId( null );
         }
     }, [ updateGroup ] );
+
+    const handleSendInvite = useCallback( async ( groupId : string ) => {
+        const email = ( inviteEmailInputs[ groupId ] ?? "" ).trim();
+        if ( email.length === 0 ) {
+            toast( "Email required", {
+                description: "Enter the teammate's email before sending an invite.",
+            } );
+            return;
+        }
+
+        setInvitingGroupId( groupId );
+        try {
+            const invite = await createGroupInvite( groupId, email );
+            setInviteEmailInputs( ( prev ) => ( { ...prev, [ groupId ]: "" } ) );
+
+            const copied = typeof navigator !== "undefined" && navigator.clipboard
+                ? await navigator.clipboard.writeText( invite.code ).then( () => true ).catch( () => false )
+                : false;
+
+            toast( "Invite ready", {
+                description: copied
+                    ? `Single-use code copied to your clipboard (${ invite.code }).`
+                    : `Share this code with your teammate: ${ invite.code }`,
+            } );
+        } catch ( error ) {
+            const message = error instanceof Error ? error.message : "Failed to create invite";
+            toast( "Invite failed", { description: message } );
+        } finally {
+            setInvitingGroupId( null );
+        }
+    }, [ createGroupInvite, inviteEmailInputs ] );
 
     if ( managingRolesForGroupId ) {
         return (
@@ -245,7 +272,7 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
                             type="text"
                             value={inviteCodeInput}
                             onChange={( event ) => setInviteCodeInput( event.target.value )}
-                            placeholder="Enter code"
+                            placeholder="Enter code from your invite"
                             className="flex-1 rounded-md border border-border bg-background/80 px-3 py-2 text-sm uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/70"
                             disabled={isJoiningGroup}
                         />
@@ -269,8 +296,7 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
                     </div>
                 ) : sortedGroups.length === 0 ? (
                     <div className="text-sm text-muted-foreground">
-                        You are not part of any groups yet. Create one or ask a teammate for an
-                        invite code.
+                        You are not part of any groups yet. Create one or ask a group owner to send you a single-use invite.
                     </div>
                 ) : (
                     sortedGroups.map( ( group ) => (
@@ -331,29 +357,57 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
                                     </Button>
                                 </div>
                             )}
-                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <span>Invite code:</span>
-                                    <code className="rounded border border-border/60 bg-background/80 px-2 py-1 text-[10px] uppercase tracking-wider">
-                                        {group.inviteCode}
-                                    </code>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => {
-                                            void handleCopyInviteCode( group.inviteCode );
-                                        }}
-                                    >
-                                        Copy
-                                    </Button>
-                                </div>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-destructive hover:text-destructive"
-                                    disabled={group.ownerId === authUser?.id || leavingGroupId === group.id}
+                {group.ownerId === authUser?.id ? (
+                    <form
+                        className="space-y-2"
+                        onSubmit={( event ) => {
+                            event.preventDefault();
+                            void handleSendInvite( group.id );
+                        }}
+                    >
+                        <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                            Invite teammate
+                        </Label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="email"
+                                value={inviteEmailInputs[ group.id ] ?? ""}
+                                onChange={( event ) => {
+                                    const value = event.target.value;
+                                    setInviteEmailInputs( ( prev ) => ( { ...prev, [ group.id ]: value } ) );
+                                }}
+                                placeholder="teammate@example.com"
+                                className="flex-1 rounded-md border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/70"
+                                disabled={invitingGroupId === group.id}
+                            />
+                            <Button
+                                type="submit"
+                                variant="outline"
+                                disabled={invitingGroupId === group.id}
+                            >
+                                {invitingGroupId === group.id ? "Sending..." : "Send"}
+                            </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            We'll generate a single-use code and copy it so you can drop it in chat or email.
+                        </p>
+                    </form>
+                ) : null}
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                    {group.ownerId !== authUser?.id ? (
+                        <div className="flex flex-col gap-1">
+                            <span className="font-medium text-foreground">Need an invite?</span>
+                            <span>Ask a group owner to send a single-use code to your email.</span>
+                        </div>
+                    ) : (
+                        <div />
+                    )}
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        disabled={group.ownerId === authUser?.id || leavingGroupId === group.id}
                                     onClick={() => {
                                         void handleLeaveGroup( group.id, group.name, group.ownerId );
                                     }}

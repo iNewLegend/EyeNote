@@ -2,6 +2,7 @@ import type {
     CreateGroupPayload,
     GroupRecord,
     JoinGroupPayload,
+    JoinGroupResponse,
     ListGroupsResponse,
     UpdateGroupPayload,
     GroupWithRoles,
@@ -10,6 +11,9 @@ import type {
     UpdateGroupRolePayload,
     AssignRolePayload,
     RemoveRolePayload,
+    ReviewJoinRequestResponse,
+    CreateGroupInvitePayload,
+    GroupInviteRecord,
 } from "@eye-note/definitions";
 import { apiRequest } from "../../lib/api-client";
 
@@ -27,19 +31,11 @@ export async function createGroup ( payload : CreateGroupPayload ) : Promise<Gro
     return response.group;
 }
 
-export async function joinGroup ( payload : JoinGroupPayload ) : Promise<{
-    group : GroupRecord;
-    joined : boolean;
-}> {
-    const response = await apiRequest<{
-        group : GroupRecord;
-        joined : boolean;
-    }>( "/api/groups/join", {
+export async function joinGroup ( payload : JoinGroupPayload ) : Promise<JoinGroupResponse> {
+    return apiRequest<JoinGroupResponse>( "/api/groups/join", {
         method: "POST",
         bodyJson: payload,
     } );
-
-    return response;
 }
 
 export async function leaveGroup ( groupId : string ) : Promise<{
@@ -99,5 +95,25 @@ export async function removeRole ( groupId : string, payload : RemoveRolePayload
     await apiRequest<{ success : boolean }>( `/api/groups/${ groupId }/roles/remove`, {
         method: "POST",
         bodyJson: payload,
+    } );
+}
+
+export async function createGroupInvite ( groupId : string, payload : CreateGroupInvitePayload ) : Promise<GroupInviteRecord> {
+    const response = await apiRequest<{ invite : GroupInviteRecord }>( `/api/groups/${ groupId }/invitations`, {
+        method: "POST",
+        bodyJson: payload,
+    } );
+    return response.invite;
+}
+
+export async function approveJoinRequest ( groupId : string, requestId : string ) : Promise<ReviewJoinRequestResponse> {
+    return apiRequest<ReviewJoinRequestResponse>( `/api/groups/${ groupId }/requests/${ requestId }/approve`, {
+        method: "POST",
+    } );
+}
+
+export async function rejectJoinRequest ( groupId : string, requestId : string ) : Promise<ReviewJoinRequestResponse> {
+    return apiRequest<ReviewJoinRequestResponse>( `/api/groups/${ groupId }/requests/${ requestId }/reject`, {
+        method: "POST",
     } );
 }

@@ -1,4 +1,3 @@
-import React from "react";
 import { Button } from "@eye-note/ui";
 import { Menu, Users } from "lucide-react";
 
@@ -38,4 +37,3 @@ export function QuickControlsSection ( { onOpenQuickMenu, onOpenGroupManager }: 
         </div>
     );
 }
-

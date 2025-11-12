@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Card, CardContent, DowntimeNotice, SignInPrompt, Toaster } from "@eye-note/ui";
 import "./extension-popup.css";

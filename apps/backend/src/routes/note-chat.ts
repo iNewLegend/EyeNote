@@ -4,7 +4,8 @@ import type { NoteChatMessageRecord } from "@eye-note/definitions";
 import { NoteChatMessageModel, type NoteChatMessageDocument } from "../models/note-chat-message";
 import { ensureNoteGroupAccess, getAccessErrorStatus } from "../services/note-chat-access";
 import { serializeNoteChatMessage } from "../services/note-chat-serialization";
-import { createNoteChatMessageNotifications } from "@eye-note/backend-models";
+import { createNoteChatMessageNotifications, serializeNotification } from "@eye-note/backend-models";
+import { broadcastNotifications } from "../services/notification-bus";
 
 const noteParamsSchema = z.object( {
     noteId: z.string().min( 1 ),
@@ -135,9 +136,16 @@ export async function noteChatRoutes ( fastify : FastifyInstance ) {
                     actorId: request.user!.id,
                     noteOwnerId: access.ownerId,
                     content: record.content,
-                } ).catch( ( error : unknown ) => {
-                    fastify.log.error( { err: error }, "Failed to generate chat notifications" );
-                } );
+                } )
+                    .then( ( docs ) => {
+                        if ( docs.length > 0 ) {
+                            const serialized = docs.map( ( doc ) => serializeNotification( doc ) );
+                            void broadcastNotifications( serialized );
+                        }
+                    } )
+                    .catch( ( error : unknown ) => {
+                        fastify.log.error( { err: error }, "Failed to generate chat notifications" );
+                    } );
 
                 reply.code( 201 ).send( record );
             } catch ( error ) {
