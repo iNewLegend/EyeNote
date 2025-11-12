@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 import { Card, CardContent, DowntimeNotice, SignInPrompt, Toaster } from "@eye-note/ui";
 import "./extension-popup.css";
@@ -7,9 +7,9 @@ import { useBackendHealthStore } from "@eye-note/backend-health";
 import { useBackendHealthBridge } from "../../hooks/use-backend-health-bridge";
 import { useGroupsBootstrap } from "../../modules/groups";
 import { useTabMessaging } from "../../hooks/use-tab-messaging";
+import { ActiveGroupsList } from "./components/active-groups-list";
 import { PopupHeader } from "./components/popup-header";
 import { QuickControlsSection } from "./components/quick-controls-section";
-import { GroupsManagementSection } from "./components/groups-management-section";
 import { HelpTip } from "./components/help-tip";
 
 export function ExtensionPopup () {
@@ -99,7 +99,7 @@ export function ExtensionPopup () {
                             onOpenGroupManager={handleOpenGroupManager}
                         />
 
-                        <GroupsManagementSection />
+                        <ActiveGroupsList />
 
                         <HelpTip />
                     </CardContent>
