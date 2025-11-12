@@ -11,6 +11,7 @@
         "ext:dev": "pnpm --filter @eye-note/ext dev",
         "ext:launch-chrome": "bash scripts/launch-chrome-extension.sh",
         "backend:dev": "pnpm --filter @eye-note/backend dev",
+        "live:dev": "pnpm --filter @eye-note/live dev",
         "lint": "eslint ./apps --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "lint:fix": "eslint ./apps --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix",
         "type-check": "pnpm -r exec tsc --noEmit"

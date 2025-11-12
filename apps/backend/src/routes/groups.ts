@@ -20,6 +20,13 @@ import { RoleService } from "../services/role-service";
 
 const DEFAULT_GROUP_COLOR = "#6366f1";
 
+function toHexId ( value : unknown ) : string {
+    if ( value && typeof ( value as { toHexString ?: () => string } ).toHexString === "function" ) {
+        return ( value as { toHexString : () => string } ).toHexString();
+    }
+    return String( value );
+}
+
 function normalizeColor ( color ?: string ) : string {
     if ( !color ) {
         return DEFAULT_GROUP_COLOR;
@@ -91,7 +98,7 @@ async function generateUniqueInviteCode () : Promise<string> {
 
 function serializeGroup ( doc : GroupDocument ) : GroupRecord {
     return {
-        id: doc._id.toHexString(),
+        id: toHexId( doc._id ),
         name: doc.name,
         description: doc.description ?? undefined,
         slug: doc.slug,
@@ -181,7 +188,7 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
                 color,
             } );
 
-            await RoleService.createDefaultRoles( created._id.toHexString(), request.user!.id );
+            await RoleService.createDefaultRoles( toHexId( created._id ), request.user!.id );
 
             reply.code( 201 ).send( {
                 group: serializeGroup( created ),

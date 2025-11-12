@@ -5,6 +5,9 @@
 - Exported the select primitives from `@eye-note/ui` and threaded group color metadata through note group options to keep the picker in sync even when a group's membership changes.
 - Kept the note sheet at full opacity whenever the dropdown is open so the panel no longer fades mid-edit, moved the Radix select portal inside the shadow container, and boosted the popover z-index/logging so the menu renders above the overlay and we can trace when it opens or closes.
 - Simplified the group selector trigger so it no longer shows a duplicate color chip; the top-of-sheet header remains the single color indicator.
+- Introduced server-side chat infrastructure: added Mongo models, REST endpoints, and a socket.io gateway (auth tokens + `/api/notes/:id/chat/messages`) so group members can exchange real-time note messages.
+- Wired the extension to the new realtime service with a `useRealtimeStore`, chat store, and NoteSheet UI that streams messages live, loads history, and falls back to HTTP when the socket drops.
+- Split the websocket gateway into a dedicated `apps/live` service with its own Fastify + Socket.IO stack, reusable Mongoose models (`@eye-note/backend-models`), and a configurable `REALTIME_JWT_SECRET`, so the REST API and realtime layer can scale independently.
 
 # 2025-10-30
 

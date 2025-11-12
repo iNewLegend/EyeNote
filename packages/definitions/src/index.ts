@@ -57,6 +57,47 @@ export interface NoteRecord extends NoteBase {
     updatedAt : string;
 }
 
+export interface NoteChatMessageBase {
+    noteId : string;
+    groupId : string | null;
+    userId : string;
+    content : string;
+    clientMessageId ?: string;
+}
+
+export interface NoteChatMessageRecord extends NoteChatMessageBase {
+    id : string;
+    createdAt : string;
+    updatedAt : string;
+}
+
+export interface CreateNoteChatMessagePayload {
+    content : string;
+    clientMessageId ?: string;
+}
+
+export interface ListNoteChatMessagesResponse {
+    messages : NoteChatMessageRecord[];
+    nextCursor ?: string;
+    hasMore : boolean;
+}
+
+export interface RealtimeTokenRequestPayload {
+    activeGroupIds ?: string[];
+}
+
+export interface RealtimeTokenResponse {
+    token : string;
+    expiresAt : string;
+}
+
+export interface RealtimeAuthClaims {
+    userId : string;
+    groupIds : string[];
+    iat : number;
+    exp : number;
+}
+
 export type CreateNotePayload = NoteBase & {
     pageIdentity ?: PageIdentityPayload;
 };

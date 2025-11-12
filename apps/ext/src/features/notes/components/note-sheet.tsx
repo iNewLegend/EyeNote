@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     cn,
     Button,
+    Input,
     Sheet,
     SheetContent,
     SheetDescription,
@@ -13,6 +14,13 @@ import {
     SelectValue,
 } from "@eye-note/ui";
 import type { Note } from "../../../types";
+import { useAuthStore } from "@eye-note/auth/extension";
+import { useNoteChatStore } from "../chat-store";
+import type { NoteChatMessage } from "../chat-store";
+import { useRealtimeStore } from "../../realtime/realtime-store";
+import { useGroupsStore } from "../../../modules/groups";
+
+const EMPTY_CHAT_MESSAGES : NoteChatMessage[] = [];
 
 export interface NoteGroupOption {
     id : string;
@@ -75,8 +83,91 @@ export function NoteSheet ( {
     isExistingPending,
 } : NoteSheetProps ) {
     const [ isSelectOpen, setIsSelectOpen ] = useState( false );
+    const [ chatDraft, setChatDraft ] = useState( "" );
+    const [ isSendingChat, setIsSendingChat ] = useState( false );
     const groupLabelId = `note-group-label-${ note.id }`;
     const groupTriggerId = `note-group-${ note.id }`;
+    const authUser = useAuthStore( ( state ) => state.user );
+    const activeGroupIds = useGroupsStore( ( state ) => state.activeGroupIds );
+    const chatMessages = useNoteChatStore(
+        ( state ) => state.messages[ note.id ] ?? EMPTY_CHAT_MESSAGES
+    ) as NoteChatMessage[];
+    const chatLoading = useNoteChatStore( ( state ) => state.isLoading[ note.id ] ?? false );
+    const chatHasMore = useNoteChatStore( ( state ) => state.hasMore[ note.id ] ?? false );
+    const fetchChatMessages = useNoteChatStore( ( state ) => state.fetchMessages );
+    const fetchOlderChatMessages = useNoteChatStore( ( state ) => state.fetchOlderMessages );
+    const realtimeStatus = useRealtimeStore( ( state ) => state.status );
+    const joinNoteRoom = useRealtimeStore( ( state ) => state.joinNoteRoom );
+    const leaveNoteRoom = useRealtimeStore( ( state ) => state.leaveNoteRoom );
+    const sendRealtimeMessage = useRealtimeStore( ( state ) => state.sendMessage );
+    const isChatEnabled = Boolean( note.groupId );
+    const activeGroupKey = activeGroupIds.join( "|" );
+    useEffect( () => {
+        if ( !open || !isChatEnabled ) {
+            return;
+        }
+
+        if ( chatMessages.length === 0 && !chatLoading ) {
+            void fetchChatMessages( note.id );
+        }
+
+        void joinNoteRoom( note.id );
+
+        return () => {
+            leaveNoteRoom( note.id );
+        };
+    }, [
+        open,
+        isChatEnabled,
+        note.id,
+        note.groupId,
+        chatMessages.length,
+        chatLoading,
+        activeGroupKey,
+        joinNoteRoom,
+        leaveNoteRoom,
+        fetchChatMessages,
+    ] );
+
+    const handleSendChat = async () => {
+        if ( !authUser || !isChatEnabled || isSendingChat ) {
+            return;
+        }
+
+        const trimmed = chatDraft.trim();
+        if ( trimmed.length === 0 ) {
+            return;
+        }
+
+        setIsSendingChat( true );
+        try {
+            await sendRealtimeMessage( {
+                note: { id: note.id, groupId: note.groupId },
+                content: trimmed,
+                userId: authUser.id,
+            } );
+            setChatDraft( "" );
+        } catch ( error ) {
+            console.error( "[EyeNote] Failed to send chat message", error );
+        } finally {
+            setIsSendingChat( false );
+        }
+    };
+
+    const chatStatusLabel = useMemo( () => {
+        switch ( realtimeStatus ) {
+            case "connected":
+                return "Connected";
+            case "connecting":
+                return "Connecting…";
+            case "error":
+                return "Realtime unavailable";
+            default:
+                return "Disconnected";
+        }
+    }, [ realtimeStatus ] );
+
+    const canSendChat = Boolean( authUser && isChatEnabled && chatDraft.trim().length > 0 && !isSendingChat );
 
     const handleSelectOpenChange = ( open : boolean ) => {
         setIsSelectOpen( open );
@@ -212,7 +303,86 @@ export function NoteSheet ( {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="space-y-2 flex-1 min-h-0">
+                    <div className="space-y-2">
+                        <label className="text-xs font-medium text-muted-foreground">
+                            Group Chat
+                        </label>
+                        {isChatEnabled ? (
+                            <div className="space-y-2">
+                                <div className="border border-border/60 rounded-md bg-background/40 h-48 overflow-y-auto p-2 flex flex-col gap-3">
+                                    {chatHasMore ? (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="self-center text-xs"
+                                            onClick={() => fetchOlderChatMessages( note.id )}
+                                            disabled={chatLoading}
+                                        >
+                                            {chatLoading ? "Loading..." : "Load earlier"}
+                                        </Button>
+                                    ) : null}
+                                    {chatMessages.length === 0 && !chatLoading ? (
+                                        <p className="text-xs text-muted-foreground text-center mt-4">
+                                            Start the conversation for this note.
+                                        </p>
+                                    ) : (
+                                        chatMessages.map( ( message ) => {
+                                            const isSelf = authUser?.id === message.userId;
+                                            const bubbleClasses = cn(
+                                                "rounded-lg px-3 py-2 text-xs whitespace-pre-wrap break-words",
+                                                isSelf
+                                                    ? "bg-primary/20 text-primary-foreground/90"
+                                                    : "bg-muted text-foreground"
+                                            );
+                                            const timestamp = new Date( message.createdAt ).toLocaleTimeString(
+                                                [],
+                                                { hour: "2-digit", minute: "2-digit" }
+                                            );
+                                            return (
+                                                <div key={message.id} className="flex flex-col gap-1">
+                                                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                                                        <span className="font-medium">
+                                                            {isSelf ? "You" : "Collaborator"}
+                                                        </span>
+                                                        <span>{timestamp}</span>
+                                                        {message.optimistic ? (
+                                                            <span>Sending…</span>
+                                                        ) : null}
+                                                    </div>
+                                                    <div className={bubbleClasses}>
+                                                        <p>{message.content}</p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        } )
+                                    )}
+                                </div>
+                                <div className="flex gap-2">
+                                    <Input
+                                        value={chatDraft}
+                                        onChange={( event ) => setChatDraft( event.target.value )}
+                                        placeholder="Type a message..."
+                                        onKeyDown={( event ) => {
+                                            if ( event.key === "Enter" && !event.shiftKey ) {
+                                                event.preventDefault();
+                                                void handleSendChat();
+                                            }
+                                        }}
+                                        disabled={!authUser || !isChatEnabled || isSendingChat}
+                                    />
+                                    <Button onClick={() => void handleSendChat()} disabled={!canSendChat}>
+                                        {isSendingChat ? "Sending..." : "Send"}
+                                    </Button>
+                                </div>
+                                <p className="text-[11px] text-muted-foreground">{chatStatusLabel}</p>
+                            </div>
+                        ) : (
+                            <p className="text-xs text-muted-foreground">
+                                Assign this note to a group to start chatting with collaborators.
+                            </p>
+                        )}
+                    </div>
+                    <div className="space-y-2">
                         <label
                             htmlFor={`note-content-${ note.id }`}
                             className="text-xs font-medium text-muted-foreground"

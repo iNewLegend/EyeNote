@@ -109,15 +109,20 @@ function normalizePageIdentityPayload ( payload : IncomingPageIdentityPayload ) 
 }
 
 type NoteLean = NoteBase & {
-    _id : Types.ObjectId;
+    _id : Types.ObjectId | { toHexString : () => string };
     userId : string;
     createdAt : Date;
     updatedAt : Date;
 };
 
 function serializeNote ( doc : NoteLean ) : NoteRecord {
+    const id =
+        typeof ( doc._id as { toHexString ?: () => string } ).toHexString === "function"
+            ? ( doc._id as { toHexString : () => string } ).toHexString()
+            : String( doc._id );
+
     return {
-        id: doc._id.toHexString(),
+        id,
         elementPath: doc.elementPath,
         content: doc.content,
         url: doc.url,
@@ -281,10 +286,10 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
                 groupIds,
             }, "Querying notes with resolved filter" );
 
-            let docs = await NoteModel.find( filter )
+            let docs = ( await NoteModel.find( filter )
                 .sort( { updatedAt: -1 } )
-                .lean()
-                .exec();
+                .lean<NoteLean>()
+                .exec() ) as unknown as NoteLean[];
 
             // Fallback: if pageId query returned no docs (e.g., newly-created notes without pageId yet),
             // try composite (hostname, normalizedUrl/normalizedUrls)
@@ -313,17 +318,17 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
                         normalizedUrls: resolvedNormalizedUrls,
                     }, "Querying notes with composite key fallback" );
 
-                    docs = await NoteModel.find( compositeFilter )
+                    docs = ( await NoteModel.find( compositeFilter )
                         .sort( { updatedAt: -1 } )
-                        .lean()
-                        .exec();
+                        .lean<NoteLean>()
+                        .exec() ) as unknown as NoteLean[];
                 }
             }
 
             // No legacy backfill path by design (fresh dataset only)
 
             reply.send( {
-                notes: docs.map( ( doc ) => serializeNote( doc as NoteLean ) ),
+                notes: docs.map( ( doc ) => serializeNote( doc ) ),
                 identity: identityResolution,
             } );
         },
@@ -343,7 +348,7 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
 
             const { url, groupIds, pageId, normalizedUrl } = queryParseResult.data;
 
-            const docs = await NoteModel.find(
+            const docs = ( await NoteModel.find(
                 buildFilter( {
                     userId: request.user!.id,
                     url,
@@ -353,11 +358,11 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
                 } )
             )
                 .sort( { updatedAt: -1 } )
-                .lean()
-                .exec();
+                .lean<NoteLean>()
+                .exec() ) as unknown as NoteLean[];
 
             return {
-                notes: docs.map( ( doc ) => serializeNote( doc as NoteLean ) ),
+                notes: docs.map( ( doc ) => serializeNote( doc ) ),
             };
         },
     } );
@@ -551,11 +556,10 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
                     userId: request.user!.id,
                 } ),
                 { $set: updateDoc },
-                {
-                    new: true,
-                    lean: true,
-                }
-            ).exec();
+                { new: true }
+            )
+                .lean<NoteLean>()
+                .exec();
 
             if ( !updated ) {
                 reply.status( 404 ).send( { error: "note_not_found" } );
@@ -563,7 +567,7 @@ export async function notesRoutes ( fastify : FastifyInstance ) {
             }
 
             return {
-                note: serializeNote( updated as NoteLean ),
+                note: serializeNote( updated ),
             };
         },
     } );

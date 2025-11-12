@@ -22,6 +22,8 @@ import {
 } from "../../modules/groups";
 import { useExtensionSettings, type ExtensionSettings } from "../../hooks/use-extension-settings";
 import { QuickMenuDialog } from "../../components/quick-menu-dialog";
+import { useRealtimeBootstrap } from "../../features/realtime/hooks/use-realtime-bootstrap";
+import { REALTIME_FAILURE_EVENT } from "../../features/realtime/realtime-store";
 import {
     Label,
     SettingsDialog,
@@ -71,6 +73,8 @@ const ShadowDomContent : React.FC = () => {
     const inspectorToastTimeoutsRef = useRef<Record<string, number | null>>( {} );
     const dialogContainer = notesContainerRef.current?.parentElement ?? null;
     const visibleNoteIds = useMarkerVirtualization( notes, { rootMargin: "200px" } );
+
+    useRealtimeBootstrap();
 
     const lastKnownUrlRef = useUrlListener( setCurrentUrl );
     useGroupsBootstrap( {
@@ -270,6 +274,22 @@ const ShadowDomContent : React.FC = () => {
             inspectorToastTimeoutsRef.current = {};
         };
     }, [ showToast, dismissToast ] );
+
+    useEffect( () => {
+        const handleRealtimeFailure = ( event : Event ) => {
+            const detail = ( event as CustomEvent<{ error ?: string }> ).detail;
+            const description = detail?.error ?? "The live server is unavailable.";
+            showToast( `Cannot reach EyeNote live server. ${ description }`, {
+                id: "shadow-toast-realtime-failure",
+                duration: 4000,
+            } );
+        };
+
+        window.addEventListener( REALTIME_FAILURE_EVENT, handleRealtimeFailure as EventListener );
+        return () => {
+            window.removeEventListener( REALTIME_FAILURE_EVENT, handleRealtimeFailure as EventListener );
+        };
+    }, [ showToast ] );
 
     useEffect( () => {
         const handler = () => {
@@ -484,7 +504,7 @@ const ShadowDomContent : React.FC = () => {
                     <NotesComponent
                         key={note.id}
                         note={note}
-                        container={notesContainerRef.current!.parentElement}
+                        container={dialogContainer}
                         setSelectedElement={setSelectedElement}
                         onNoteDismissed={handleNoteDismissed}
                     />

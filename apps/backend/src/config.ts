@@ -23,6 +23,10 @@ const envSchema = z.object( {
     AUTH_DISABLED: z
         .enum( [ "true", "false" ] )
         .optional(),
+    REALTIME_JWT_SECRET: z.string().min( 16 ).default( "dev-realtime-secret-change-me" ),
+    REALTIME_JWT_TTL_SECONDS: z
+        .preprocess( ( value ) => ( value ? Number( value ) : undefined ), z.number().int().min( 60 ).max( 86400 ) )
+        .default( 600 ),
 } );
 
 const env = envSchema.parse( {
@@ -33,6 +37,8 @@ const env = envSchema.parse( {
     MONGODB_DB_NAME: process.env.MONGODB_DB_NAME,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     AUTH_DISABLED: process.env.AUTH_DISABLED,
+    REALTIME_JWT_SECRET: process.env.REALTIME_JWT_SECRET,
+    REALTIME_JWT_TTL_SECONDS: process.env.REALTIME_JWT_TTL_SECONDS,
 } );
 
 const isAuthDisabled = env.AUTH_DISABLED === "true" || !env.GOOGLE_CLIENT_ID;
@@ -48,6 +54,10 @@ export const appConfig = {
     auth: {
         disabled: isAuthDisabled,
         googleClientId: env.GOOGLE_CLIENT_ID ?? "",
+    },
+    realtime: {
+        jwtSecret: env.REALTIME_JWT_SECRET,
+        tokenTtlSeconds: env.REALTIME_JWT_TTL_SECONDS,
     },
 };
 

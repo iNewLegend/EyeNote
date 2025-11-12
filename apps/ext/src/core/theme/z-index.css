@@ -9,7 +9,8 @@
     --z-index-highlight-overlay: 2147483645;
     --z-index-shadow-dom-container: 2147483646;
     --z-index-interaction-blocker: 2147483646;
+    --z-index-settings-dialog-overlay: 2147483646;
+    --z-index-settings-dialog-content: 2147483647;
     --z-index-sheet-overlay: 2147483647;
     --z-index-sheet-content: 2147483647;
 }
-

@@ -88,8 +88,9 @@ export function SettingsDialog ( {
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 container={dialogContainer ?? undefined}
+                overlayClassName="!z-[var(--z-index-settings-dialog-overlay,2147483646)]"
                 className={cn(
-                    "flex max-h-[85vh] w-[min(90vw,840px)] max-w-[840px] flex-col gap-6 overflow-hidden",
+                    "flex max-h-[85vh] w-[min(90vw,840px)] max-w-[840px] flex-col gap-6 overflow-hidden !z-[var(--z-index-settings-dialog-content,2147483647)]",
                     contentClassName
                 )}
             >

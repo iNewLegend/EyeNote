@@ -3,12 +3,22 @@ import { getStoredAuth } from "@eye-note/auth/extension";
 
 const DEFAULT_BASE_URL = "http://localhost:3001";
 
-function getBaseUrl () : string {
+export function getBackendBaseUrl () : string {
     const envUrl = import.meta.env.VITE_BACKEND_URL;
     if ( envUrl && envUrl.trim().length > 0 ) {
         return envUrl;
     }
     return DEFAULT_BASE_URL;
+}
+
+const DEFAULT_REALTIME_URL = typeof window !== "undefined" ? window.location.origin : DEFAULT_BASE_URL;
+
+export function getRealtimeBaseUrl () : string {
+    const envUrl = import.meta.env.VITE_REALTIME_URL;
+    if ( envUrl && envUrl.trim().length > 0 ) {
+        return envUrl;
+    }
+    return getBackendBaseUrl() ?? DEFAULT_REALTIME_URL;
 }
 
 async function buildAuthHeaders () : Promise<Record<string, string>> {
@@ -29,7 +39,7 @@ export interface ApiRequestOptions extends RequestInit {
 }
 
 export async function apiRequest<T> ( path : string, options : ApiRequestOptions = {} ) : Promise<T> {
-    const baseUrl = getBaseUrl();
+    const baseUrl = getBackendBaseUrl();
     const url = new URL( path, baseUrl );
 
     if ( options.searchParams ) {
