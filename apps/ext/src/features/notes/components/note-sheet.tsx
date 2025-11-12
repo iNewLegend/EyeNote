@@ -94,6 +94,7 @@ export function NoteSheet ( {
     ) as NoteChatMessage[];
     const chatLoading = useNoteChatStore( ( state ) => state.isLoading[ note.id ] ?? false );
     const chatHasMore = useNoteChatStore( ( state ) => state.hasMore[ note.id ] ?? false );
+    const chatInitialized = useNoteChatStore( ( state ) => state.initialized[ note.id ] ?? false );
     const fetchChatMessages = useNoteChatStore( ( state ) => state.fetchMessages );
     const fetchOlderChatMessages = useNoteChatStore( ( state ) => state.fetchOlderMessages );
     const realtimeStatus = useRealtimeStore( ( state ) => state.status );
@@ -107,7 +108,7 @@ export function NoteSheet ( {
             return;
         }
 
-        if ( chatMessages.length === 0 && !chatLoading ) {
+        if ( !chatInitialized && !chatLoading ) {
             void fetchChatMessages( note.id );
         }
 
@@ -121,7 +122,7 @@ export function NoteSheet ( {
         isChatEnabled,
         note.id,
         note.groupId,
-        chatMessages.length,
+        chatInitialized,
         chatLoading,
         activeGroupKey,
         joinNoteRoom,

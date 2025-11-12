@@ -1,3 +1,8 @@
+# 2025-11-12
+
+## Notes overlay
+- Prevented the extension NoteSheet from endlessly refetching `/api/notes/:id/chat/messages` when a note has no chat history by tracking per-note chat initialization in the store so the initial load only fires once per session.
+
 # 2025-11-11
 
 ## Notes overlay

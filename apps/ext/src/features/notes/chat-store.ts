@@ -12,6 +12,7 @@ interface NoteChatState {
     errors : Record<string, string | undefined>;
     hasMore : Record<string, boolean>;
     nextCursor : Record<string, string | undefined>;
+    initialized : Record<string, boolean>;
 }
 
 interface NoteChatActions {
@@ -35,6 +36,7 @@ const initialState : NoteChatState = {
     errors: {},
     hasMore: {},
     nextCursor: {},
+    initialized: {},
 };
 
 function upsertMessage ( existing : NoteChatMessage[], incoming : NoteChatMessageRecord ) : NoteChatMessage[] {
@@ -89,6 +91,7 @@ export const useNoteChatStore = create<NoteChatStore>( ( set, get ) => ( {
                 hasMore: { ...prev.hasMore, [ noteId ]: response.hasMore },
                 nextCursor: { ...prev.nextCursor, [ noteId ]: response.nextCursor },
                 isLoading: { ...prev.isLoading, [ noteId ]: false },
+                initialized: { ...prev.initialized, [ noteId ]: true },
             } ) );
         } catch ( error ) {
             console.warn( "[EyeNote] Failed to load note chat messages", error );
@@ -185,6 +188,8 @@ export const useNoteChatStore = create<NoteChatStore>( ( set, get ) => ( {
             delete nextCursor[ noteId ];
             const nextHasMore = { ...prev.hasMore };
             delete nextHasMore[ noteId ];
+            const nextInitialized = { ...prev.initialized };
+            delete nextInitialized[ noteId ];
 
             return {
                 ...prev,
@@ -193,6 +198,7 @@ export const useNoteChatStore = create<NoteChatStore>( ( set, get ) => ( {
                 errors: nextErrors,
                 nextCursor: nextCursor,
                 hasMore: nextHasMore,
+                initialized: nextInitialized,
             };
         } );
     },
