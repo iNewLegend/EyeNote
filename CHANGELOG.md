@@ -1,3 +1,9 @@
+# 2025-11-13
+
+## Sidebar layout parity
+- Introduced a shared `SidebarSheet` wrapper around the shadcn sheet primitives so overlay sidebars reuse consistent width, padding, and backdrop treatment, then reran `pnpm --filter @eye-note/ext exec tsc --noEmit`.
+- Updated the notifications center and note editor panels to consume the shared sidebar, keeping their existing event handlers while aligning both experiences to the new layout.
+
 # 2025-11-12
 
 ## Notes overlay

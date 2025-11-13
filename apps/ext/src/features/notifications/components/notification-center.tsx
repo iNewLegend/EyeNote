@@ -1,19 +1,11 @@
 import { useEffect } from "react";
 import type { NotificationRecord } from "@eye-note/definitions";
-import {
-    Badge,
-    Button,
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    cn,
-} from "@eye-note/ui";
+import { Badge, Button, SheetDescription, SheetHeader, SheetTitle, cn } from "@eye-note/ui";
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { useNotificationsStore } from "../notifications-store";
 import { approveJoinRequest, rejectJoinRequest } from "../../../modules/groups/groups-api";
+import { SidebarSheet } from "../../../components/sidebar-sheet";
 
 interface NotificationCenterProps {
     open : boolean;
@@ -74,12 +66,12 @@ export function NotificationCenter ( { open, onOpenChange, container } : Notific
     const isEmpty = !isLoading && notifications.length === 0;
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent
-                container={container ?? undefined}
-                side="right"
-                className="notifications-panel w-full sm:max-w-md flex flex-col gap-4"
-            >
+        <SidebarSheet
+            open={open}
+            onOpenChange={onOpenChange}
+            container={container ?? undefined}
+            className="notifications-panel flex flex-col gap-4"
+        >
                 <SheetHeader>
                     <SheetTitle>Notifications</SheetTitle>
                     <SheetDescription>
@@ -142,8 +134,7 @@ export function NotificationCenter ( { open, onOpenChange, container } : Notific
                         {isLoadingMore ? "Loading…" : "Load older"}
                     </Button>
                 ) : null}
-            </SheetContent>
-        </Sheet>
+        </SidebarSheet>
     );
 }
 

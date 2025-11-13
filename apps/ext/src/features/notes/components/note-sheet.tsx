@@ -3,8 +3,6 @@ import {
     cn,
     Button,
     Input,
-    Sheet,
-    SheetContent,
     SheetDescription,
     SheetTitle,
     Select,
@@ -19,6 +17,7 @@ import { useNoteChatStore } from "../chat-store";
 import type { NoteChatMessage } from "../chat-store";
 import { useRealtimeStore } from "../../realtime/realtime-store";
 import { useGroupsStore } from "../../../modules/groups";
+import { SidebarSheet } from "../../../components/sidebar-sheet";
 
 const EMPTY_CHAT_MESSAGES : NoteChatMessage[] = [];
 
@@ -179,27 +178,29 @@ export function NoteSheet ( {
     };
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent
-                {...( container ? { container } : {} )}
-                side="right"
-                className={cn(
-                    "note-content w-full sm:max-w-md flex flex-col outline-none opacity-50 hover:opacity-100 transition-opacity duration-200",
-                    isSelectOpen && "opacity-100"
-                )}
-                onPointerDownOutside={( event ) => {
+        <SidebarSheet
+            open={open}
+            onOpenChange={onOpenChange}
+            container={container ?? undefined}
+            className={cn(
+                "note-content w-full sm:max-w-md flex flex-col outline-none opacity-50 hover:opacity-100 transition-opacity duration-200",
+                isSelectOpen && "opacity-100"
+            )}
+            contentProps={{
+                onPointerDownOutside: ( event ) => {
                     if ( note.isLocalDraft ) {
                         event.preventDefault();
                         return;
                     }
                     onOpenChange( false );
-                }}
-                onInteractOutside={( event ) => {
+                },
+                onInteractOutside: ( event ) => {
                     if ( note.isLocalDraft ) {
                         event.preventDefault();
                     }
-                }}
-            >
+                },
+            }}
+        >
                 <SheetTitle className="sr-only">Add Note</SheetTitle>
                 <SheetDescription className="sr-only">
                     Add or edit your note for the selected element. Use the textarea below to write your note,
@@ -416,7 +417,6 @@ export function NoteSheet ( {
                         </Button>
                     </div>
                 </div>
-            </SheetContent>
-        </Sheet>
+        </SidebarSheet>
     );
 }
