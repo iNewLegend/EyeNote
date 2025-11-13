@@ -13,6 +13,7 @@ import {
     EXTENSION_MANAGEMENT_DESCRIPTION,
     EXTENSION_MANAGEMENT_TITLE,
 } from "@eye-note/definitions";
+import { bindShortcutDispatcher } from "@eye-note/shortcuts";
 import { useMarkerVirtualization } from "../../hooks/use-marker-virtualization";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { InteractionBlocker } from "../../components/interaction-blocker";
@@ -28,7 +29,7 @@ import {
     GroupManagerPanel,
 } from "../../modules/groups";
 import { useExtensionSettings, type ExtensionSettings } from "../../hooks/use-extension-settings";
-import { QuickMenuDialog } from "../../components/quick-menu-dialog";
+import { QuickMenuDialog, type QuickMenuItem } from "../../components/quick-menu-dialog";
 import { useRealtimeBootstrap } from "../../features/realtime/hooks/use-realtime-bootstrap";
 import { REALTIME_FAILURE_EVENT } from "../../features/realtime/realtime-store";
 import { useNotificationsBootstrap } from "../../features/notifications/hooks/use-notifications-bootstrap";
@@ -44,6 +45,7 @@ import {
     type SettingsDialogItem,
 } from "@eye-note/ui";
 import { INSPECTOR_BLOCKED_EVENT } from "../../hooks/use-inspector-mode";
+import { overlayShortcutRegistry } from "../../shortcuts/overlay-shortcuts";
 
 type SettingsSectionId = "general" | "groups";
 const SHADOW_HOST_ID = "eye-note-shadow-dom";
@@ -89,6 +91,16 @@ const ShadowDomContent : React.FC = () => {
 
     useRealtimeBootstrap();
     useNotificationsBootstrap();
+
+    useEffect( () => {
+        const unsubscribe = bindShortcutDispatcher( {
+            registry: overlayShortcutRegistry,
+            scope: "overlay",
+        } );
+        return () => {
+            unsubscribe();
+        };
+    }, [] );
 
     useEffect( () => {
         if ( typeof chrome === "undefined" || !chrome.runtime?.sendMessage ) {
@@ -249,13 +261,13 @@ const ShadowDomContent : React.FC = () => {
         [ canManageGroups, generalSettingsSection, groupsSection ]
     );
 
-    const quickMenuItems = useMemo(
+    const quickMenuItems = useMemo<QuickMenuItem[]>(
         () => [
             {
                 id: "groups" as const,
                 label: "Groups",
                 description: "Manage collaboration groups, invites, and roles.",
-                shortcut: "Shift + G",
+                shortcutId: "overlay.openGroupManager",
                 disabled: !canManageGroups,
             },
             {
@@ -265,13 +277,13 @@ const ShadowDomContent : React.FC = () => {
                     unreadNotificationCount > 0
                         ? `${ unreadNotificationCount } unread alert${ unreadNotificationCount === 1 ? "" : "s" }`
                         : "Review recent alerts from your groups.",
-                shortcut: "Shift + N",
+                shortcutId: "overlay.openNotifications",
             },
             {
                 id: "settings" as const,
                 label: "Settings",
                 description: "Adjust overlay preferences without leaving the page.",
-                shortcut: "Shift + S",
+                shortcutId: "overlay.openSettings",
             },
         ],
         [ canManageGroups, unreadNotificationCount ]

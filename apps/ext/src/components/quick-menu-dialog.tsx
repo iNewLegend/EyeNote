@@ -11,6 +11,10 @@ import {
     DialogTitle,
     cn,
 } from "@eye-note/ui";
+import {
+    overlayShortcutRegistry,
+    type OverlayShortcutId,
+} from "../shortcuts/overlay-shortcuts";
 
 const dialogClassName =
     "max-h-[85vh] overflow-y-auto w-[min(90vw,480px)] max-w-[480px] space-y-6";
@@ -22,6 +26,7 @@ type QuickMenuItem = {
     label: string;
     description: string;
     shortcut ?: string;
+    shortcutId ?: OverlayShortcutId;
     disabled ?: boolean;
 };
 
@@ -30,19 +35,19 @@ const DEFAULT_MENU_ITEMS : QuickMenuItem[] = [
         id: "groups",
         label: "Groups",
         description: "Manage collaboration groups, invites, and member roles.",
-        shortcut: "Shift + G",
+        shortcutId: "overlay.openGroupManager",
     },
     {
         id: "notifications",
         label: "Notifications",
         description: "Review unread alerts from your groups.",
-        shortcut: "Shift + N",
+        shortcutId: "overlay.openNotifications",
     },
     {
         id: "settings",
         label: "Settings",
         description: "Configure overlay preferences and notifications.",
-        shortcut: "Shift + S",
+        shortcutId: "overlay.openSettings",
     },
 ];
 
@@ -73,31 +78,38 @@ export const QuickMenuDialog : React.FC<QuickMenuDialogProps> = ( {
                 </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-2">
-                {items.map( ( item ) => (
-                    <Button
-                        key={item.id}
-                        type="button"
-                        variant="outline"
-                        className={cn(
-                            "flex w-full items-start justify-between gap-3 rounded-md border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-muted",
-                            item.disabled && "pointer-events-none opacity-60"
-                        )}
-                        onClick={() => onSelect( item.id )}
-                        disabled={item.disabled}
-                    >
-                        <span>
-                            <span className="block text-sm font-medium">{item.label}</span>
-                            <span className="mt-1 block text-xs text-muted-foreground">
-                                {item.description}
+                {items.map( ( item ) => {
+                    const shortcutLabel = item.shortcut
+                        ? item.shortcut
+                        : item.shortcutId
+                            ? overlayShortcutRegistry.getDisplayText( item.shortcutId )
+                            : null;
+                    return (
+                        <Button
+                            key={item.id}
+                            type="button"
+                            variant="outline"
+                            className={cn(
+                                "flex w-full items-start justify-between gap-3 rounded-md border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-muted",
+                                item.disabled && "pointer-events-none opacity-60"
+                            )}
+                            onClick={() => onSelect( item.id )}
+                            disabled={item.disabled}
+                        >
+                            <span>
+                                <span className="block text-sm font-medium">{item.label}</span>
+                                <span className="mt-1 block text-xs text-muted-foreground">
+                                    {item.description}
+                                </span>
                             </span>
-                        </span>
-                        {item.shortcut ? (
-                            <kbd className="rounded-md border bg-secondary px-2 py-1 text-[10px] font-mono">
-                                {item.shortcut}
-                            </kbd>
-                        ) : null}
-                    </Button>
-                ) )}
+                            {shortcutLabel ? (
+                                <kbd className="rounded-md border bg-secondary px-2 py-1 text-[10px] font-mono">
+                                    {shortcutLabel}
+                                </kbd>
+                            ) : null}
+                        </Button>
+                    );
+                } )}
             </div>
             <DialogFooter className="justify-end">
                 <DialogClose asChild>

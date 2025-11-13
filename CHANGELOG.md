@@ -4,6 +4,10 @@
 - Introduced a shared `SidebarSheet` wrapper around the shadcn sheet primitives so overlay sidebars reuse consistent width, padding, and backdrop treatment, then reran `pnpm --filter @eye-note/ext exec tsc --noEmit`.
 - Updated the notifications center and note editor panels to consume the shared sidebar, keeping their existing event handlers while aligning both experiences to the new layout.
 
+## Keyboard shortcuts
+- Added a centralized `@eye-note/shortcuts` toolkit with a generic registry/dispatcher so the extension (not the package) now declares the active bindings and can later swap combos per user settings.
+- Wired the overlay shadow host to mount the dispatcher and taught the quick menu to pull shortcut labels directly from the registry, eliminating the duplicated "Shift" labels sprinkled across the UI.
+
 # 2025-11-12
 
 ## Notes overlay
