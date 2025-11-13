@@ -10,6 +10,8 @@ import {
     EVENT_OPEN_NOTIFICATIONS_PANEL,
     EVENT_OPEN_QUICK_MENU,
     EVENT_OPEN_SETTINGS_DIALOG,
+    EXTENSION_MANAGEMENT_DESCRIPTION,
+    EXTENSION_MANAGEMENT_TITLE,
 } from "@eye-note/definitions";
 import { useMarkerVirtualization } from "../../hooks/use-marker-virtualization";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
@@ -53,6 +55,7 @@ const ShadowDomContent : React.FC = () => {
     const { createNote, loadNotes } = useNotesController();
     const activeGroupIds = useGroupsStore( ( state ) => state.activeGroupIds );
     const isAuthenticated = useAuthStore( ( state ) => state.isAuthenticated );
+    const authUserId = useAuthStore( ( state ) => state.user?.id ?? null );
     const refreshAuthStatus = useAuthStore( ( state ) => state.refreshStatus );
     const modes = useModeStore( ( state ) => state.modes );
     const isConnected = ( modes & AppMode.CONNECTED ) === AppMode.CONNECTED;
@@ -212,7 +215,10 @@ const ShadowDomContent : React.FC = () => {
     const groupsSection = useMemo(
         () =>
             canManageGroups ? (
-                <GroupManagerPanel onClose={() => setIsSettingsDialogOpen( false )} />
+                <GroupManagerPanel
+                    currentUserId={authUserId}
+                    onClose={() => setIsSettingsDialogOpen( false )}
+                />
             ) : (
                 <div className="space-y-2 text-sm text-muted-foreground">
                     <p>Sign in and connect to manage groups.</p>
@@ -541,8 +547,8 @@ const ShadowDomContent : React.FC = () => {
                     open={isSettingsDialogOpen}
                     onOpenChange={setIsSettingsDialogOpen}
                     dialogContainer={dialogContainer}
-                    title="Extension Managment"
-                    description="These preferences are stored locally in chrome.storage and sync across the popup and overlay."
+                    title={EXTENSION_MANAGEMENT_TITLE}
+                    description={EXTENSION_MANAGEMENT_DESCRIPTION}
                     selectedItemId={activeSettingsSection}
                     onSelectedItemChange={( id ) =>
                         setActiveSettingsSection( id as SettingsSectionId )

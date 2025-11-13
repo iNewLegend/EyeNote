@@ -10,10 +10,11 @@ import {
     TabsList,
     TabsTrigger,
 } from "@eye-note/ui";
-import { useGroupsStore } from "../../modules/groups/groups-store";
-import { RoleList } from "./role-list";
+import { GroupPermission, type CreateGroupRolePayload, type GroupRoleRecord, type UpdateGroupRolePayload } from "@eye-note/definitions";
+
+import { useGroupsStore } from "../../store/groups-store";
 import { RoleForm } from "./role-form";
-import { GroupPermission, type GroupRoleRecord, type CreateGroupRolePayload, type UpdateGroupRolePayload } from "@eye-note/definitions";
+import { RoleList } from "./role-list";
 
 interface RoleManagementPanelProps {
     groupId : string;
@@ -31,14 +32,14 @@ export function RoleManagementPanel ( { groupId, onClose } : RoleManagementPanel
         clearSelectedGroup,
     } = useGroupsStore();
 
-    const [activeTab, setActiveTab] = useState( "roles" );
-    const [editingRole, setEditingRole] = useState<GroupRoleRecord | null>( null );
-    const [isSubmitting, setIsSubmitting] = useState( false );
+    const [ activeTab, setActiveTab ] = useState( "roles" );
+    const [ editingRole, setEditingRole ] = useState<GroupRoleRecord | null>( null );
+    const [ isSubmitting, setIsSubmitting ] = useState( false );
 
     useEffect( () => {
         fetchGroupWithRoles( groupId );
         return () => clearSelectedGroup();
-    }, [groupId, fetchGroupWithRoles, clearSelectedGroup] );
+    }, [ groupId, fetchGroupWithRoles, clearSelectedGroup ] );
 
     const handleCreateRole = async ( data : CreateGroupRolePayload | UpdateGroupRolePayload ) => {
         setIsSubmitting( true );
@@ -57,7 +58,9 @@ export function RoleManagementPanel ( { groupId, onClose } : RoleManagementPanel
     };
 
     const handleUpdateRole = async ( data : CreateGroupRolePayload | UpdateGroupRolePayload ) => {
-        if ( !editingRole ) return;
+        if ( !editingRole ) {
+            return;
+        }
 
         setIsSubmitting( true );
         try {
@@ -102,7 +105,7 @@ export function RoleManagementPanel ( { groupId, onClose } : RoleManagementPanel
                     <div className="text-center text-destructive">
                         Error: {rolesError}
                     </div>
-                    <div className="flex justify-center mt-4">
+                    <div className="mt-4 flex justify-center">
                         <Button onClick={onClose}>Close</Button>
                     </div>
                 </CardContent>
@@ -120,12 +123,12 @@ export function RoleManagementPanel ( { groupId, onClose } : RoleManagementPanel
         );
     }
 
-    const canManageRoles = selectedGroupWithRoles.roles.some( role => 
+    const canManageRoles = selectedGroupWithRoles.roles.some( ( role ) =>
         role.permissions.includes( GroupPermission.MANAGE_ROLES )
     );
 
     return (
-        <Card className="w-full max-w-4xl mx-auto">
+        <Card className="mx-auto w-full max-w-4xl">
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <CardTitle>Role Management - {selectedGroupWithRoles.name}</CardTitle>
@@ -146,7 +149,7 @@ export function RoleManagementPanel ( { groupId, onClose } : RoleManagementPanel
 
                     <TabsContent value="roles" className="mt-6">
                         <div className="space-y-4">
-                            <div className="flex justify-between items-center">
+                            <div className="flex items-center justify-between">
                                 <h3 className="text-lg font-semibold">Group Roles</h3>
                                 {canManageRoles && (
                                     <Button onClick={() => setActiveTab( "create" )}>

@@ -29,3 +29,7 @@ export const EVENT_OPEN_GROUP_MANAGER = "eye-note-open-group-manager";
 export const EVENT_OPEN_QUICK_MENU = "eye-note-open-quick-menu";
 export const EVENT_OPEN_SETTINGS_DIALOG = "eye-note-open-settings-dialog";
 export const EVENT_OPEN_NOTIFICATIONS_PANEL = "eye-note-open-notifications-panel";
+
+// Copy shared between app + extension
+export const EXTENSION_MANAGEMENT_TITLE = "Extension Managment";
+export const EXTENSION_MANAGEMENT_DESCRIPTION = "Manage overlay behavior and collaboration options from the extension managment panel without launching the extension.";

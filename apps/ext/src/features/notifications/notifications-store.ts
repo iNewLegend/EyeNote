@@ -5,7 +5,7 @@ import {
     markAllNotificationsRead,
     markNotificationRead,
 } from "./notifications-api";
-import { useGroupsStore } from "../../modules/groups/groups-store";
+import { useGroupsStore } from "../../modules/groups";
 
 interface NotificationsState {
     items : NotificationRecord[];

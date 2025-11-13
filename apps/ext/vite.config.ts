@@ -66,6 +66,10 @@ export default defineConfig( ( { mode } ) => {
                         __dirname,
                         "src/core/background-script/background-script.ts"
                     ),
+                    "group-manager-window": resolve(
+                        __dirname,
+                        "src/core/group-window/group-manager-window-mount.tsx"
+                    ),
                 },
                 output: {
                     entryFileNames: "[name].js",

@@ -15,6 +15,7 @@ import { HelpTip } from "./components/help-tip";
 export function ExtensionPopup () {
     const [ isSigningIn, setIsSigningIn ] = useState( false );
     const isAuthenticated = useAuthStore( ( state ) => state.isAuthenticated );
+    const hasAuthHydrated = useAuthStore( ( state ) => state.hasHydrated );
     const refreshAuthStatus = useAuthStore( ( state ) => state.refreshStatus );
     const signOutUser = useAuthStore( ( state ) => state.signOut );
     const signInUser = useAuthStore( ( state ) => state.signIn );
@@ -51,7 +52,13 @@ export function ExtensionPopup () {
     };
 
     const handleOpenGroupManager = async () => {
-        await sendMessageWithToast( { type: "OPEN_GROUP_MANAGER" }, "Cannot open groups" );
+        try {
+            await chrome.runtime.sendMessage( { type: "OPEN_GROUP_MANAGER_WINDOW" } );
+        } catch ( error ) {
+            toast( "Window error", {
+                description: error instanceof Error ? error.message : "Cannot open group manager window.",
+            } );
+        }
     };
 
     const handleOpenQuickMenuDialog = async () => {
@@ -91,6 +98,10 @@ export function ExtensionPopup () {
                 {isBackendDown ? (
                     <CardContent className="flex-1 flex items-center justify-center p-6 text-center">
                         <DowntimeNotice className="text-center" />
+                    </CardContent>
+                ) : !hasAuthHydrated ? (
+                    <CardContent className="flex-1 flex items-center justify-center p-6 text-center text-muted-foreground text-sm">
+                        Checking your session…
                     </CardContent>
                 ) : isAuthenticated ? (
                     <CardContent className="p-6 space-y-8 flex-1 overflow-auto">

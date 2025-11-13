@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { initializeGroupsStore, useGroupsStore } from "../groups-store";
+import { initializeGroupsStore, useGroupsStore } from "../store/groups-store";
 
 interface UseGroupsBootstrapArgs {
     isAuthenticated : boolean;
@@ -49,10 +49,7 @@ export function useGroupsBootstrap ( {
                 if ( cancelled ) {
                     return;
                 }
-                console.warn(
-                    `[EyeNote] Failed to fetch groups (${ logContext })`,
-                    error
-                );
+                console.warn( `[EyeNote] Failed to fetch groups (${ logContext })`, error );
             } );
 
         return () => {

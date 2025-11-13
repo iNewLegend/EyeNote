@@ -1,35 +1,20 @@
 import { create } from "zustand";
 import type {
-    CreateGroupPayload,
-    GroupRecord,
-    JoinGroupResponse,
-    UpdateGroupPayload,
-    GroupWithRoles,
-    GroupRoleRecord,
-    CreateGroupRolePayload,
-    UpdateGroupRolePayload,
     AssignRolePayload,
-    RemoveRolePayload,
+    CreateGroupPayload,
+    CreateGroupRolePayload,
     GroupInviteRecord,
+    GroupRecord,
+    GroupRoleRecord,
+    GroupWithRoles,
+    JoinGroupResponse,
+    RemoveRolePayload,
+    UpdateGroupPayload,
+    UpdateGroupRolePayload,
 } from "@eye-note/definitions";
-import {
-    createGroup as createGroupApi,
-    joinGroup as joinGroupApi,
-    leaveGroup as leaveGroupApi,
-    listGroups,
-    updateGroup as updateGroupApi,
-    getGroupWithRoles as getGroupWithRolesApi,
-    createGroupRole as createGroupRoleApi,
-    updateGroupRole as updateGroupRoleApi,
-    assignRole as assignRoleApi,
-    removeRole as removeRoleApi,
-    createGroupInvite as createGroupInviteApi,
-} from "./groups-api";
-import {
-    getStoredActiveGroupIds,
-    setStoredActiveGroupIds,
-    subscribeToActiveGroupIds,
-} from "./groups-storage";
+
+import { getGroupsApiClient } from "../api/groups-api-client";
+import { getGroupsStorageAdapter } from "../storage/groups-storage-adapter";
 
 type GroupsState = {
     groups : GroupRecord[];
@@ -47,9 +32,7 @@ type GroupsActions = {
     listenToStorageChanges : () => void;
     fetchGroups : () => Promise<void>;
     createGroup : ( payload : CreateGroupPayload ) => Promise<GroupRecord>;
-    joinGroupByCode : ( inviteCode : string ) => Promise<{
-        response : JoinGroupResponse;
-    }>;
+    joinGroupByCode : ( inviteCode : string ) => Promise<JoinGroupResponse>;
     leaveGroup : ( groupId : string ) => Promise<void>;
     updateGroup : ( groupId : string, payload : UpdateGroupPayload ) => Promise<GroupRecord>;
     setGroupActive : ( groupId : string, isActive : boolean ) => Promise<void>;
@@ -102,7 +85,7 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
         }
 
         try {
-            const stored = await getStoredActiveGroupIds();
+            const stored = await getGroupsStorageAdapter().getActiveGroupIds();
             const normalized = normalizeActiveGroupIds( stored, get().groups );
             set( ( state ) => ( {
                 ...state,
@@ -123,7 +106,12 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
             return;
         }
 
-        detachActiveGroupListener = subscribeToActiveGroupIds( ( nextIds ) => {
+        const adapter = getGroupsStorageAdapter();
+        if ( !adapter.subscribeToActiveGroupIds ) {
+            return;
+        }
+
+        detachActiveGroupListener = adapter.subscribeToActiveGroupIds( ( nextIds ) => {
             set( ( state ) => ( {
                 ...state,
                 activeGroupIds: normalizeActiveGroupIds( nextIds, state.groups ),
@@ -138,7 +126,7 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
         } ) );
 
         try {
-            await setStoredActiveGroupIds( normalized );
+            await getGroupsStorageAdapter().setActiveGroupIds( normalized );
         } catch ( error ) {
             console.warn( "[EyeNote] Failed to persist active groups", error );
         }
@@ -160,7 +148,8 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
         } ) );
 
         try {
-            const groups = await listGroups();
+            const client = getGroupsApiClient();
+            const groups = await client.listGroups();
             set( ( state ) => ( {
                 ...state,
                 groups,
@@ -177,7 +166,8 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
         }
     },
     async createGroup ( payload ) {
-        const group = await createGroupApi( payload );
+        const client = getGroupsApiClient();
+        const group = await client.createGroup( payload );
 
         set( ( state ) => ( {
             ...state,
@@ -190,7 +180,8 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
         return group;
     },
     async joinGroupByCode ( inviteCode ) {
-        const response = await joinGroupApi( { inviteCode: inviteCode.trim() } );
+        const client = getGroupsApiClient();
+        const response = await client.joinGroupByCode( inviteCode.trim() );
 
         if ( response.joined ) {
             const { group } = response;
@@ -209,19 +200,15 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
             await get().setActiveGroupIds( [ ...current, group.id ] );
         }
 
-        return {
-            response,
-        };
+        return response;
     },
     async createGroupInvite ( groupId, email, expiresInHours ) {
-        const invite = await createGroupInviteApi( groupId, {
-            email,
-            ...( expiresInHours ? { expiresInHours } : {} ),
-        } );
-        return invite;
+        const client = getGroupsApiClient();
+        return client.createGroupInvite( groupId, email, expiresInHours );
     },
     async leaveGroup ( groupId ) {
-        await leaveGroupApi( groupId );
+        const client = getGroupsApiClient();
+        await client.leaveGroup( groupId );
 
         set( ( state ) => ( {
             ...state,
@@ -232,7 +219,8 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
         await get().setActiveGroupIds( next );
     },
     async updateGroup ( groupId, payload ) {
-        const updated = await updateGroupApi( groupId, payload );
+        const client = getGroupsApiClient();
+        const updated = await client.updateGroup( groupId, payload );
 
         set( ( state ) => ( {
             ...state,
@@ -249,7 +237,8 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
         } ) );
 
         try {
-            const groupWithRoles = await getGroupWithRolesApi( groupId );
+            const client = getGroupsApiClient();
+            const groupWithRoles = await client.getGroupWithRoles( groupId );
             set( ( state ) => ( {
                 ...state,
                 selectedGroupWithRoles: groupWithRoles,
@@ -265,7 +254,8 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
         }
     },
     async createGroupRole ( groupId, payload ) {
-        const role = await createGroupRoleApi( groupId, payload );
+        const client = getGroupsApiClient();
+        const role = await client.createGroupRole( groupId, payload );
 
         set( ( state ) => {
             if ( !state.selectedGroupWithRoles || state.selectedGroupWithRoles.id !== groupId ) {
@@ -284,7 +274,8 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
         return role;
     },
     async updateGroupRole ( groupId, roleId, payload ) {
-        const updated = await updateGroupRoleApi( groupId, roleId, payload );
+        const client = getGroupsApiClient();
+        const updated = await client.updateGroupRole( groupId, roleId, payload );
 
         set( ( state ) => {
             if ( !state.selectedGroupWithRoles || state.selectedGroupWithRoles.id !== groupId ) {
@@ -295,8 +286,8 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
                 ...state,
                 selectedGroupWithRoles: {
                     ...state.selectedGroupWithRoles,
-                    roles: state.selectedGroupWithRoles.roles.map( ( role ) => 
-                        role.id === updated.id ? updated : role 
+                    roles: state.selectedGroupWithRoles.roles.map( ( role ) =>
+                        role.id === updated.id ? updated : role
                     ),
                 },
             };
@@ -305,13 +296,13 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
         return updated;
     },
     async assignRole ( groupId, payload ) {
-        await assignRoleApi( groupId, payload );
-
+        const client = getGroupsApiClient();
+        await client.assignRole( groupId, payload );
         await get().fetchGroupWithRoles( groupId );
     },
     async removeRole ( groupId, payload ) {
-        await removeRoleApi( groupId, payload );
-
+        const client = getGroupsApiClient();
+        await client.removeRole( groupId, payload );
         await get().fetchGroupWithRoles( groupId );
     },
     clearSelectedGroup () {

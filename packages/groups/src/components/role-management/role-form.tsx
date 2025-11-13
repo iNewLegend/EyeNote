@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import type { CheckedState } from "@radix-ui/react-checkbox";
 import {
     Button,
@@ -54,11 +54,11 @@ const permissionGroups = [
 ];
 
 export function RoleForm ( { initialData, onSubmit, onCancel, isLoading = false, title } : RoleFormProps ) {
-    const [formData, setFormData] = useState( {
+    const [ formData, setFormData ] = useState( {
         name: initialData?.name || "",
         description: initialData?.description || "",
         color: initialData?.color || "#6366f1",
-        permissions: initialData?.permissions || [GroupPermission.VIEW_NOTES],
+        permissions: initialData?.permissions || [ GroupPermission.VIEW_NOTES ],
     } );
 
     const handlePermissionChange = ( permission : GroupPermission, checked : boolean ) => {
@@ -70,8 +70,8 @@ export function RoleForm ( { initialData, onSubmit, onCancel, isLoading = false,
         } ) );
     };
 
-    const handleSubmit = async ( e : React.FormEvent ) => {
-        e.preventDefault();
+    const handleSubmit = async ( event : React.FormEvent ) => {
+        event.preventDefault();
         await onSubmit( formData );
     };
 
@@ -87,7 +87,7 @@ export function RoleForm ( { initialData, onSubmit, onCancel, isLoading = false,
                         <Input
                             id="name"
                             value={formData.name}
-                            onChange={( event : React.ChangeEvent<HTMLInputElement> ) =>
+                            onChange={( event ) =>
                                 setFormData( ( prev ) => ( { ...prev, name: event.target.value } ) )
                             }
                             placeholder="Enter role name"
@@ -100,7 +100,7 @@ export function RoleForm ( { initialData, onSubmit, onCancel, isLoading = false,
                         <Textarea
                             id="description"
                             value={formData.description}
-                            onChange={( event : React.ChangeEvent<HTMLTextAreaElement> ) =>
+                            onChange={( event ) =>
                                 setFormData( ( prev ) => ( { ...prev, description: event.target.value } ) )
                             }
                             placeholder="Enter role description"
@@ -115,14 +115,14 @@ export function RoleForm ( { initialData, onSubmit, onCancel, isLoading = false,
                                 id="color"
                                 type="color"
                                 value={formData.color}
-                                onChange={( event : React.ChangeEvent<HTMLInputElement> ) =>
+                                onChange={( event ) =>
                                     setFormData( ( prev ) => ( { ...prev, color: event.target.value } ) )
                                 }
-                                className="w-16 h-10 p-1"
+                                className="h-10 w-16 p-1"
                             />
                             <Input
                                 value={formData.color}
-                                onChange={( event : React.ChangeEvent<HTMLInputElement> ) =>
+                                onChange={( event ) =>
                                     setFormData( ( prev ) => ( { ...prev, color: event.target.value } ) )
                                 }
                                 placeholder="#6366f1"

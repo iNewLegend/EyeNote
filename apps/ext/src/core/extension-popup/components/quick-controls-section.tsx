@@ -13,8 +13,8 @@ export function QuickControlsSection ( { onOpenQuickMenu, onOpenGroupManager }: 
                 <h2 className="text-sm font-semibold">Quick controls</h2>
             </div>
             <p className="text-sm text-muted-foreground">
-                Launch in-page tools without leaving your current tab. Each button
-                opens a content overlay inside the site you are viewing.
+                Launch in-page tools or pop open the standalone manager without
+                leaving your current tab.
             </p>
             <div className="grid grid-cols-2 gap-3">
                 <Button

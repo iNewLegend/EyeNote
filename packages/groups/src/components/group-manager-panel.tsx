@@ -1,18 +1,18 @@
-import { useState, useMemo, useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Button, Label, Switch, cn } from "@eye-note/ui";
-import { useAuthStore } from "@eye-note/auth/extension";
-import { useGroupsStore } from "../groups-store";
-import { RoleManagementPanel } from "../../../components/role-management";
+import { Badge, Button, Label, Switch, cn } from "@eye-note/ui";
 import type { UpdateGroupPayload } from "@eye-note/definitions";
+
+import { useGroupsStore } from "../store/groups-store";
+import { RoleManagementPanel } from "./role-management";
 
 type GroupManagerPanelProps = {
     className ?: string;
     onClose ?: () => void;
+    currentUserId ?: string | null;
 };
 
-export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelProps ) {
-    const authUser = useAuthStore( ( state ) => state.user );
+export function GroupManagerPanel ( { className, onClose, currentUserId } : GroupManagerPanelProps ) {
     const groups = useGroupsStore( ( state ) => state.groups );
     const activeGroupIds = useGroupsStore( ( state ) => state.activeGroupIds );
     const groupsError = useGroupsStore( ( state ) => state.error );
@@ -39,134 +39,118 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
         () => groups.slice().sort( ( a, b ) => a.name.localeCompare( b.name ) ),
         [ groups ]
     );
-    const activeGroupSet = useMemo(
-        () => new Set( activeGroupIds ),
-        [ activeGroupIds ]
-    );
+    const activeGroupSet = useMemo( () => new Set( activeGroupIds ), [ activeGroupIds ] );
 
-    const handleCreateGroup = useCallback(
-        async ( event : React.FormEvent<HTMLFormElement> ) => {
-            event.preventDefault();
+    const handleCreateGroup = useCallback( async ( event : React.FormEvent<HTMLFormElement> ) => {
+        event.preventDefault();
 
-            const name = newGroupName.trim();
+        const name = newGroupName.trim();
 
-            if ( name.length === 0 ) {
-                toast( "Group name required", {
-                    description: "Enter a name before creating a group.",
-                } );
-                return;
-            }
+        if ( name.length === 0 ) {
+            toast( "Group name required", {
+                description: "Enter a name before creating a group.",
+            } );
+            return;
+        }
 
-            try {
-                setIsCreatingGroup( true );
-                await createGroup( { name, color: newGroupColor } );
-                setNewGroupName( "" );
-                setNewGroupColor( "#6366f1" );
-                toast( "Group created", {
-                    description: "Use the invite form below to send teammates a single-use code.",
+        try {
+            setIsCreatingGroup( true );
+            await createGroup( { name, color: newGroupColor } );
+            setNewGroupName( "" );
+            setNewGroupColor( "#6366f1" );
+            toast( "Group created", {
+                description: "Use the invite form below to send teammates a single-use code.",
+            } );
+            onClose?.();
+        } catch ( error ) {
+            const message = error instanceof Error ? error.message : "Failed to create group";
+            toast( "Error", {
+                description: message,
+            } );
+        } finally {
+            setIsCreatingGroup( false );
+        }
+    }, [ createGroup, newGroupName, newGroupColor, onClose ] );
+
+    const handleJoinGroup = useCallback( async ( event : React.FormEvent<HTMLFormElement> ) => {
+        event.preventDefault();
+
+        const inviteCode = inviteCodeInput.trim();
+
+        if ( inviteCode.length === 0 ) {
+            toast( "Invite code required", {
+                description: "Enter a group's invite code to join.",
+            } );
+            return;
+        }
+
+        try {
+            setIsJoiningGroup( true );
+            const response = await joinGroupByCode( inviteCode );
+            setInviteCodeInput( "" );
+
+            if ( response.joined ) {
+                toast( "Joined group", {
+                    description: `You're ready to collaborate in ${ response.group.name }`,
                 } );
                 onClose?.();
-            } catch ( error ) {
-                const message = error instanceof Error ? error.message : "Failed to create group";
-                toast( "Error", {
-                    description: message,
-                } );
-            } finally {
-                setIsCreatingGroup( false );
+                return;
             }
-        },
-        [ createGroup, newGroupName, onClose ]
-    );
 
-    const handleJoinGroup = useCallback(
-        async ( event : React.FormEvent<HTMLFormElement> ) => {
-            event.preventDefault();
-
-            const inviteCode = inviteCodeInput.trim();
-
-            if ( inviteCode.length === 0 ) {
-                toast( "Invite code required", {
-                    description: "Enter a group's invite code to join.",
+            if ( response.requiresApproval ) {
+                toast( "Request sent", {
+                    description: `We'll notify you when ${ response.group.name } approves your request.`,
                 } );
                 return;
             }
 
-            try {
-                setIsJoiningGroup( true );
-                const { response } = await joinGroupByCode( inviteCode );
-                setInviteCodeInput( "" );
+            toast( "Already a member", {
+                description: `You're already part of ${ response.group.name }.`,
+            } );
+        } catch ( error ) {
+            const message = error instanceof Error ? error.message : "Failed to join group";
+            toast( "Error", {
+                description: message,
+            } );
+        } finally {
+            setIsJoiningGroup( false );
+        }
+    }, [ inviteCodeInput, joinGroupByCode, onClose ] );
 
-                if ( response.joined ) {
-                    toast( "Joined group", {
-                        description: `You're ready to collaborate in ${ response.group.name }`,
-                    } );
-                    onClose?.();
-                    return;
-                }
+    const handleToggleGroup = useCallback( async ( groupId : string, isActive : boolean ) => {
+        try {
+            await setGroupActive( groupId, isActive );
+        } catch ( error ) {
+            const message = error instanceof Error ? error.message : "Failed to update group selection";
+            toast( "Error", {
+                description: message,
+            } );
+        }
+    }, [ setGroupActive ] );
 
-                if ( response.requiresApproval ) {
-                    toast( "Request sent", {
-                        description: `We'll notify you when ${ response.group.name } approves your request.`,
-                    } );
-                    return;
-                }
+    const handleLeaveGroup = useCallback( async ( groupId : string, groupName : string, ownerId : string ) => {
+        if ( ownerId === currentUserId ) {
+            toast( "Transfer ownership first", {
+                description: "Assign a new owner before leaving your group.",
+            } );
+            return;
+        }
 
-                toast( "Already a member", {
-                    description: `You're already part of ${ response.group.name }.`,
-                } );
-            } catch ( error ) {
-                const message = error instanceof Error ? error.message : "Failed to join group";
-                toast( "Error", {
-                    description: message,
-                } );
-            } finally {
-                setIsJoiningGroup( false );
-            }
-        },
-        [ inviteCodeInput, joinGroupByCode, onClose ]
-    );
-
-    const handleToggleGroup = useCallback(
-        async ( groupId : string, isActive : boolean ) => {
-            try {
-                await setGroupActive( groupId, isActive );
-            } catch ( error ) {
-                const message =
-                    error instanceof Error ? error.message : "Failed to update group selection";
-                toast( "Error", {
-                    description: message,
-                } );
-            }
-        },
-        [ setGroupActive ]
-    );
-
-    const handleLeaveGroup = useCallback(
-        async ( groupId : string, groupName : string, ownerId : string ) => {
-            if ( ownerId === authUser?.id ) {
-                toast( "Transfer ownership first", {
-                    description: "Assign a new owner before leaving your group.",
-                } );
-                return;
-            }
-
-            try {
-                setLeavingGroupId( groupId );
-                await leaveGroup( groupId );
-                toast( "Left group", {
-                    description: `You left ${ groupName }.`,
-                } );
-            } catch ( error ) {
-                const message = error instanceof Error ? error.message : "Failed to leave group";
-                toast( "Error", {
-                    description: message,
-                } );
-            } finally {
-                setLeavingGroupId( null );
-            }
-        },
-        [ authUser?.id, leaveGroup ]
-    );
+        try {
+            setLeavingGroupId( groupId );
+            await leaveGroup( groupId );
+            toast( "Left group", {
+                description: `You left ${ groupName }.`,
+            } );
+        } catch ( error ) {
+            const message = error instanceof Error ? error.message : "Failed to leave group";
+            toast( "Error", {
+                description: message,
+            } );
+        } finally {
+            setLeavingGroupId( null );
+        }
+    }, [ currentUserId, leaveGroup ] );
 
     const handleUpdateGroup = useCallback( async ( groupId : string, payload : UpdateGroupPayload ) => {
         try {
@@ -304,32 +288,32 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
                             key={group.id}
                             className="space-y-3 rounded-md border border-border/60 bg-secondary/40 p-3"
                         >
-                            <div className="flex items-start justify-between gap-3">
-                                <div className="flex flex-1 items-start gap-3">
-                                    <span
-                                        className="mt-1 h-3 w-3 rounded-full border border-border"
+                            <div className="flex flex-wrap items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                    <div
+                                        className="h-3 w-3 rounded-full"
                                         style={{ backgroundColor: group.color }}
-                                        aria-hidden
+                                        aria-label="Group color"
                                     />
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-semibold text-foreground">
-                                            {group.name}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {group.memberCount} member{group.memberCount === 1 ? "" : "s"}
-                                            {group.ownerId === authUser?.id ? " • You own this group" : ""}
-                                        </p>
-                                    </div>
+                                    <p className="text-sm font-medium text-foreground">
+                                        {group.name}
+                                        {group.ownerId === currentUserId ? " • You own this group" : ""}
+                                    </p>
                                 </div>
-                                <Switch
-                                    aria-label={`Toggle ${ group.name }`}
-                                    checked={activeGroupSet.has( group.id )}
-                                    onCheckedChange={( checked ) => {
-                                        void handleToggleGroup( group.id, checked );
-                                    }}
-                                />
+                                <Badge variant="outline" className="text-xs">
+                                    {group.memberCount} member{group.memberCount === 1 ? "" : "s"}
+                                </Badge>
+                                <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+                                    <span>Active</span>
+                                    <Switch
+                                        checked={activeGroupSet.has( group.id )}
+                                        onCheckedChange={( checked ) => {
+                                            void handleToggleGroup( group.id, checked === true );
+                                        }}
+                                    />
+                                </div>
                             </div>
-                            {group.ownerId === authUser?.id && (
+                            {group.ownerId === currentUserId && (
                                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                     <label className="flex items-center gap-2">
                                         <span>Marker color</span>
@@ -357,57 +341,57 @@ export function GroupManagerPanel ( { className, onClose } : GroupManagerPanelPr
                                     </Button>
                                 </div>
                             )}
-                {group.ownerId === authUser?.id ? (
-                    <form
-                        className="space-y-2"
-                        onSubmit={( event ) => {
-                            event.preventDefault();
-                            void handleSendInvite( group.id );
-                        }}
-                    >
-                        <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                            Invite teammate
-                        </Label>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="email"
-                                value={inviteEmailInputs[ group.id ] ?? ""}
-                                onChange={( event ) => {
-                                    const value = event.target.value;
-                                    setInviteEmailInputs( ( prev ) => ( { ...prev, [ group.id ]: value } ) );
-                                }}
-                                placeholder="teammate@example.com"
-                                className="flex-1 rounded-md border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/70"
-                                disabled={invitingGroupId === group.id}
-                            />
-                            <Button
-                                type="submit"
-                                variant="outline"
-                                disabled={invitingGroupId === group.id}
-                            >
-                                {invitingGroupId === group.id ? "Sending..." : "Send"}
-                            </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                            We'll generate a single-use code and copy it so you can drop it in chat or email.
-                        </p>
-                    </form>
-                ) : null}
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                    {group.ownerId !== authUser?.id ? (
-                        <div className="flex flex-col gap-1">
-                            <span className="font-medium text-foreground">Need an invite?</span>
-                            <span>Ask a group owner to send a single-use code to your email.</span>
-                        </div>
-                    ) : (
-                        <div />
-                    )}
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        disabled={group.ownerId === authUser?.id || leavingGroupId === group.id}
+                            {group.ownerId === currentUserId ? (
+                                <form
+                                    className="space-y-2"
+                                    onSubmit={( event ) => {
+                                        event.preventDefault();
+                                        void handleSendInvite( group.id );
+                                    }}
+                                >
+                                    <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                                        Invite teammate
+                                    </Label>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="email"
+                                            value={inviteEmailInputs[ group.id ] ?? ""}
+                                            onChange={( event ) => {
+                                                const value = event.target.value;
+                                                setInviteEmailInputs( ( prev ) => ( { ...prev, [ group.id ]: value } ) );
+                                            }}
+                                            placeholder="teammate@example.com"
+                                            className="flex-1 rounded-md border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/70"
+                                            disabled={invitingGroupId === group.id}
+                                        />
+                                        <Button
+                                            type="submit"
+                                            variant="outline"
+                                            disabled={invitingGroupId === group.id}
+                                        >
+                                            {invitingGroupId === group.id ? "Sending..." : "Send"}
+                                        </Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        We'll generate a single-use code and copy it so you can drop it in chat or email.
+                                    </p>
+                                </form>
+                            ) : null}
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                                {group.ownerId !== currentUserId ? (
+                                    <div className="flex flex-col gap-1">
+                                        <span className="font-medium text-foreground">Need an invite?</span>
+                                        <span>Ask a group owner to send a single-use code to your email.</span>
+                                    </div>
+                                ) : (
+                                    <div />
+                                )}
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-destructive hover:text-destructive"
+                                    disabled={group.ownerId === currentUserId || leavingGroupId === group.id}
                                     onClick={() => {
                                         void handleLeaveGroup( group.id, group.name, group.ownerId );
                                     }}

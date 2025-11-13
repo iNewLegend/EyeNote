@@ -15,6 +15,7 @@ import type {
     CreateGroupInvitePayload,
     GroupInviteRecord,
 } from "@eye-note/definitions";
+import type { GroupsApiClient } from "@eye-note/groups";
 import { apiRequest } from "../../lib/api-client";
 
 export async function listGroups () : Promise<GroupRecord[]> {
@@ -117,3 +118,23 @@ export async function rejectJoinRequest ( groupId : string, requestId : string )
         method: "POST",
     } );
 }
+
+export const groupsApiClient : GroupsApiClient = {
+    listGroups,
+    createGroup,
+    joinGroupByCode : ( inviteCode : string ) => joinGroup( { inviteCode } ),
+    leaveGroup : async ( groupId : string ) => {
+        await leaveGroup( groupId );
+    },
+    updateGroup,
+    getGroupWithRoles,
+    createGroupRole,
+    updateGroupRole,
+    assignRole,
+    removeRole,
+    createGroupInvite : ( groupId : string, email : string, expiresInHours ?: number ) =>
+        createGroupInvite( groupId, {
+            email,
+            ...( expiresInHours ? { expiresInHours } : {} ),
+        } ),
+};

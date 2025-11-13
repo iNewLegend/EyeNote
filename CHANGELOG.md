@@ -5,6 +5,15 @@
 - Added an end-to-end notifications system: Mongo-backed notification records, Fastify `/api/notifications` listing + read endpoints, live gateway broadcasts, and an extension notification center with realtime updates and Chrome badge sync.
 - Reworked group invites into an approval-driven workflow—join requests now fan out via the notification system, group managers can approve or decline directly from the overlay, and applicants are synced into their groups automatically once approved.
 
+## Collaboration
+- Extracted the group manager store, hooks, and role-management UI into a new `@eye-note/groups` package with pluggable API/storage adapters so both the extension and dashboard consume the same logic.
+- Pointed the extension at the shared package (Chrome storage + existing REST client) and removed its local copies of the group manager/role components so popup, overlay, and notifications all stay in sync automatically.
+- Replaced the dashboard app’s preview surface with the real group manager experience by wiring a local-storage adapter, app-authenticated API client, and shared panel—users can now create/join/manage groups from the standalone app without opening the extension.
+- Restored the dashboard’s `Extension Managment` shell so the shared group manager renders inside the familiar settings surface, matching the extension’s look and copy.
+- Centralized the `Extension Managment` title/description copy inside `@eye-note/definitions` so the app, overlay, and popup stay perfectly in sync.
+- Synced the extension auth store across contexts so the popup and standalone group window reuse the existing session before showing sign-in prompts, eliminating the “sign in twice” confusion.
+- Removed the legacy dashboard workspace (`apps/app`) so the Chrome extension and its standalone manager window remain the single source of truth for extension management.
+
 # 2025-11-11
 
 ## Notes overlay
@@ -32,7 +41,7 @@
 # 2025-10-29
 
 ## Documentation
-- Realigned `AGENTS.md` with the current workspace layout (`apps/app`, `apps/dashboard`, `apps/ext`) and developer commands.
+- Realigned `AGENTS.md` with the current workspace layout (`apps/backend`, `apps/ext`) and developer commands.
 - Inlined `.cursor` automation rule descriptions inside `AGENTS.md` for quick reference.
 - Added a root `pnpm type-check` script that executes TypeScript checks across every workspace and documented it for agents.
 

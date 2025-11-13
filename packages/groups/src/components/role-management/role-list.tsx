@@ -1,11 +1,4 @@
-import {
-    Badge,
-    Button,
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@eye-note/ui";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@eye-note/ui";
 import { GroupPermission, type GroupRoleRecord } from "@eye-note/definitions";
 
 interface RoleListProps {
@@ -37,7 +30,7 @@ export function RoleList ( { roles, onEditRole, onDeleteRole, canManageRoles = f
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div
-                                    className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                                    className="h-4 w-4 rounded-full border-2 border-white shadow-sm"
                                     style={{ backgroundColor: role.color }}
                                 />
                                 <CardTitle className="text-lg">{role.name}</CardTitle>
@@ -67,9 +60,7 @@ export function RoleList ( { roles, onEditRole, onDeleteRole, canManageRoles = f
                             )}
                         </div>
                         {role.description && (
-                            <p className="text-sm text-muted-foreground">
-                                {role.description}
-                            </p>
+                            <p className="text-sm text-muted-foreground">{role.description}</p>
                         )}
                     </CardHeader>
                     <CardContent>

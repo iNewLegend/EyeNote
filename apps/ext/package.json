@@ -12,6 +12,7 @@
     "dependencies": {
         "@eye-note/auth": "workspace:*",
         "@eye-note/backend-health": "workspace:*",
+        "@eye-note/groups": "workspace:*",
         "@eye-note/definitions": "workspace:*",
         "@eye-note/page-identity": "workspace:*",
         "@eye-note/ui": "workspace:*",
