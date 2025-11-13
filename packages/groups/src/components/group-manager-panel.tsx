@@ -1,6 +1,45 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Badge, Button, Label, Switch, cn } from "@eye-note/ui";
+import {
+    Badge,
+    Button,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+    Input,
+    Label,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+    Switch,
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+    cn,
+} from "@eye-note/ui";
+import type { LucideIcon } from "lucide-react";
+import {
+    Users,
+    Plus,
+    Link2,
+    Copy,
+    Trash2,
+    RefreshCw,
+    Settings,
+    LogOut,
+    Crown,
+    Circle,
+    CheckCircle2,
+    XCircle,
+    Clock,
+    LayoutGrid,
+    Shield,
+} from "lucide-react";
 import type { UpdateGroupPayload } from "@eye-note/definitions";
 
 import { useGroupsStore } from "../store/groups-store";
@@ -37,6 +76,50 @@ const INVITE_LINK_BASE_URL = "https://eyenote.io/invite";
 
 const buildInviteLink = ( code : string ) => `${ INVITE_LINK_BASE_URL.replace( /\/$/, "" ) }/${ code }`;
 
+const INVITE_STATUS_LABEL : Record<string, string> = {
+    active: "Active",
+    revoked: "Revoked",
+    expired: "Expired",
+    maxed: "At capacity",
+};
+
+const INVITE_STATUS_TONE : Record<string, string> = {
+    active: "text-emerald-500 border-emerald-500/40",
+    revoked: "text-destructive border-destructive/40",
+    expired: "text-amber-500 border-amber-500/40",
+    maxed: "text-blue-500 border-blue-500/40",
+};
+
+type DetailTabValue = "overview" | "invites" | "access";
+
+type DetailTabOption = {
+    value : DetailTabValue;
+    label : string;
+    description : string;
+    icon : LucideIcon;
+};
+
+const DETAIL_TAB_OPTIONS : DetailTabOption[] = [
+    {
+        value: "overview",
+        label: "Overview",
+        description: "Presence & theme",
+        icon: LayoutGrid,
+    },
+    {
+        value: "invites",
+        label: "Invites",
+        description: "Links & quotas",
+        icon: Link2,
+    },
+    {
+        value: "access",
+        label: "Access",
+        description: "Roles & membership",
+        icon: Shield,
+    },
+];
+
 type GroupManagerPanelProps = {
     className ?: string;
     onClose ?: () => void;
@@ -70,12 +153,38 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
     const [ inviteSelections, setInviteSelections ] = useState<Record<string, InviteSelection>>( {} );
     const [ creatingInviteGroupId, setCreatingInviteGroupId ] = useState<string | null>( null );
     const [ revokingInviteKey, setRevokingInviteKey ] = useState<string | null>( null );
+    const [ selectedGroupId, setSelectedGroupId ] = useState<string | null>( null );
+    const [ detailTab, setDetailTab ] = useState<DetailTabValue>( "overview" );
 
     const sortedGroups = useMemo(
         () => groups.slice().sort( ( a, b ) => a.name.localeCompare( b.name ) ),
         [ groups ]
     );
     const activeGroupSet = useMemo( () => new Set( activeGroupIds ), [ activeGroupIds ] );
+
+    const selectedGroup = useMemo( () => {
+        if ( !selectedGroupId ) {
+            return null;
+        }
+        return sortedGroups.find( ( group ) => group.id === selectedGroupId ) ?? null;
+    }, [ sortedGroups, selectedGroupId ] );
+
+    useEffect( () => {
+        if ( sortedGroups.length === 0 ) {
+            if ( selectedGroupId !== null ) {
+                setSelectedGroupId( null );
+            }
+            return;
+        }
+
+        if ( !selectedGroupId || !sortedGroups.some( ( group ) => group.id === selectedGroupId ) ) {
+            setSelectedGroupId( sortedGroups[ 0 ].id );
+        }
+    }, [ sortedGroups, selectedGroupId ] );
+
+    useEffect( () => {
+        setDetailTab( "overview" );
+    }, [ selectedGroupId ] );
 
     const handleCreateGroup = useCallback( async ( event : React.FormEvent<HTMLFormElement> ) => {
         event.preventDefault();
@@ -300,19 +409,523 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
         } );
     }, [ copyText ] );
 
-    useEffect( () => {
-        groups
-            .filter( ( group ) => group.ownerId === currentUserId )
-            .forEach( ( group ) => {
-                if ( invitesByGroupId[ group.id ] || inviteStateByGroupId[ group.id ]?.loading ) {
-                    return;
-                }
+    const renderInviteSection = () => {
+        if ( !selectedGroup ) {
+            return null;
+        }
 
-                void fetchGroupInvites( group.id ).catch( () => {
-                    // Error state handled via store metadata
-                } );
-            } );
-    }, [ groups, currentUserId, invitesByGroupId, inviteStateByGroupId, fetchGroupInvites ] );
+        const isOwner = selectedGroup.ownerId === currentUserId;
+        const selection = inviteSelections[ selectedGroup.id ] ?? DEFAULT_INVITE_SELECTION;
+        const inviteState = inviteStateByGroupId[ selectedGroup.id ];
+        const invites = invitesByGroupId[ selectedGroup.id ] ?? [];
+
+        if ( !isOwner ) {
+            return (
+                <Card className="border border-border/60 bg-muted/20">
+                    <CardContent className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+                        <Users className="h-10 w-10 text-muted-foreground/40" />
+                        <CardTitle className="text-sm font-semibold">Owner only</CardTitle>
+                        <CardDescription className="text-xs">
+                            Ask the owner for a fresh invite, just like Discord’s server flow.
+                        </CardDescription>
+                    </CardContent>
+                </Card>
+            );
+        }
+
+        return (
+            <div className="space-y-3">
+                <div className="rounded-md border border-border/60 bg-secondary/20 p-3">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                        <Label className="text-xs font-medium">Invite links</Label>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 text-xs"
+                            onClick={() => {
+                                void handleRefreshInvites( selectedGroup.id );
+                            }}
+                            disabled={inviteState?.loading === true}
+                        >
+                            <RefreshCw className={cn( "mr-1 h-3 w-3", inviteState?.loading && "animate-spin" )} />
+                            Refresh
+                        </Button>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                            <Select
+                                value={selection.expiresInMinutes?.toString() ?? ""}
+                                onValueChange={( value ) => {
+                                    const numValue = value === "" ? null : Number( value );
+                                    handleSelectionChange( selectedGroup.id, { expiresInMinutes: numValue } );
+                                }}
+                            >
+                                <SelectTrigger className="h-8 flex-1 text-xs">
+                                    <SelectValue placeholder="Never expires" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {INVITE_EXPIRATION_OPTIONS.map( ( option ) => (
+                                        <SelectItem key={`expires-${ option.label }`} value={option.value?.toString() ?? ""}>
+                                            {option.label}
+                                        </SelectItem>
+                                    ) )}
+                                </SelectContent>
+                            </Select>
+                            <Select
+                                value={selection.maxUses?.toString() ?? ""}
+                                onValueChange={( value ) => {
+                                    const numValue = value === "" ? null : Number( value );
+                                    handleSelectionChange( selectedGroup.id, { maxUses: numValue } );
+                                }}
+                            >
+                                <SelectTrigger className="h-8 flex-1 text-xs">
+                                    <SelectValue placeholder="No limit" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {INVITE_MAX_USE_OPTIONS.map( ( option ) => (
+                                        <SelectItem key={`uses-${ option.label }`} value={option.value?.toString() ?? ""}>
+                                            {option.label}
+                                        </SelectItem>
+                                    ) )}
+                                </SelectContent>
+                            </Select>
+                            <Button
+                                type="button"
+                                size="sm"
+                                className="h-8"
+                                onClick={() => {
+                                    void handleCreateInviteLink( selectedGroup.id );
+                                }}
+                                disabled={creatingInviteGroupId === selectedGroup.id}
+                            >
+                                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                                {creatingInviteGroupId === selectedGroup.id ? "..." : "Generate"}
+                            </Button>
+                        </div>
+                        {inviteState?.error ? (
+                            <p className="text-[10px] text-destructive">{inviteState.error}</p>
+                        ) : null}
+                    </div>
+                </div>
+
+                {inviteState?.loading && invites.length === 0 ? (
+                    <div className="flex items-center justify-center gap-2 rounded-md border border-border/60 bg-secondary/20 py-6">
+                        <RefreshCw className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">Loading…</p>
+                    </div>
+                ) : invites.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border/60 bg-secondary/20 py-6 text-center">
+                        <Link2 className="h-8 w-8 text-muted-foreground/40" />
+                        <p className="text-xs font-medium text-muted-foreground">No invites yet</p>
+                    </div>
+                ) : (
+                    <div className="space-y-2">
+                        {invites.map( ( invite ) => {
+                            const inviteKey = `${ selectedGroup.id }-${ invite.code }`;
+                            const statusLabel = INVITE_STATUS_LABEL[ invite.status ] ?? invite.status;
+                            const statusTone = INVITE_STATUS_TONE[ invite.status ] ?? "text-muted-foreground border-border/60";
+                            const isActive = invite.status === "active";
+                            return (
+                                <div key={invite.id} className="rounded-md border border-border/60 bg-secondary/20 p-2">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="truncate font-mono text-xs font-semibold">{invite.code}</span>
+                                                <Badge variant="outline" className={cn( "text-[9px] font-medium", statusTone )}>
+                                                    {statusLabel}
+                                                </Badge>
+                                            </div>
+                                            <div className="mt-1 flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground">
+                                                <span className="flex items-center gap-1">
+                                                    <Users className="h-2.5 w-2.5" />
+                                                    {invite.maxUses
+                                                        ? `${ invite.uses }/${ invite.maxUses }`
+                                                        : `${ invite.uses } use${ invite.uses === 1 ? "" : "s" }`}
+                                                </span>
+                                                {invite.expiresAt ? (
+                                                    <span className="flex items-center gap-1">
+                                                        <Clock className="h-2.5 w-2.5" />
+                                                        {new Date( invite.expiresAt ).toLocaleDateString()}
+                                                    </span>
+                                                ) : (
+                                                    <span className="flex items-center gap-1">
+                                                        <CheckCircle2 className="h-2.5 w-2.5" />
+                                                        No expiry
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-7 px-2 text-xs"
+                                                onClick={() => {
+                                                    void handleCopyInvite( invite.code, "link" );
+                                                }}
+                                            >
+                                                <Copy className="mr-1 h-3 w-3" />
+                                                Link
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                disabled={!isActive || revokingInviteKey === inviteKey}
+                                                onClick={() => {
+                                                    void handleRevokeInvite( selectedGroup.id, invite.code );
+                                                }}
+                                            >
+                                                {revokingInviteKey === inviteKey ? (
+                                                    <RefreshCw className="h-3 w-3 animate-spin" />
+                                                ) : (
+                                                    <Trash2 className="h-3 w-3" />
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        } )}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    const renderGroupDetails = () => {
+        if ( sortedGroups.length === 0 ) {
+            return null;
+        }
+
+        if ( !selectedGroup ) {
+            return (
+                <Card className="border-dashed border-border/60 bg-muted/20">
+                    <CardContent className="flex min-h-[360px] flex-col items-center justify-center py-12 text-center">
+                        <Users className="mb-4 h-12 w-12 text-muted-foreground/40" />
+                        <CardTitle className="text-base font-semibold">Pick a group</CardTitle>
+                        <CardDescription className="mt-1 text-sm">
+                            Choose a group from the Discord-style sidebar to start managing it.
+                        </CardDescription>
+                    </CardContent>
+                </Card>
+            );
+        }
+
+        const isOwner = selectedGroup.ownerId === currentUserId;
+        const isActive = activeGroupSet.has( selectedGroup.id );
+        // compact header replaces previous stats grid
+
+        return (
+            <div className="space-y-3">
+                <div className="flex items-center justify-between rounded-md border border-border/60 bg-secondary/30 px-3 py-2">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div
+                            className="h-10 w-10 shrink-0 rounded-full"
+                            style={{ backgroundColor: selectedGroup.color }}
+                        />
+                        <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold">{selectedGroup.name}</p>
+                            {selectedGroup.description ? (
+                                <p className="truncate text-xs text-muted-foreground">{selectedGroup.description}</p>
+                            ) : null}
+                        </div>
+                        {isOwner && <Crown className="h-4 w-4 text-amber-500" />}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Switch
+                            checked={isActive}
+                            onCheckedChange={( checked ) => {
+                                void handleToggleGroup( selectedGroup.id, checked === true );
+                            }}
+                        />
+                        {isOwner && (
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                onClick={() => setManagingRolesForGroupId( selectedGroup.id )}
+                            >
+                                <Settings className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                </div>
+
+                <Tabs
+                    value={detailTab}
+                    onValueChange={( value ) => setDetailTab( value as DetailTabValue )}
+                    className="flex flex-col gap-4 lg:flex-row"
+                >
+                    <TabsList className="flex h-full flex-row overflow-x-auto rounded-md border border-border/60 bg-secondary/20 p-0.5 lg:w-48 lg:flex-col">
+                        {DETAIL_TAB_OPTIONS.map( ( option ) => {
+                            const Icon = option.icon;
+                            return (
+                                <TabsTrigger
+                                    key={option.value}
+                                    value={option.value}
+                                    className="group flex flex-1 items-center justify-start gap-2 rounded px-2 py-1.5 text-left text-xs font-medium transition data-[state=active]:bg-background data-[state=active]:text-foreground"
+                                >
+                                    <Icon className="h-3.5 w-3.5 text-muted-foreground group-data-[state=active]:text-primary" />
+                                    {option.label}
+                                </TabsTrigger>
+                            );
+                        } )}
+                    </TabsList>
+                    <div className="flex-1 space-y-3">
+                        <TabsContent value="overview" className="space-y-3 focus-visible:outline-none">
+                            {isOwner && (
+                                <div className="flex items-center justify-between rounded-md border border-border/60 bg-secondary/20 px-3 py-2">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-xs font-medium">Marker color</Label>
+                                        <p className="text-[10px] text-muted-foreground">
+                                            Customize the group icon color
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="color"
+                                            value={selectedGroup.color}
+                                            onChange={( event ) => {
+                                                void handleUpdateGroup( selectedGroup.id, {
+                                                    color: event.target.value,
+                                                } );
+                                            }}
+                                            className="h-8 w-12 cursor-pointer rounded border border-border"
+                                            disabled={updatingGroupId === selectedGroup.id}
+                                        />
+                                        {updatingGroupId === selectedGroup.id && (
+                                            <RefreshCw className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                            <div className="flex items-center justify-between rounded-md border border-border/60 bg-secondary/20 px-3 py-2">
+                                <div className="space-y-0.5">
+                                    <Label className="text-xs font-medium">Members</Label>
+                                    <p className="text-[10px] text-muted-foreground">
+                                        {selectedGroup.memberCount} member{selectedGroup.memberCount === 1 ? "" : "s"} in this group
+                                    </p>
+                                </div>
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="invites" className="space-y-4 focus-visible:outline-none">
+                            {renderInviteSection()}
+                        </TabsContent>
+                        <TabsContent value="access" className="space-y-3 focus-visible:outline-none">
+                            {isOwner ? (
+                                <div className="flex items-center justify-between rounded-md border border-border/60 bg-secondary/20 px-3 py-2">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-xs font-medium">Roles</Label>
+                                        <p className="text-[10px] text-muted-foreground">
+                                            Manage permissions and member roles
+                                        </p>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-7 text-xs"
+                                        onClick={() => setManagingRolesForGroupId( selectedGroup.id )}
+                                    >
+                                        <Settings className="mr-1.5 h-3.5 w-3.5" />
+                                        Manage
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="rounded-md border border-border/60 bg-secondary/20 px-3 py-3 text-center">
+                                    <Crown className="mx-auto mb-1.5 h-5 w-5 text-muted-foreground/50" />
+                                    <p className="text-xs font-medium text-muted-foreground">Owner only feature</p>
+                                </div>
+                            )}
+                            {selectedGroup.ownerId !== currentUserId && (
+                                <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2">
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-0.5">
+                                            <Label className="text-xs font-medium text-destructive">Leave group</Label>
+                                            <p className="text-[10px] text-muted-foreground">
+                                                Remove yourself from this group
+                                            </p>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-7 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                            disabled={leavingGroupId === selectedGroup.id}
+                                            onClick={() => {
+                                                void handleLeaveGroup( selectedGroup.id, selectedGroup.name, selectedGroup.ownerId );
+                                            }}
+                                        >
+                                            {leavingGroupId === selectedGroup.id ? (
+                                                <>
+                                                    <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                                                    Leaving...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <LogOut className="mr-1.5 h-3.5 w-3.5" />
+                                                    Leave
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                        </TabsContent>
+                    </div>
+                </Tabs>
+            </div>
+        );
+    };
+
+    /* removed quick actions */
+
+    const renderGroupStackCard = () => {
+        if ( groupsLoading && sortedGroups.length === 0 ) {
+            return (
+                <Card className="border border-border/60 bg-muted/20">
+                    <CardContent className="flex items-center justify-center gap-2 py-10">
+                        <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">Loading your groups…</p>
+                    </CardContent>
+                </Card>
+            );
+        }
+
+        if ( sortedGroups.length === 0 ) {
+            return (
+                <Card className="border-dashed border-border/60 bg-muted/20">
+                    <CardContent className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+                        <Users className="h-10 w-10 text-muted-foreground/40" />
+                        <CardTitle className="text-sm font-semibold">No groups yet</CardTitle>
+                        <CardDescription className="text-xs">
+                            Use the quick actions above to spin up your first space.
+                        </CardDescription>
+                    </CardContent>
+                </Card>
+            );
+        }
+
+        return (
+            <Card className="border border-border/60 bg-background/70 shadow-sm">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-xs font-semibold text-muted-foreground">Groups</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-1">
+                        {sortedGroups.map( ( group ) => {
+                            const isSelected = group.id === selectedGroupId;
+                            const isActive = activeGroupSet.has( group.id );
+                            const isOwner = group.ownerId === currentUserId;
+                            return (
+                                <button
+                                    type="button"
+                                    key={group.id}
+                                    onClick={() => setSelectedGroupId( group.id )}
+                                    className={cn(
+                                        "group relative flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors",
+                                        isSelected
+                                            ? "bg-accent text-foreground"
+                                            : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                                    )}
+                                >
+                                    <div
+                                        className={cn(
+                                            "h-6 w-0.5 rounded-full",
+                                            isSelected ? "bg-primary" : "bg-transparent group-hover:bg-muted-foreground/30"
+                                        )}
+                                    />
+                                    <div
+                                        className="h-8 w-8 shrink-0 rounded-full"
+                                        style={{ backgroundColor: group.color }}
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center justify-between gap-1">
+                                            <span className="truncate text-sm font-medium">
+                                                {group.name}
+                                            </span>
+                                            {isOwner && <Crown className="h-3 w-3 text-amber-500" />}
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                            <span>{group.memberCount} member{group.memberCount === 1 ? "" : "s"}</span>
+                                            {isActive && (
+                                                <span className="flex items-center gap-0.5 text-emerald-500">
+                                                    <Circle className="h-1.5 w-1.5 fill-current" />
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </button>
+                            );
+                        } )}
+                    </div>
+                </CardContent>
+            </Card>
+        );
+    };
+
+    const renderGroupsArea = () => {
+        const detailPanel = renderGroupDetails();
+
+        return (
+            <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+                <div className="space-y-4">
+                    {groupsError && (
+                        <Card className="border border-destructive/40 bg-destructive/10">
+                            <CardContent className="flex items-center gap-2 py-4 text-sm text-destructive">
+                                <XCircle className="h-4 w-4" />
+                                {groupsError}
+                            </CardContent>
+                        </Card>
+                    )}
+                    {renderGroupStackCard()}
+                </div>
+                <div className="space-y-6">
+                    {groupsLoading && sortedGroups.length === 0 ? (
+                        <Card className="border border-border/60 bg-muted/20">
+                            <CardContent className="flex items-center justify-center gap-2 py-12">
+                                <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">Loading your groups…</p>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        detailPanel ?? (
+                            <Card className="border border-dashed border-border/60 bg-muted/20">
+                                <CardContent className="py-12 text-center">
+                                    <CardTitle className="text-base font-semibold">Start managing spaces</CardTitle>
+                                    <CardDescription className="mt-1 text-sm">
+                                        Create or join a group to get started.
+                                    </CardDescription>
+                                </CardContent>
+                            </Card>
+                        )
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    useEffect( () => {
+        if ( !selectedGroup || selectedGroup.ownerId !== currentUserId ) {
+            return;
+        }
+
+        const hasInvitesLoaded = invitesByGroupId[ selectedGroup.id ];
+        const isLoading = inviteStateByGroupId[ selectedGroup.id ]?.loading;
+
+        if ( hasInvitesLoaded || isLoading ) {
+            return;
+        }
+
+        void fetchGroupInvites( selectedGroup.id ).catch( () => {
+            // Error state handled via store metadata
+        } );
+    }, [ selectedGroup, currentUserId, invitesByGroupId, inviteStateByGroupId, fetchGroupInvites ] );
 
     if ( managingRolesForGroupId ) {
         return (
@@ -324,321 +937,57 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
     }
 
     return (
-        <div className={cn( "space-y-5", className )}>
-            <div className="space-y-3">
-                <form onSubmit={handleCreateGroup} className="space-y-2">
-                    <Label
-                        htmlFor="group-name"
-                        className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
-                    >
-                        Create Group
-                    </Label>
-                    <div className="flex items-center gap-2">
-                        <input
-                            id="group-name"
-                            type="text"
-                            value={newGroupName}
-                            onChange={( event ) => setNewGroupName( event.target.value )}
-                            placeholder="Team name"
-                            className="flex-1 rounded-md border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/70"
-                            disabled={isCreatingGroup}
-                        />
-                        <input
-                            aria-label="Group color"
-                            type="color"
-                            value={newGroupColor}
-                            onChange={( event ) => setNewGroupColor( event.target.value )}
-                            className="h-10 w-12 cursor-pointer rounded-md border border-border"
-                            disabled={isCreatingGroup}
-                        />
-                        <Button type="submit" disabled={isCreatingGroup}>
-                            {isCreatingGroup ? "Creating..." : "Create"}
-                        </Button>
-                    </div>
+        <div className={cn( "space-y-4", className )}>
+            <div className="flex flex-col gap-2 rounded-md border border-border/60 bg-secondary/20 p-3 md:flex-row md:items-center md:justify-between">
+                <form onSubmit={handleCreateGroup} className="flex flex-1 items-center gap-2">
+                    <Input
+                        id="group-name"
+                        type="text"
+                        value={newGroupName}
+                        onChange={( event ) => setNewGroupName( event.target.value )}
+                        placeholder="Create group..."
+                        disabled={isCreatingGroup}
+                        className="h-8 flex-1 text-xs"
+                    />
+                    <input
+                        aria-label="Group color"
+                        type="color"
+                        value={newGroupColor}
+                        onChange={( event ) => setNewGroupColor( event.target.value )}
+                        className="h-8 w-10 cursor-pointer rounded border border-border"
+                        disabled={isCreatingGroup}
+                    />
+                    <Button type="submit" size="sm" disabled={isCreatingGroup} className="h-8 px-3 text-xs">
+                        {isCreatingGroup ? "..." : "Create"}
+                    </Button>
                 </form>
 
-                <form onSubmit={handleJoinGroup} className="space-y-2">
-                    <Label
-                        htmlFor="invite-code"
-                        className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
-                    >
-                        Join With Invite Link
-                    </Label>
-                    <div className="flex items-center gap-2">
-                        <input
-                            id="invite-code"
-                            type="text"
-                            value={inviteCodeInput}
-                            onChange={( event ) => setInviteCodeInput( event.target.value )}
-                            placeholder="Paste invite link or code"
-                            className="flex-1 rounded-md border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/70"
-                            disabled={isJoiningGroup}
-                        />
-                        <Button type="submit" variant="outline" disabled={isJoiningGroup}>
-                            {isJoiningGroup ? "Joining..." : "Join"}
-                        </Button>
-                    </div>
+                <div className="hidden h-6 w-px bg-border md:block" />
+
+                <form onSubmit={handleJoinGroup} className="flex flex-1 items-center gap-2">
+                    <Input
+                        id="invite-code"
+                        type="text"
+                        value={inviteCodeInput}
+                        onChange={( event ) => setInviteCodeInput( event.target.value )}
+                        placeholder="Join with invite..."
+                        disabled={isJoiningGroup}
+                        className="h-8 flex-1 text-xs"
+                    />
+                    <Button type="submit" variant="outline" size="sm" className="h-8 px-3 text-xs" disabled={isJoiningGroup}>
+                        {isJoiningGroup ? "..." : "Join"}
+                    </Button>
                 </form>
             </div>
 
             {groupsError && (
-                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                <div className="flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                    <XCircle className="h-3.5 w-3.5" />
                     {groupsError}
                 </div>
             )}
 
-            <div className="space-y-3">
-                {groupsLoading && sortedGroups.length === 0 ? (
-                    <div className="text-sm text-muted-foreground">
-                        Loading your groups…
-                    </div>
-                ) : sortedGroups.length === 0 ? (
-                    <div className="text-sm text-muted-foreground">
-                        You are not part of any groups yet. Create one or ask a group owner to send you an invite link.
-                    </div>
-                ) : (
-                    sortedGroups.map( ( group ) => (
-                        <div
-                            key={group.id}
-                            className="space-y-3 rounded-md border border-border/60 bg-secondary/40 p-3"
-                        >
-                            <div className="flex flex-wrap items-center gap-3">
-                                <div className="flex items-center gap-2">
-                                    <div
-                                        className="h-3 w-3 rounded-full"
-                                        style={{ backgroundColor: group.color }}
-                                        aria-label="Group color"
-                                    />
-                                    <p className="text-sm font-medium text-foreground">
-                                        {group.name}
-                                        {group.ownerId === currentUserId ? " • You own this group" : ""}
-                                    </p>
-                                </div>
-                                <Badge variant="outline" className="text-xs">
-                                    {group.memberCount} member{group.memberCount === 1 ? "" : "s"}
-                                </Badge>
-                                <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-                                    <span>Active</span>
-                                    <Switch
-                                        checked={activeGroupSet.has( group.id )}
-                                        onCheckedChange={( checked ) => {
-                                            void handleToggleGroup( group.id, checked === true );
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            {group.ownerId === currentUserId && (
-                                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                    <label className="flex items-center gap-2">
-                                        <span>Marker color</span>
-                                        <input
-                                            type="color"
-                                            value={group.color}
-                                            onChange={( event ) => {
-                                                void handleUpdateGroup( group.id, {
-                                                    color: event.target.value,
-                                                } );
-                                            }}
-                                            className="h-8 w-10 cursor-pointer rounded-md border border-border"
-                                            disabled={updatingGroupId === group.id}
-                                        />
-                                    </label>
-                                    {updatingGroupId === group.id && <span>Saving…</span>}
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setManagingRolesForGroupId( group.id )}
-                                        className="ml-auto"
-                                    >
-                                        Manage Roles
-                                    </Button>
-                                </div>
-                            )}
-                            {group.ownerId === currentUserId ? (
-                                <div className="space-y-3 rounded-md border border-dashed border-border/60 bg-background/70 p-3">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <div>
-                                            <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                                                Invite links
-                                            </Label>
-                                            <p className="text-xs text-muted-foreground">
-                                                Share anywhere—new members start with the lowest role automatically.
-                                            </p>
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className="ml-auto"
-                                            onClick={() => {
-                                                void handleRefreshInvites( group.id );
-                                            }}
-                                            disabled={inviteStateByGroupId[ group.id ]?.loading === true}
-                                        >
-                                            Refresh
-                                        </Button>
-                                    </div>
-                                    <div className="grid gap-2 sm:grid-cols-2">
-                                        <div className="flex flex-col gap-1">
-                                            <Label className="text-xs font-medium text-muted-foreground">Expires</Label>
-                                            <select
-                                                className="rounded-md border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/70"
-                                                value={( inviteSelections[ group.id ] ?? DEFAULT_INVITE_SELECTION ).expiresInMinutes ?? ""}
-                                                onChange={( event ) => {
-                                                    const value = event.target.value === "" ? null : Number( event.target.value );
-                                                    handleSelectionChange( group.id, { expiresInMinutes: value } );
-                                                }}
-                                            >
-                                                {INVITE_EXPIRATION_OPTIONS.map( ( option ) => (
-                                                    <option key={`expires-${ option.label }`} value={option.value ?? ""}>
-                                                        {option.label}
-                                                    </option>
-                                                ) )}
-                                            </select>
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                            <Label className="text-xs font-medium text-muted-foreground">Max uses</Label>
-                                            <select
-                                                className="rounded-md border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/70"
-                                                value={( inviteSelections[ group.id ] ?? DEFAULT_INVITE_SELECTION ).maxUses ?? ""}
-                                                onChange={( event ) => {
-                                                    const value = event.target.value === "" ? null : Number( event.target.value );
-                                                    handleSelectionChange( group.id, { maxUses: value } );
-                                                }}
-                                            >
-                                                {INVITE_MAX_USE_OPTIONS.map( ( option ) => (
-                                                    <option key={`uses-${ option.label }`} value={option.value ?? ""}>
-                                                        {option.label}
-                                                    </option>
-                                                ) )}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => {
-                                            void handleCreateInviteLink( group.id );
-                                        }}
-                                        disabled={creatingInviteGroupId === group.id}
-                                    >
-                                        {creatingInviteGroupId === group.id ? "Generating..." : "Generate invite link"}
-                                    </Button>
-                                    <div className="space-y-2">
-                                        {inviteStateByGroupId[ group.id ]?.error ? (
-                                            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
-                                                {inviteStateByGroupId[ group.id ]?.error}
-                                            </div>
-                                        ) : null}
-                                        {inviteStateByGroupId[ group.id ]?.loading && ( invitesByGroupId[ group.id ]?.length ?? 0 ) === 0 ? (
-                                            <p className="text-xs text-muted-foreground">Loading invite links…</p>
-                                        ) : ( invitesByGroupId[ group.id ] ?? [] ).length === 0 ? (
-                                            <p className="text-xs text-muted-foreground">No invite links yet. Generate one above.</p>
-                                        ) : (
-                                            ( invitesByGroupId[ group.id ] ?? [] ).map( ( invite ) => {
-                                                const inviteKey = `${ group.id }-${ invite.code }`;
-                                                const statusClass = invite.status === "active"
-                                                    ? "text-emerald-500 border-emerald-500/40"
-                                                    : invite.status === "revoked"
-                                                        ? "text-destructive border-destructive/40"
-                                                        : invite.status === "expired"
-                                                            ? "text-amber-500 border-amber-500/40"
-                                                            : "text-muted-foreground border-border";
-                                                return (
-                                                    <div
-                                                        key={invite.id}
-                                                        className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 bg-background/80 p-2 text-xs"
-                                                    >
-                                                        <span className="font-mono text-sm tracking-wide text-foreground">{invite.code}</span>
-                                                        <Badge variant="outline" className={cn( "text-[11px]", statusClass )}>
-                                                            {invite.status === "active"
-                                                                ? "Active"
-                                                                : invite.status === "maxed"
-                                                                    ? "At capacity"
-                                                                    : invite.status === "expired"
-                                                                        ? "Expired"
-                                                                        : "Revoked"}
-                                                        </Badge>
-                                                        <span>
-                                                            {invite.maxUses
-                                                                ? `${ invite.uses } / ${ invite.maxUses } uses`
-                                                                : `${ invite.uses } use${ invite.uses === 1 ? "" : "s" }`}
-                                                        </span>
-                                                        <span>
-                                                            {invite.expiresAt
-                                                                ? `Expires ${ new Date( invite.expiresAt ).toLocaleString() }`
-                                                                : "Never expires"}
-                                                        </span>
-                                                        <div className="ml-auto flex flex-wrap items-center gap-1">
-                                                            <Button
-                                                                type="button"
-                                                                size="sm"
-                                                                variant="outline"
-                                                                className="text-xs"
-                                                                onClick={() => {
-                                                                    void handleCopyInvite( invite.code, "link" );
-                                                                }}
-                                                            >
-                                                                Copy link
-                                                            </Button>
-                                                            <Button
-                                                                type="button"
-                                                                size="sm"
-                                                                variant="outline"
-                                                                className="text-xs"
-                                                                onClick={() => {
-                                                                    void handleCopyInvite( invite.code, "code" );
-                                                                }}
-                                                            >
-                                                                Copy code
-                                                            </Button>
-                                                            <Button
-                                                                type="button"
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                className="text-xs text-destructive hover:text-destructive"
-                                                                disabled={invite.status !== "active" || revokingInviteKey === inviteKey}
-                                                                onClick={() => {
-                                                                    void handleRevokeInvite( group.id, invite.code );
-                                                                }}
-                                                            >
-                                                                {revokingInviteKey === inviteKey ? "Revoking..." : "Revoke"}
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            } )
-                                        )}
-                                    </div>
-                                </div>
-                            ) : null}
-                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                                {group.ownerId !== currentUserId ? (
-                                    <div className="flex flex-col gap-1">
-                                        <span className="font-medium text-foreground">Need an invite?</span>
-                                        <span>Ask a group owner to share an invite link with you.</span>
-                                    </div>
-                                ) : (
-                                    <div />
-                                )}
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-destructive hover:text-destructive"
-                                    disabled={group.ownerId === currentUserId || leavingGroupId === group.id}
-                                    onClick={() => {
-                                        void handleLeaveGroup( group.id, group.name, group.ownerId );
-                                    }}
-                                >
-                                    {leavingGroupId === group.id ? "Leaving..." : "Leave"}
-                                </Button>
-                            </div>
-                        </div>
-                    ) )
-                )}
-            </div>
+            {renderGroupsArea()}
         </div>
     );
 }

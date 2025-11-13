@@ -1,5 +1,10 @@
 # 2025-11-13
 
+## Discord-style group manager
+- Refactored `GroupManagerPanel` with a hero stats banner, vertical tab navigation, and a Discord-inspired group stack so managing spaces mirrors the server settings experience.
+- Consolidated the create/join flows into a quick-action tab card, keeping the existing handlers but surfacing them in a single Discord-like entry point.
+- Restyled invite management, owner-only messaging, and the access/danger zones with richer cards/badges so invite sharing and role management feel consistent with the new layout.
+
 ## Sidebar layout parity
 - Introduced a shared `SidebarSheet` wrapper around the shadcn sheet primitives so overlay sidebars reuse consistent width, padding, and backdrop treatment, then reran `pnpm --filter @eye-note/ext exec tsc --noEmit`.
 - Updated the notifications center and note editor panels to consume the shared sidebar, keeping their existing event handlers while aligning both experiences to the new layout.
