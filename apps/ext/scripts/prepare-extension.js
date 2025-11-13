@@ -274,7 +274,7 @@ async function prepareExtension () {
         }
 
         // Copy HTML shells from src so they reference the stable entry file names
-        const htmlTemplates = [ "popup.html", "group-manager.html" ];
+        const htmlTemplates = [ "popup.html" ];
         for ( const template of htmlTemplates ) {
             const sourcePath = path.join( rootDir, "src", template );
             const destinationPath = path.join( extensionDir, template );

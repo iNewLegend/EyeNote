@@ -9,6 +9,10 @@
 - Wired the overlay shadow host to mount the dispatcher and taught the quick menu to pull shortcut labels directly from the registry, eliminating the duplicated "Shift" labels sprinkled across the UI.
 - Promoted the Quick Launch dialog to build its entries straight from the registered shortcuts (via metadata), so adding a new binding automatically surfaces the action without touching the UI.
 
+## Extension popup
+- Closed the popup window automatically after launching the quick menu so the overlay dialog can take focus without leaving the popup hanging open.
+- Rewired the Manage Groups shortcut to open the Extension Managment panel, removed the legacy standalone window/background handler, and dropped the duplicate popup button so the menu is the single entry point.
+
 # 2025-11-12
 
 ## Notes overlay

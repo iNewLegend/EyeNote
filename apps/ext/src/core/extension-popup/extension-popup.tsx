@@ -51,18 +51,12 @@ export function ExtensionPopup () {
         }
     };
 
-    const handleOpenGroupManager = async () => {
-        try {
-            await chrome.runtime.sendMessage( { type: "OPEN_GROUP_MANAGER_WINDOW" } );
-        } catch ( error ) {
-            toast( "Window error", {
-                description: error instanceof Error ? error.message : "Cannot open group manager window.",
-            } );
-        }
-    };
-
     const handleOpenQuickMenuDialog = async () => {
-        await sendMessageWithToast( { type: "OPEN_QUICK_MENU_DIALOG" }, "Cannot open menu" );
+        const result = await sendMessageWithToast( { type: "OPEN_QUICK_MENU_DIALOG" }, "Cannot open menu" );
+
+        if ( result.success && typeof window !== "undefined" && typeof window.close === "function" ) {
+            window.close(); // Close the popup so the quick menu dialog can take focus.
+        }
     };
 
     const handleGetStarted = async () => {
@@ -107,7 +101,6 @@ export function ExtensionPopup () {
                     <CardContent className="p-6 space-y-8 flex-1 overflow-auto">
                         <QuickControlsSection
                             onOpenQuickMenu={handleOpenQuickMenuDialog}
-                            onOpenGroupManager={handleOpenGroupManager}
                         />
 
                         <ActiveGroupsList />

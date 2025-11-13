@@ -1,39 +1,28 @@
 import { Button } from "@eye-note/ui";
-import { Menu, Users } from "lucide-react";
+import { Menu } from "lucide-react";
 
 interface QuickControlsSectionProps {
     onOpenQuickMenu: () => void;
-    onOpenGroupManager: () => void;
 }
 
-export function QuickControlsSection ( { onOpenQuickMenu, onOpenGroupManager }: QuickControlsSectionProps ) {
+export function QuickControlsSection ( { onOpenQuickMenu }: QuickControlsSectionProps ) {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold">Quick controls</h2>
             </div>
             <p className="text-sm text-muted-foreground">
-                Launch in-page tools or pop open the standalone manager without
+                Launch the quick menu to open groups, notifications, or settings without
                 leaving your current tab.
             </p>
-            <div className="grid grid-cols-2 gap-3">
-                <Button
-                    variant="outline"
-                    className="w-full justify-between rounded-full"
-                    onClick={onOpenQuickMenu}
-                >
-                    <span>Menu</span>
-                    <Menu className="h-4 w-4" />
-                </Button>
-                <Button
-                    variant="outline"
-                    className="w-full justify-between rounded-full"
-                    onClick={onOpenGroupManager}
-                >
-                    <span>Manage Groups</span>
-                    <Users className="h-4 w-4" />
-                </Button>
-            </div>
+            <Button
+                variant="outline"
+                className="w-full justify-between rounded-full"
+                onClick={onOpenQuickMenu}
+            >
+                <span>Menu</span>
+                <Menu className="h-4 w-4" />
+            </Button>
         </div>
     );
 }

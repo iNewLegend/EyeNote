@@ -14,7 +14,6 @@ export const MUTATION_ATTRIBUTE_FILTER = [ "class", "style", "hidden" ] as const
 // Marker rendering/virtualization
 export const MARKER_IO_ROOT_MARGIN = "200px";
 export const MARKER_IO_THRESHOLD = 0;
-export const MARKER_ELEMENT_ID_DATA_ATTR = "data-eye-note-element-id";
 
 // Anchor hints
 export const ANCHOR_HINTS_DATA_ATTR_WHITELIST = [
@@ -31,5 +30,5 @@ export const EVENT_OPEN_SETTINGS_DIALOG = "eye-note-open-settings-dialog";
 export const EVENT_OPEN_NOTIFICATIONS_PANEL = "eye-note-open-notifications-panel";
 
 // Copy shared between app + extension
-export const EXTENSION_MANAGEMENT_TITLE = "Extension Managment";
+export const EXTENSION_MANAGEMENT_TITLE = "Extension Management";
 export const EXTENSION_MANAGEMENT_DESCRIPTION = "Manage overlay behavior and collaboration options from the extension managment panel without launching the extension.";

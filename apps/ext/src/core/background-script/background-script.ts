@@ -107,7 +107,6 @@ let currentHealthStatus : boolean | null = null;
 let healthCheckPromise : Promise<void> | null = null;
 let healthCheckInterval : ReturnType<typeof setInterval> | null = null;
 const healthPorts = new Set<chrome.runtime.Port>();
-let groupManagerWindowId : number | null = null;
 
 // Function to start build info check interval
 function startBuildInfoCheck () {
@@ -182,35 +181,6 @@ function startHealthCheck () {
     }, DEFAULT_HEALTH_CHECK_INTERVAL );
 }
 
-async function openGroupManagerWindow () {
-    if ( groupManagerWindowId ) {
-        try {
-            await chrome.windows.update( groupManagerWindowId, { focused: true } );
-            return { success: true, windowId: groupManagerWindowId };
-        } catch ( error ) {
-            console.warn( "Group manager window handle stale", error );
-            groupManagerWindowId = null;
-        }
-    }
-
-    const created = await chrome.windows.create( {
-        url: chrome.runtime.getURL( "group-manager.html" ),
-        type: "popup",
-        width: 520,
-        height: 720,
-        focused: true,
-    } );
-
-    if ( typeof created.id === "number" ) {
-        groupManagerWindowId = created.id;
-    }
-
-    return {
-        success: true,
-        windowId: created.id ?? null,
-    };
-}
-
 chrome.runtime.onMessage.addListener( ( message, _sender, sendResponse ) => {
     const handler = ( async () => {
         switch ( message.type ) {
@@ -230,8 +200,6 @@ chrome.runtime.onMessage.addListener( ( message, _sender, sendResponse ) => {
                 }
                 return { success: true };
             }
-            case "OPEN_GROUP_MANAGER_WINDOW":
-                return openGroupManagerWindow();
             case "GET_BACKEND_STATUS": {
                 if ( currentHealthStatus === null ) {
                     await checkBackendHealth( true );
@@ -258,12 +226,6 @@ chrome.runtime.onMessage.addListener( ( message, _sender, sendResponse ) => {
 } );
 
 startHealthCheck();
-
-chrome.windows?.onRemoved.addListener( ( windowId ) => {
-    if ( windowId === groupManagerWindowId ) {
-        groupManagerWindowId = null;
-    }
-} );
 
 chrome.runtime.onConnect.addListener( ( port ) => {
     if ( port.name !== "eye-note-health" ) {

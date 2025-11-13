@@ -64,13 +64,15 @@ export function useTabMessaging () {
     const buildMessageFailureDescription = ( error?: string ): string =>
         error ? `${ error } Make sure EyeNote is active on this tab.` : "Make sure EyeNote is active on this tab.";
 
-    const sendMessageWithToast = async ( payload: MessagePayload, errorTitle: string ) => {
+    const sendMessageWithToast = async ( payload: MessagePayload, errorTitle: string ): Promise<MessageResult> => {
         const result = await sendMessageToActiveTab( payload );
         if ( !result.success ) {
             toast( errorTitle, {
                 description: buildMessageFailureDescription( result.error ),
             } );
         }
+
+        return result;
     };
 
     return {
@@ -78,4 +80,3 @@ export function useTabMessaging () {
         sendMessageWithToast,
     };
 }
-
