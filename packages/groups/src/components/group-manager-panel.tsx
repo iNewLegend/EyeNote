@@ -659,16 +659,16 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
                 <Tabs
                     value={detailTab}
                     onValueChange={( value ) => setDetailTab( value as DetailTabValue )}
-                    className="flex flex-col gap-4 lg:flex-row"
+                    className="flex flex-col gap-3"
                 >
-                    <TabsList className="flex h-full flex-row overflow-x-auto rounded-md border border-border/60 bg-secondary/20 p-0.5 lg:w-48 lg:flex-col">
+                    <TabsList className="flex h-9 flex-row overflow-x-auto rounded-md border border-border/60 bg-secondary/20 p-0.5">
                         {DETAIL_TAB_OPTIONS.map( ( option ) => {
                             const Icon = option.icon;
                             return (
                                 <TabsTrigger
                                     key={option.value}
                                     value={option.value}
-                                    className="group flex flex-1 items-center justify-start gap-2 rounded px-2 py-1.5 text-left text-xs font-medium transition data-[state=active]:bg-background data-[state=active]:text-foreground"
+                                    className="group flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition data-[state=active]:bg-background data-[state=active]:text-foreground"
                                 >
                                     <Icon className="h-3.5 w-3.5 text-muted-foreground group-data-[state=active]:text-primary" />
                                     {option.label}
@@ -713,7 +713,7 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
                                 </div>
                             </div>
                         </TabsContent>
-                        <TabsContent value="invites" className="space-y-4 focus-visible:outline-none">
+                        <TabsContent value="invites" className="space-y-3 focus-visible:outline-none">
                             {renderInviteSection()}
                         </TabsContent>
                         <TabsContent value="access" className="space-y-3 focus-visible:outline-none">
@@ -873,19 +873,11 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
         const detailPanel = renderGroupDetails();
 
         return (
-            <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+            <div className="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
                 <div className="space-y-4">
-                    {groupsError && (
-                        <Card className="border border-destructive/40 bg-destructive/10">
-                            <CardContent className="flex items-center gap-2 py-4 text-sm text-destructive">
-                                <XCircle className="h-4 w-4" />
-                                {groupsError}
-                            </CardContent>
-                        </Card>
-                    )}
                     {renderGroupStackCard()}
                 </div>
-                <div className="space-y-6">
+                <div className="space-y-4">
                     {groupsLoading && sortedGroups.length === 0 ? (
                         <Card className="border border-border/60 bg-muted/20">
                             <CardContent className="flex items-center justify-center gap-2 py-12">
@@ -937,7 +929,7 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
     }
 
     return (
-        <div className={cn( "space-y-4", className )}>
+        <div className={cn( "w-full space-y-4", className )}>
             <div className="flex flex-col gap-2 rounded-md border border-border/60 bg-secondary/20 p-3 md:flex-row md:items-center md:justify-between">
                 <form onSubmit={handleCreateGroup} className="flex flex-1 items-center gap-2">
                     <Input
