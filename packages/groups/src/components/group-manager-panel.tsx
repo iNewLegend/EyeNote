@@ -1,10 +1,41 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge, Button, Label, Switch, cn } from "@eye-note/ui";
 import type { UpdateGroupPayload } from "@eye-note/definitions";
 
 import { useGroupsStore } from "../store/groups-store";
 import { RoleManagementPanel } from "./role-management";
+
+type InviteSelection = {
+    maxUses : number | null;
+    expiresInMinutes : number | null;
+};
+
+const INVITE_EXPIRATION_OPTIONS = [
+    { label: "Never", value: null },
+    { label: "30 minutes", value: 30 },
+    { label: "1 hour", value: 60 },
+    { label: "6 hours", value: 60 * 6 },
+    { label: "1 day", value: 60 * 24 },
+    { label: "7 days", value: 60 * 24 * 7 },
+];
+
+const INVITE_MAX_USE_OPTIONS = [
+    { label: "No limit", value: null },
+    { label: "1 use", value: 1 },
+    { label: "5 uses", value: 5 },
+    { label: "10 uses", value: 10 },
+    { label: "25 uses", value: 25 },
+];
+
+const DEFAULT_INVITE_SELECTION : InviteSelection = {
+    maxUses: null,
+    expiresInMinutes: null,
+};
+
+const INVITE_LINK_BASE_URL = "https://eyenote.io/invite";
+
+const buildInviteLink = ( code : string ) => `${ INVITE_LINK_BASE_URL.replace( /\/$/, "" ) }/${ code }`;
 
 type GroupManagerPanelProps = {
     className ?: string;
@@ -23,6 +54,10 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
     const setGroupActive = useGroupsStore( ( state ) => state.setGroupActive );
     const updateGroup = useGroupsStore( ( state ) => state.updateGroup );
     const createGroupInvite = useGroupsStore( ( state ) => state.createGroupInvite );
+    const invitesByGroupId = useGroupsStore( ( state ) => state.invitesByGroupId );
+    const inviteStateByGroupId = useGroupsStore( ( state ) => state.inviteStateByGroupId );
+    const fetchGroupInvites = useGroupsStore( ( state ) => state.fetchGroupInvites );
+    const revokeGroupInvite = useGroupsStore( ( state ) => state.revokeGroupInvite );
 
     const [ newGroupName, setNewGroupName ] = useState( "" );
     const [ newGroupColor, setNewGroupColor ] = useState( "#6366f1" );
@@ -32,8 +67,9 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
     const [ leavingGroupId, setLeavingGroupId ] = useState<string | null>( null );
     const [ updatingGroupId, setUpdatingGroupId ] = useState<string | null>( null );
     const [ managingRolesForGroupId, setManagingRolesForGroupId ] = useState<string | null>( null );
-    const [ inviteEmailInputs, setInviteEmailInputs ] = useState<Record<string, string>>( {} );
-    const [ invitingGroupId, setInvitingGroupId ] = useState<string | null>( null );
+    const [ inviteSelections, setInviteSelections ] = useState<Record<string, InviteSelection>>( {} );
+    const [ creatingInviteGroupId, setCreatingInviteGroupId ] = useState<string | null>( null );
+    const [ revokingInviteKey, setRevokingInviteKey ] = useState<string | null>( null );
 
     const sortedGroups = useMemo(
         () => groups.slice().sort( ( a, b ) => a.name.localeCompare( b.name ) ),
@@ -59,7 +95,7 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
             setNewGroupName( "" );
             setNewGroupColor( "#6366f1" );
             toast( "Group created", {
-                description: "Use the invite form below to send teammates a single-use code.",
+                description: "Use invite links to add teammates when you're ready.",
             } );
             onClose?.();
         } catch ( error ) {
@@ -78,8 +114,8 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
         const inviteCode = inviteCodeInput.trim();
 
         if ( inviteCode.length === 0 ) {
-            toast( "Invite code required", {
-                description: "Enter a group's invite code to join.",
+            toast( "Invite link required", {
+                description: "Paste the invite link or code you received to join.",
             } );
             return;
         }
@@ -169,36 +205,114 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
         }
     }, [ updateGroup ] );
 
-    const handleSendInvite = useCallback( async ( groupId : string ) => {
-        const email = ( inviteEmailInputs[ groupId ] ?? "" ).trim();
-        if ( email.length === 0 ) {
-            toast( "Email required", {
-                description: "Enter the teammate's email before sending an invite.",
-            } );
-            return;
+    const copyText = useCallback( async ( value : string ) => {
+        if ( typeof navigator === "undefined" || !navigator.clipboard?.writeText ) {
+            return false;
         }
 
-        setInvitingGroupId( groupId );
         try {
-            const invite = await createGroupInvite( groupId, email );
-            setInviteEmailInputs( ( prev ) => ( { ...prev, [ groupId ]: "" } ) );
+            await navigator.clipboard.writeText( value );
+            return true;
+        } catch {
+            return false;
+        }
+    }, [] );
 
-            const copied = typeof navigator !== "undefined" && navigator.clipboard
-                ? await navigator.clipboard.writeText( invite.code ).then( () => true ).catch( () => false )
-                : false;
+    const handleSelectionChange = useCallback( ( groupId : string, patch : Partial<InviteSelection> ) => {
+        setInviteSelections( ( prev ) => ( {
+            ...prev,
+            [ groupId ]: {
+                ...DEFAULT_INVITE_SELECTION,
+                ...( prev[ groupId ] ?? {} ),
+                ...patch,
+            },
+        } ) );
+    }, [] );
 
-            toast( "Invite ready", {
-                description: copied
-                    ? `Single-use code copied to your clipboard (${ invite.code }).`
-                    : `Share this code with your teammate: ${ invite.code }`,
+    const handleCreateInviteLink = useCallback( async ( groupId : string ) => {
+        const selection = inviteSelections[ groupId ] ?? DEFAULT_INVITE_SELECTION;
+
+        try {
+            setCreatingInviteGroupId( groupId );
+            const invite = await createGroupInvite( groupId, selection );
+            const copiedLink = await copyText( buildInviteLink( invite.code ) );
+            toast( "Invite link ready", {
+                description: copiedLink
+                    ? "Link copied to your clipboard. Share it anywhere."
+                    : `Share this code: ${ invite.code }`,
             } );
         } catch ( error ) {
             const message = error instanceof Error ? error.message : "Failed to create invite";
-            toast( "Invite failed", { description: message } );
+            toast( "Error", {
+                description: message,
+            } );
         } finally {
-            setInvitingGroupId( null );
+            setCreatingInviteGroupId( null );
         }
-    }, [ createGroupInvite, inviteEmailInputs ] );
+    }, [ createGroupInvite, inviteSelections, copyText ] );
+
+    const handleRefreshInvites = useCallback( async ( groupId : string, silent = false ) => {
+        try {
+            await fetchGroupInvites( groupId );
+            if ( !silent ) {
+                toast( "Invite links updated", {
+                    description: "Loaded the latest invite links for this group.",
+                } );
+            }
+        } catch ( error ) {
+            const message = error instanceof Error ? error.message : "Failed to refresh invites";
+            if ( !silent ) {
+                toast( "Error", {
+                    description: message,
+                } );
+            }
+        }
+    }, [ fetchGroupInvites ] );
+
+    const handleRevokeInvite = useCallback( async ( groupId : string, code : string ) => {
+        const key = `${ groupId }-${ code }`;
+        try {
+            setRevokingInviteKey( key );
+            await revokeGroupInvite( groupId, code );
+            toast( "Invite revoked", {
+                description: "That link can no longer be used.",
+            } );
+        } catch ( error ) {
+            const message = error instanceof Error ? error.message : "Failed to revoke invite";
+            toast( "Error", {
+                description: message,
+            } );
+        } finally {
+            setRevokingInviteKey( null );
+        }
+    }, [ revokeGroupInvite ] );
+
+    const handleCopyInvite = useCallback( async ( code : string, mode : "link" | "code" ) => {
+        const target = mode === "link" ? buildInviteLink( code ) : code;
+        const copied = await copyText( target );
+
+        toast( copied ? "Copied" : "Copy failed", {
+            description: copied
+                ? mode === "link"
+                    ? "Invite link copied to clipboard."
+                    : "Invite code copied to clipboard."
+                : "Your browser blocked clipboard access.",
+        } );
+    }, [ copyText ] );
+
+    useEffect( () => {
+        groups
+            .filter( ( group ) => group.ownerId === currentUserId )
+            .forEach( ( group ) => {
+                if ( invitesByGroupId[ group.id ] || inviteStateByGroupId[ group.id ]?.loading ) {
+                    return;
+                }
+
+                void fetchGroupInvites( group.id ).catch( () => {
+                    // Error state handled via store metadata
+                } );
+            } );
+    }, [ groups, currentUserId, invitesByGroupId, inviteStateByGroupId, fetchGroupInvites ] );
 
     if ( managingRolesForGroupId ) {
         return (
@@ -248,7 +362,7 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
                         htmlFor="invite-code"
                         className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
                     >
-                        Join With Invite Code
+                        Join With Invite Link
                     </Label>
                     <div className="flex items-center gap-2">
                         <input
@@ -256,8 +370,8 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
                             type="text"
                             value={inviteCodeInput}
                             onChange={( event ) => setInviteCodeInput( event.target.value )}
-                            placeholder="Enter code from your invite"
-                            className="flex-1 rounded-md border border-border bg-background/80 px-3 py-2 text-sm uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/70"
+                            placeholder="Paste invite link or code"
+                            className="flex-1 rounded-md border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/70"
                             disabled={isJoiningGroup}
                         />
                         <Button type="submit" variant="outline" disabled={isJoiningGroup}>
@@ -280,7 +394,7 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
                     </div>
                 ) : sortedGroups.length === 0 ? (
                     <div className="text-sm text-muted-foreground">
-                        You are not part of any groups yet. Create one or ask a group owner to send you a single-use invite.
+                        You are not part of any groups yet. Create one or ask a group owner to send you an invite link.
                     </div>
                 ) : (
                     sortedGroups.map( ( group ) => (
@@ -342,46 +456,168 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
                                 </div>
                             )}
                             {group.ownerId === currentUserId ? (
-                                <form
-                                    className="space-y-2"
-                                    onSubmit={( event ) => {
-                                        event.preventDefault();
-                                        void handleSendInvite( group.id );
-                                    }}
-                                >
-                                    <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                                        Invite teammate
-                                    </Label>
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="email"
-                                            value={inviteEmailInputs[ group.id ] ?? ""}
-                                            onChange={( event ) => {
-                                                const value = event.target.value;
-                                                setInviteEmailInputs( ( prev ) => ( { ...prev, [ group.id ]: value } ) );
-                                            }}
-                                            placeholder="teammate@example.com"
-                                            className="flex-1 rounded-md border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/70"
-                                            disabled={invitingGroupId === group.id}
-                                        />
+                                <div className="space-y-3 rounded-md border border-dashed border-border/60 bg-background/70 p-3">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <div>
+                                            <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                                                Invite links
+                                            </Label>
+                                            <p className="text-xs text-muted-foreground">
+                                                Share anywhere—new members start with the lowest role automatically.
+                                            </p>
+                                        </div>
                                         <Button
-                                            type="submit"
-                                            variant="outline"
-                                            disabled={invitingGroupId === group.id}
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="ml-auto"
+                                            onClick={() => {
+                                                void handleRefreshInvites( group.id );
+                                            }}
+                                            disabled={inviteStateByGroupId[ group.id ]?.loading === true}
                                         >
-                                            {invitingGroupId === group.id ? "Sending..." : "Send"}
+                                            Refresh
                                         </Button>
                                     </div>
-                                    <p className="text-xs text-muted-foreground">
-                                        We'll generate a single-use code and copy it so you can drop it in chat or email.
-                                    </p>
-                                </form>
+                                    <div className="grid gap-2 sm:grid-cols-2">
+                                        <div className="flex flex-col gap-1">
+                                            <Label className="text-xs font-medium text-muted-foreground">Expires</Label>
+                                            <select
+                                                className="rounded-md border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/70"
+                                                value={( inviteSelections[ group.id ] ?? DEFAULT_INVITE_SELECTION ).expiresInMinutes ?? ""}
+                                                onChange={( event ) => {
+                                                    const value = event.target.value === "" ? null : Number( event.target.value );
+                                                    handleSelectionChange( group.id, { expiresInMinutes: value } );
+                                                }}
+                                            >
+                                                {INVITE_EXPIRATION_OPTIONS.map( ( option ) => (
+                                                    <option key={`expires-${ option.label }`} value={option.value ?? ""}>
+                                                        {option.label}
+                                                    </option>
+                                                ) )}
+                                            </select>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <Label className="text-xs font-medium text-muted-foreground">Max uses</Label>
+                                            <select
+                                                className="rounded-md border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/70"
+                                                value={( inviteSelections[ group.id ] ?? DEFAULT_INVITE_SELECTION ).maxUses ?? ""}
+                                                onChange={( event ) => {
+                                                    const value = event.target.value === "" ? null : Number( event.target.value );
+                                                    handleSelectionChange( group.id, { maxUses: value } );
+                                                }}
+                                            >
+                                                {INVITE_MAX_USE_OPTIONS.map( ( option ) => (
+                                                    <option key={`uses-${ option.label }`} value={option.value ?? ""}>
+                                                        {option.label}
+                                                    </option>
+                                                ) )}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            void handleCreateInviteLink( group.id );
+                                        }}
+                                        disabled={creatingInviteGroupId === group.id}
+                                    >
+                                        {creatingInviteGroupId === group.id ? "Generating..." : "Generate invite link"}
+                                    </Button>
+                                    <div className="space-y-2">
+                                        {inviteStateByGroupId[ group.id ]?.error ? (
+                                            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                                                {inviteStateByGroupId[ group.id ]?.error}
+                                            </div>
+                                        ) : null}
+                                        {inviteStateByGroupId[ group.id ]?.loading && ( invitesByGroupId[ group.id ]?.length ?? 0 ) === 0 ? (
+                                            <p className="text-xs text-muted-foreground">Loading invite links…</p>
+                                        ) : ( invitesByGroupId[ group.id ] ?? [] ).length === 0 ? (
+                                            <p className="text-xs text-muted-foreground">No invite links yet. Generate one above.</p>
+                                        ) : (
+                                            ( invitesByGroupId[ group.id ] ?? [] ).map( ( invite ) => {
+                                                const inviteKey = `${ group.id }-${ invite.code }`;
+                                                const statusClass = invite.status === "active"
+                                                    ? "text-emerald-500 border-emerald-500/40"
+                                                    : invite.status === "revoked"
+                                                        ? "text-destructive border-destructive/40"
+                                                        : invite.status === "expired"
+                                                            ? "text-amber-500 border-amber-500/40"
+                                                            : "text-muted-foreground border-border";
+                                                return (
+                                                    <div
+                                                        key={invite.id}
+                                                        className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 bg-background/80 p-2 text-xs"
+                                                    >
+                                                        <span className="font-mono text-sm tracking-wide text-foreground">{invite.code}</span>
+                                                        <Badge variant="outline" className={cn( "text-[11px]", statusClass )}>
+                                                            {invite.status === "active"
+                                                                ? "Active"
+                                                                : invite.status === "maxed"
+                                                                    ? "At capacity"
+                                                                    : invite.status === "expired"
+                                                                        ? "Expired"
+                                                                        : "Revoked"}
+                                                        </Badge>
+                                                        <span>
+                                                            {invite.maxUses
+                                                                ? `${ invite.uses } / ${ invite.maxUses } uses`
+                                                                : `${ invite.uses } use${ invite.uses === 1 ? "" : "s" }`}
+                                                        </span>
+                                                        <span>
+                                                            {invite.expiresAt
+                                                                ? `Expires ${ new Date( invite.expiresAt ).toLocaleString() }`
+                                                                : "Never expires"}
+                                                        </span>
+                                                        <div className="ml-auto flex flex-wrap items-center gap-1">
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="text-xs"
+                                                                onClick={() => {
+                                                                    void handleCopyInvite( invite.code, "link" );
+                                                                }}
+                                                            >
+                                                                Copy link
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="text-xs"
+                                                                onClick={() => {
+                                                                    void handleCopyInvite( invite.code, "code" );
+                                                                }}
+                                                            >
+                                                                Copy code
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                className="text-xs text-destructive hover:text-destructive"
+                                                                disabled={invite.status !== "active" || revokingInviteKey === inviteKey}
+                                                                onClick={() => {
+                                                                    void handleRevokeInvite( group.id, invite.code );
+                                                                }}
+                                                            >
+                                                                {revokingInviteKey === inviteKey ? "Revoking..." : "Revoke"}
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            } )
+                                        )}
+                                    </div>
+                                </div>
                             ) : null}
                             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                                 {group.ownerId !== currentUserId ? (
                                     <div className="flex flex-col gap-1">
                                         <span className="font-medium text-foreground">Need an invite?</span>
-                                        <span>Ask a group owner to send a single-use code to your email.</span>
+                                        <span>Ask a group owner to share an invite link with you.</span>
                                     </div>
                                 ) : (
                                     <div />

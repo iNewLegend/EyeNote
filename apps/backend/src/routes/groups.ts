@@ -16,6 +16,8 @@ import type {
     GroupJoinRequestStatus,
     GroupInviteRecord,
     CreateGroupInvitePayload,
+    GroupInviteStatus,
+    ListGroupInvitesResponse,
     ReviewJoinRequestResponse,
 } from "@eye-note/definitions";
 import { GroupPermission } from "@eye-note/definitions";
@@ -67,7 +69,7 @@ const updateGroupSchema = z.object( {
 } );
 
 const joinGroupSchema = z.object( {
-    inviteCode: z.string().min( 4 ).max( 32 ),
+    inviteCode: z.string().min( 4 ).max( 512 ),
 } );
 
 const leaveGroupParamsSchema = z.object( {
@@ -116,10 +118,22 @@ async function generateUniqueInviteCode () : Promise<string> {
     return candidate;
 }
 
-async function generateOneTimeInviteCode () : Promise<string> {
-    let candidate = randomBytes( 6 ).toString( "hex" ).toUpperCase();
+const INVITE_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const DEFAULT_INVITE_CODE_LENGTH = 8;
+
+function createInviteCodeCandidate ( length = DEFAULT_INVITE_CODE_LENGTH ) : string {
+    let candidate = "";
+    for ( let index = 0; index < length; index += 1 ) {
+        const charIndex = Math.floor( Math.random() * INVITE_CODE_ALPHABET.length );
+        candidate += INVITE_CODE_ALPHABET.charAt( charIndex );
+    }
+    return candidate;
+}
+
+async function generateShareableInviteCode () : Promise<string> {
+    let candidate = createInviteCodeCandidate();
     while ( await GroupInviteModel.exists( { code: candidate } ) ) {
-        candidate = randomBytes( 6 ).toString( "hex" ).toUpperCase();
+        candidate = createInviteCodeCandidate();
     }
     return candidate;
 }
@@ -179,16 +193,83 @@ function serializeJoinRequest ( doc : GroupJoinRequestDocument ) : GroupJoinRequ
     };
 }
 
+function extractInviteCodeFromInput ( input : string ) : string {
+    const trimmed = input.trim();
+    if ( trimmed.length === 0 ) {
+        return trimmed;
+    }
+
+    try {
+        const maybeUrl = new URL( trimmed );
+        const segments = maybeUrl.pathname.split( "/" ).filter( Boolean );
+        if ( segments.length > 0 ) {
+            return segments[ segments.length - 1 ].replace( /[^A-Za-z0-9]/g, "" );
+        }
+    } catch {
+        // Not a URL – fall through to sanitized input
+    }
+
+    return trimmed.replace( /[^A-Za-z0-9]/g, "" );
+}
+
+async function assignLowestRoleToMember ( group : GroupDocument, userId : string ) : Promise<void> {
+    if ( group.ownerId === userId ) {
+        return;
+    }
+
+    const groupId = toHexId( group._id );
+    const baseRole = await GroupRoleModel.findOne( { groupId } )
+        .sort( { position: 1 } )
+        .exec();
+
+    if ( !baseRole ) {
+        return;
+    }
+
+    await GroupMemberRoleModel.findOneAndUpdate(
+        {
+            userId,
+            roleId: baseRole._id.toHexString(),
+            groupId,
+        },
+        {
+            userId,
+            roleId: baseRole._id.toHexString(),
+            groupId,
+            assignedBy: group.ownerId,
+            assignedAt: new Date(),
+        },
+        { upsert: true }
+    );
+}
+
+function resolveGroupInviteStatus ( doc : GroupInviteDocument ) : GroupInviteStatus {
+    if ( doc.status === "revoked" || doc.revokedAt ) {
+        return "revoked";
+    }
+
+    if ( doc.expiresAt && doc.expiresAt.getTime() < Date.now() ) {
+        return "expired";
+    }
+
+    if ( typeof doc.maxUses === "number" && doc.maxUses > 0 && doc.uses >= doc.maxUses ) {
+        return "maxed";
+    }
+
+    return "active";
+}
+
 function serializeGroupInvite ( doc : GroupInviteDocument ) : GroupInviteRecord {
     return {
         id: toHexId( doc._id ),
         groupId: doc.groupId,
-        email: doc.email,
         code: doc.code,
-        status: doc.status,
+        status: resolveGroupInviteStatus( doc ),
+        maxUses: typeof doc.maxUses === "number" ? doc.maxUses : null,
+        uses: doc.uses,
         expiresAt: doc.expiresAt ? doc.expiresAt.toISOString() : null,
-        usedAt: doc.usedAt ? doc.usedAt.toISOString() : null,
-        usedBy: doc.usedBy ?? null,
+        revokedAt: doc.revokedAt ? doc.revokedAt.toISOString() : null,
+        createdBy: doc.createdBy,
         createdAt: doc.createdAt.toISOString(),
         updatedAt: doc.updatedAt.toISOString(),
     };
@@ -343,28 +424,123 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
                 return;
             }
 
-            const { email, expiresInHours } = bodyParseResult.data as CreateGroupInvitePayload;
-            const code = await generateOneTimeInviteCode();
-            const expiresAt = expiresInHours
-                ? new Date( Date.now() + expiresInHours * 60 * 60 * 1000 )
+            const { maxUses = null, expiresInMinutes = null } = bodyParseResult.data as CreateGroupInvitePayload;
+            const code = await generateShareableInviteCode();
+            const expiresAt = expiresInMinutes
+                ? new Date( Date.now() + expiresInMinutes * 60 * 1000 )
                 : null;
 
             const invite = await GroupInviteModel.create( {
                 groupId,
-                email: email.toLowerCase(),
                 code,
-                status: "pending",
+                status: "active",
                 expiresAt,
+                maxUses: typeof maxUses === "number" ? maxUses : null,
+                uses: 0,
+                createdBy: request.user!.id,
             } );
 
             fastify.log.info( {
                 event: "group.invite.create",
                 groupId,
-                email,
                 inviteCode: code,
+                maxUses: typeof maxUses === "number" ? maxUses : null,
+                expiresAt,
             }, "Group invite created" );
 
             reply.code( 201 ).send( { invite: serializeGroupInvite( invite as GroupInviteDocument ) } );
+        },
+    } );
+
+    fastify.route( {
+        method: "GET",
+        url: "/api/groups/:groupId/invitations",
+        preHandler: fastify.authenticate,
+        handler: async ( request, reply ) => {
+            const paramsParseResult = leaveGroupParamsSchema.safeParse( request.params );
+
+            if ( !paramsParseResult.success ) {
+                reply.code( 400 ).send( { error: "invalid_group_id" } );
+                return;
+            }
+
+            const { groupId } = paramsParseResult.data;
+
+            if ( !Types.ObjectId.isValid( groupId ) ) {
+                reply.code( 400 ).send( { error: "invalid_group_id" } );
+                return;
+            }
+
+            const group = await GroupModel.findById( groupId ).exec();
+
+            if ( !group ) {
+                reply.code( 404 ).send( { error: "group_not_found" } );
+                return;
+            }
+
+            if ( !( await canManageJoinRequests( groupId, request.user!.id ) ) ) {
+                reply.code( 403 ).send( { error: "insufficient_permissions" } );
+                return;
+            }
+
+            const invites = await GroupInviteModel.find( { groupId } )
+                .sort( { createdAt: -1 } )
+                .exec();
+
+            const response : ListGroupInvitesResponse = {
+                invites: invites.map( ( invite ) => serializeGroupInvite( invite as GroupInviteDocument ) ),
+            };
+
+            reply.code( 200 ).send( response );
+        },
+    } );
+
+    fastify.route( {
+        method: "POST",
+        url: "/api/groups/:groupId/invitations/:code/revoke",
+        preHandler: fastify.authenticate,
+        handler: async ( request, reply ) => {
+            const paramsParseResult = revokeInviteParamsSchema.safeParse( request.params );
+
+            if ( !paramsParseResult.success ) {
+                reply.code( 400 ).send( { error: "invalid_params" } );
+                return;
+            }
+
+            const { groupId, code } = paramsParseResult.data;
+
+            if ( !Types.ObjectId.isValid( groupId ) ) {
+                reply.code( 400 ).send( { error: "invalid_group_id" } );
+                return;
+            }
+
+            const group = await GroupModel.findById( groupId ).exec();
+
+            if ( !group ) {
+                reply.code( 404 ).send( { error: "group_not_found" } );
+                return;
+            }
+
+            if ( !( await canManageJoinRequests( groupId, request.user!.id ) ) ) {
+                reply.code( 403 ).send( { error: "insufficient_permissions" } );
+                return;
+            }
+
+            const normalizedCode = code.trim().toUpperCase();
+            const invite = await GroupInviteModel.findOne( { groupId, code: normalizedCode } ).exec();
+
+            if ( !invite ) {
+                reply.code( 404 ).send( { error: "invite_not_found" } );
+                return;
+            }
+
+            if ( invite.status !== "revoked" ) {
+                invite.status = "revoked";
+                invite.revokedAt = new Date();
+                await invite.save();
+            }
+
+            reply.code( 200 ).send( { invite: serializeGroupInvite( invite as GroupInviteDocument ) } );
         },
     } );
 
@@ -385,43 +561,39 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
 
             const payload = parseResult.data as JoinGroupPayload;
 
-            const group = await GroupModel.findOne( {
-                inviteCode: payload.inviteCode.trim(),
-            } ).exec();
+            const userId = request.user!.id;
+            const extractedCode = extractInviteCodeFromInput( payload.inviteCode );
 
-            if ( !group ) {
-                reply.code( 404 ).send( { error: "group_not_found" } );
+            if ( extractedCode.length === 0 ) {
+                reply.code( 400 ).send( { error: "invalid_invite_code" } );
                 return;
             }
 
-            const userId = request.user!.id;
-
-            const groupId = toHexId( group._id );
-            const trimmedCode = payload.inviteCode.trim();
-
-            const invite = await GroupInviteModel.findOne( { code: trimmedCode } ).exec();
+            const normalizedInviteCode = extractedCode.toUpperCase();
+            const invite = await GroupInviteModel.findOne( { code: normalizedInviteCode } ).exec();
 
             if ( invite ) {
-                if ( invite.groupId !== groupId ) {
-                    reply.code( 404 ).send( { error: "invite_not_found" } );
+                const group = await GroupModel.findById( invite.groupId ).exec();
+
+                if ( !group ) {
+                    reply.code( 404 ).send( { error: "group_not_found" } );
                     return;
                 }
 
-                if ( invite.status !== "pending" ) {
-                    reply.code( 410 ).send( { error: "invite_used" } );
+                const inviteStatus = resolveGroupInviteStatus( invite );
+
+                if ( inviteStatus === "revoked" ) {
+                    reply.code( 410 ).send( { error: "invite_revoked" } );
                     return;
                 }
 
-                if ( invite.expiresAt && invite.expiresAt.getTime() < Date.now() ) {
+                if ( inviteStatus === "expired" ) {
                     reply.code( 410 ).send( { error: "invite_expired" } );
                     return;
                 }
 
-                const inviteEmail = invite.email.toLowerCase();
-                const userEmail = request.user?.email?.toLowerCase();
-
-                if ( inviteEmail && userEmail && inviteEmail !== userEmail ) {
-                    reply.code( 403 ).send( { error: "invite_email_mismatch" } );
+                if ( inviteStatus === "maxed" ) {
+                    reply.code( 410 ).send( { error: "invite_at_capacity" } );
                     return;
                 }
 
@@ -430,9 +602,9 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
                     await group.save();
                 }
 
-                invite.status = "used";
-                invite.usedAt = new Date();
-                invite.usedBy = userId;
+                await assignLowestRoleToMember( group, userId );
+
+                invite.uses += 1;
                 await invite.save();
 
                 const response : JoinGroupResponse = {
@@ -441,6 +613,21 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
                     requiresApproval: false,
                 };
                 reply.code( 200 ).send( response );
+                return;
+            }
+
+            const legacyCodeCandidates = Array.from( new Set( [
+                extractedCode,
+                extractedCode.toLowerCase(),
+                extractedCode.toUpperCase(),
+            ] ) ).filter( ( code ) => code.length > 0 );
+
+            const group = await GroupModel.findOne( {
+                inviteCode: { $in: legacyCodeCandidates },
+            } ).exec();
+
+            if ( !group ) {
+                reply.code( 404 ).send( { error: "group_not_found" } );
                 return;
             }
 
@@ -457,7 +644,7 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
             const userName = request.user?.name ?? undefined;
 
             let joinRequest = await GroupJoinRequestModel.findOne( {
-                groupId,
+                groupId: toHexId( group._id ),
                 userId,
             } ).exec();
 
@@ -477,16 +664,16 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
                 joinRequest.processedAt = null;
                 joinRequest.processedBy = null;
                 joinRequest.groupName = group.name;
-                joinRequest.inviteCode = trimmedCode;
+                joinRequest.inviteCode = extractedCode;
                 joinRequest.userName = userName ?? null;
                 await joinRequest.save();
             } else {
                 joinRequest = await GroupJoinRequestModel.create( {
-                    groupId,
+                    groupId: toHexId( group._id ),
                     groupName: group.name,
                     userId,
                     userName: userName ?? null,
-                    inviteCode: trimmedCode,
+                    inviteCode: extractedCode,
                     status: "pending" satisfies GroupJoinRequestStatus,
                 } );
             }
@@ -494,10 +681,10 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
             const serializedRequest = serializeJoinRequest( joinRequest );
 
             try {
-                const managerUserIds = await resolveGroupManagerUserIds( groupId );
+                const managerUserIds = await resolveGroupManagerUserIds( toHexId( group._id ) );
                 const notificationDocs = await createGroupJoinRequestNotifications( {
                     requestId: serializedRequest.id,
-                    groupId,
+                    groupId: toHexId( group._id ),
                     groupName: group.name,
                     requesterId: userId,
                     requesterName: userName,
@@ -1134,6 +1321,11 @@ export async function groupsRoutes ( fastify : FastifyInstance ) {
     } );
 }
 const createInviteSchema = z.object( {
-    email: z.string().email(),
-    expiresInHours: z.number().int().min( 1 ).max( 720 ).optional(),
+    maxUses: z.number().int().min( 1 ).max( 500 ).optional().nullable(),
+    expiresInMinutes: z.number().int().min( 5 ).max( 60 * 24 * 30 ).optional().nullable(),
+} );
+
+const revokeInviteParamsSchema = z.object( {
+    groupId: z.string().min( 1 ),
+    code: z.string().min( 4 ).max( 128 ),
 } );

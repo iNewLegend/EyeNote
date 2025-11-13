@@ -2,6 +2,7 @@ import type {
     AssignRolePayload,
     CreateGroupPayload,
     CreateGroupRolePayload,
+    CreateGroupInvitePayload,
     GroupInviteRecord,
     GroupRecord,
     GroupRoleRecord,
@@ -23,7 +24,9 @@ export interface GroupsApiClient {
     updateGroupRole : ( groupId : string, roleId : string, payload : UpdateGroupRolePayload ) => Promise<GroupRoleRecord>;
     assignRole : ( groupId : string, payload : AssignRolePayload ) => Promise<void>;
     removeRole : ( groupId : string, payload : RemoveRolePayload ) => Promise<void>;
-    createGroupInvite : ( groupId : string, email : string, expiresInHours ?: number ) => Promise<GroupInviteRecord>;
+    createGroupInvite : ( groupId : string, payload : CreateGroupInvitePayload ) => Promise<GroupInviteRecord>;
+    listGroupInvites : ( groupId : string ) => Promise<GroupInviteRecord[]>;
+    revokeGroupInvite : ( groupId : string, code : string ) => Promise<GroupInviteRecord>;
 }
 
 let groupsApiClient : GroupsApiClient | null = null;

@@ -3,12 +3,13 @@ const { Schema, model, models } = mongoose;
 
 export interface GroupInviteEntity {
     groupId : string;
-    email : string;
     code : string;
-    status : "pending" | "used";
+    status : "active" | "revoked";
     expiresAt ?: Date | null;
-    usedAt ?: Date | null;
-    usedBy ?: string | null;
+    maxUses ?: number | null;
+    uses : number;
+    createdBy : string;
+    revokedAt ?: Date | null;
 }
 
 export type GroupInviteDocument = Document<unknown, unknown, GroupInviteEntity> & GroupInviteEntity & {
@@ -19,19 +20,20 @@ export type GroupInviteDocument = Document<unknown, unknown, GroupInviteEntity> 
 const groupInviteSchema = new Schema<GroupInviteDocument>(
     {
         groupId: { type: String, required: true, index: true },
-        email: { type: String, required: true },
         code: { type: String, required: true, unique: true },
-        status: { type: String, enum: [ "pending", "used" ], default: "pending", index: true },
+        status: { type: String, enum: [ "active", "revoked" ], default: "active", index: true },
         expiresAt: { type: Date, default: null },
-        usedAt: { type: Date, default: null },
-        usedBy: { type: String, default: null },
+        maxUses: { type: Number, default: null },
+        uses: { type: Number, default: 0 },
+        createdBy: { type: String, required: true },
+        revokedAt: { type: Date, default: null },
     },
     {
         timestamps: true,
     }
 );
 
-groupInviteSchema.index( { groupId: 1, email: 1, status: 1 } );
+groupInviteSchema.index( { groupId: 1, status: 1 } );
 
 export function getGroupInviteModel () : Model<GroupInviteDocument> {
     return models.GroupInvite || model<GroupInviteDocument>( "GroupInvite", groupInviteSchema );

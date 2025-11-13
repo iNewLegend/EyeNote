@@ -201,22 +201,29 @@ export interface JoinGroupResponse {
     request ?: GroupJoinRequestRecord;
 }
 
+export type GroupInviteStatus = "active" | "expired" | "revoked" | "maxed";
+
 export interface GroupInviteRecord {
     id : string;
     groupId : string;
-    email : string;
     code : string;
-    status : "pending" | "used";
+    status : GroupInviteStatus;
+    maxUses ?: number | null;
+    uses : number;
     expiresAt ?: string | null;
-    usedAt ?: string | null;
-    usedBy ?: string | null;
+    revokedAt ?: string | null;
+    createdBy : string;
     createdAt : string;
     updatedAt : string;
 }
 
 export interface CreateGroupInvitePayload {
-    email : string;
-    expiresInHours ?: number;
+    maxUses ?: number | null;
+    expiresInMinutes ?: number | null;
+}
+
+export interface ListGroupInvitesResponse {
+    invites : GroupInviteRecord[];
 }
 
 export interface ListGroupsResponse {

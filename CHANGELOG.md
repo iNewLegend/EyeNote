@@ -14,6 +14,11 @@
 - Rewired the Manage Groups shortcut to open the Extension Managment panel, removed the legacy standalone window/background handler, and dropped the duplicate popup button so the menu is the single entry point.
 - Clarified the popup's "can't reach this tab" toast so users know EyeNote only works on regular webpages and not Chrome system tabs.
 
+## Group invites
+- Replaced email-locked single-use codes with Discord-style invite links that support configurable expirations, max uses, revocation, and automatic lowest-role assignment on join.
+- Extended the backend API with invite listing/revocation endpoints and normalized invite code parsing so pasted links or raw codes both work.
+- Refreshed the Extension Managment panel to generate/share links, monitor usage, and revoke invites, while the join form now accepts full links in addition to codes.
+
 # 2025-11-12
 
 ## Notes overlay

@@ -3,6 +3,7 @@ import type {
     AssignRolePayload,
     CreateGroupPayload,
     CreateGroupRolePayload,
+    CreateGroupInvitePayload,
     GroupInviteRecord,
     GroupRecord,
     GroupRoleRecord,
@@ -25,6 +26,8 @@ type GroupsState = {
     selectedGroupWithRoles ?: GroupWithRoles;
     rolesLoading : boolean;
     rolesError ?: string;
+    invitesByGroupId : Record<string, GroupInviteRecord[]>;
+    inviteStateByGroupId : Record<string, { loading : boolean; error ?: string }>;
 };
 
 type GroupsActions = {
@@ -38,7 +41,9 @@ type GroupsActions = {
     setGroupActive : ( groupId : string, isActive : boolean ) => Promise<void>;
     setActiveGroupIds : ( groupIds : string[] ) => Promise<void>;
     fetchGroupWithRoles : ( groupId : string ) => Promise<void>;
-    createGroupInvite : ( groupId : string, email : string, expiresInHours ?: number ) => Promise<GroupInviteRecord>;
+    createGroupInvite : ( groupId : string, payload : CreateGroupInvitePayload ) => Promise<GroupInviteRecord>;
+    fetchGroupInvites : ( groupId : string ) => Promise<GroupInviteRecord[]>;
+    revokeGroupInvite : ( groupId : string, code : string ) => Promise<GroupInviteRecord>;
     createGroupRole : ( groupId : string, payload : CreateGroupRolePayload ) => Promise<GroupRoleRecord>;
     updateGroupRole : ( groupId : string, roleId : string, payload : UpdateGroupRolePayload ) => Promise<GroupRoleRecord>;
     assignRole : ( groupId : string, payload : AssignRolePayload ) => Promise<void>;
@@ -58,6 +63,8 @@ const initialState : GroupsState = {
     selectedGroupWithRoles: undefined,
     rolesLoading: false,
     rolesError: undefined,
+    invitesByGroupId: {},
+    inviteStateByGroupId: {},
 };
 
 function normalizeActiveGroupIds ( groupIds : string[], groups : GroupRecord[] ) : string[] {
@@ -202,9 +209,71 @@ export const useGroupsStore = create<GroupsStore>( ( set, get ) => ( {
 
         return response;
     },
-    async createGroupInvite ( groupId, email, expiresInHours ) {
+    async fetchGroupInvites ( groupId ) {
+        set( ( state ) => ( {
+            ...state,
+            inviteStateByGroupId: {
+                ...state.inviteStateByGroupId,
+                [ groupId ]: { loading: true },
+            },
+        } ) );
+
+        try {
+            const client = getGroupsApiClient();
+            const invites = await client.listGroupInvites( groupId );
+            set( ( state ) => ( {
+                ...state,
+                invitesByGroupId: {
+                    ...state.invitesByGroupId,
+                    [ groupId ]: invites,
+                },
+                inviteStateByGroupId: {
+                    ...state.inviteStateByGroupId,
+                    [ groupId ]: { loading: false, error: undefined },
+                },
+            } ) );
+            return invites;
+        } catch ( error ) {
+            const message = error instanceof Error ? error.message : "Failed to load invites";
+            set( ( state ) => ( {
+                ...state,
+                inviteStateByGroupId: {
+                    ...state.inviteStateByGroupId,
+                    [ groupId ]: { loading: false, error: message },
+                },
+            } ) );
+            throw error;
+        }
+    },
+    async createGroupInvite ( groupId, payload ) {
         const client = getGroupsApiClient();
-        return client.createGroupInvite( groupId, email, expiresInHours );
+        const invite = await client.createGroupInvite( groupId, payload );
+
+        set( ( state ) => ( {
+            ...state,
+            invitesByGroupId: {
+                ...state.invitesByGroupId,
+                [ groupId ]: [ invite, ...( state.invitesByGroupId[ groupId ] ?? [] ) ],
+            },
+        } ) );
+
+        return invite;
+    },
+    async revokeGroupInvite ( groupId, code ) {
+        const client = getGroupsApiClient();
+        const invite = await client.revokeGroupInvite( groupId, code );
+
+        set( ( state ) => ( {
+            ...state,
+            invitesByGroupId: {
+                ...state.invitesByGroupId,
+                [ groupId ]: ( state.invitesByGroupId[ groupId ] ?? [] ).map( ( existing ) =>
+                    existing.id === invite.id ? invite : existing
+                ),
+            },
+        } ) );
+
+        return invite;
     },
     async leaveGroup ( groupId ) {
         const client = getGroupsApiClient();

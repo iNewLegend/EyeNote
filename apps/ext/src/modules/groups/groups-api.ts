@@ -107,6 +107,18 @@ export async function createGroupInvite ( groupId : string, payload : CreateGrou
     return response.invite;
 }
 
+export async function listGroupInvites ( groupId : string ) : Promise<GroupInviteRecord[]> {
+    const response = await apiRequest<{ invites : GroupInviteRecord[] }>( `/api/groups/${ groupId }/invitations` );
+    return response.invites;
+}
+
+export async function revokeGroupInvite ( groupId : string, code : string ) : Promise<GroupInviteRecord> {
+    const response = await apiRequest<{ invite : GroupInviteRecord }>( `/api/groups/${ groupId }/invitations/${ code }/revoke`, {
+        method: "POST",
+    } );
+    return response.invite;
+}
+
 export async function approveJoinRequest ( groupId : string, requestId : string ) : Promise<ReviewJoinRequestResponse> {
     return apiRequest<ReviewJoinRequestResponse>( `/api/groups/${ groupId }/requests/${ requestId }/approve`, {
         method: "POST",
@@ -132,9 +144,7 @@ export const groupsApiClient : GroupsApiClient = {
     updateGroupRole,
     assignRole,
     removeRole,
-    createGroupInvite : ( groupId : string, email : string, expiresInHours ?: number ) =>
-        createGroupInvite( groupId, {
-            email,
-            ...( expiresInHours ? { expiresInHours } : {} ),
-        } ),
+    createGroupInvite,
+    listGroupInvites,
+    revokeGroupInvite,
 };
