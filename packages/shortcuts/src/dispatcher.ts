@@ -29,6 +29,7 @@ export interface BindShortcutOptions<
     overrides ?: Partial<Record<TId, ShortcutHandler<TId, TMeta>>>;
     listenerOptions ?: boolean | AddEventListenerOptions;
     respectPrevented ?: boolean;
+    debugLabel ?: string;
 }
 
 export function bindShortcutDispatcher<
@@ -37,17 +38,33 @@ export function bindShortcutDispatcher<
 > (
     options : BindShortcutOptions<TId, TMeta>
 ) : () => void {
-    if ( typeof window === "undefined" ) {
+    if ( typeof window === "undefined" && typeof document === "undefined" ) {
         return () => {};
     }
 
-    const eventTarget : ShortcutEventTarget = options.target ?? window;
+    const defaultTarget : ShortcutEventTarget | null = options.target
+        ?? ( typeof document !== "undefined" ? document : null )
+        ?? ( typeof window !== "undefined" ? window : null );
+
+    if ( !defaultTarget ) {
+        return () => {};
+    }
+
+    const eventTarget : ShortcutEventTarget = defaultTarget;
+    const debugLabel = options.debugLabel ?? "shortcuts";
+    const debugLog = ( message : string, payload ?: Record<string, unknown> ) => {
+        console.info( "[EyeNote][Shortcut]", debugLabel, message, payload ?? {} );
+    };
     const scopes = normalizeScopes( options.scope );
     const ids = options.ids ? new Set( options.ids ) : null;
 
     const definitions = selectDefinitions( options.registry, scopes, ids );
 
     if ( definitions.length === 0 ) {
+        debugLog( "no definitions registered", {
+            scopes,
+            ids: ids ? Array.from( ids ) : null,
+        } );
         return () => {};
     }
 
@@ -57,10 +74,26 @@ export function bindShortcutDispatcher<
     } ) );
 
     const handler = ( event : KeyboardEvent ) => {
+        debugLog( "keydown", {
+            key: event.key,
+            shift: event.shiftKey,
+            alt: event.altKey,
+            ctrl: event.ctrlKey,
+            meta: event.metaKey,
+            repeat: event.repeat,
+            targetTag: ( event.target as HTMLElement | null )?.tagName ?? null,
+            timestamp: Date.now(),
+        } );
         for ( const entry of bindings ) {
             const { definition, parsedCombo } = entry;
 
-            if ( shouldSkipEvent( event, definition, options.respectPrevented ?? false ) ) {
+            const skipReason = determineSkipReason( event, definition, options.respectPrevented ?? false );
+            if ( skipReason ) {
+                debugLog( "skipping shortcut", {
+                    shortcutId: definition.id,
+                    reason: skipReason,
+                    combo: definition.combo,
+                } );
                 continue;
             }
 
@@ -77,6 +110,12 @@ export function bindShortcutDispatcher<
             const finalHandler = override ?? fallback;
 
             finalHandler?.( event, definition );
+            debugLog( "shortcut matched", {
+                shortcutId: definition.id,
+                combo: definition.combo,
+                scope: definition.scope,
+                timestamp: Date.now(),
+            } );
             break;
         }
     };
@@ -122,24 +161,24 @@ function selectDefinitions<TId extends ShortcutId, TMeta = Record<string, never>
     return baseList.filter( ( definition ) => ids.has( definition.id ) );
 }
 
-function shouldSkipEvent<TId extends ShortcutId, TMeta = Record<string, never>> (
+function determineSkipReason<TId extends ShortcutId, TMeta = Record<string, never>> (
     event : KeyboardEvent,
     definition : ShortcutDefinition<TId, TMeta>,
     respectPrevented : boolean
-) : boolean {
+) : string | null {
     if ( respectPrevented && event.defaultPrevented ) {
-        return true;
+        return "event already prevented";
     }
 
     if ( event.repeat && !definition.allowRepeat ) {
-        return true;
+        return "repeat disallowed";
     }
 
     if ( !definition.allowWhileTyping && isEditableTarget( event.target ) ) {
-        return true;
+        return "typing focus disallowed";
     }
 
-    return false;
+    return null;
 }
 
 function createDefaultHandler<TId extends ShortcutId, TMeta = Record<string, never>> (
@@ -149,7 +188,11 @@ function createDefaultHandler<TId extends ShortcutId, TMeta = Record<string, nev
     if ( definition.action.type === "event" ) {
         return () => {
             const detail : ShortcutTriggeredDetail<TId> = { shortcutId: definition.id };
-            target.dispatchEvent( new CustomEvent( definition.action.eventName, { detail } ) );
+            const dispatcher = typeof window !== "undefined" ? window : target;
+            dispatcher.dispatchEvent( new CustomEvent( definition.action.eventName, {
+                detail,
+                bubbles: true,
+            } ) );
         };
     }
 

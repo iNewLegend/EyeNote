@@ -98,9 +98,13 @@ const ShadowDomContent : React.FC = () => {
     useNotificationsBootstrap();
 
     useEffect( () => {
+        const definitions = overlayShortcutRegistry.listByScope( "overlay" );
+        console.info( "[EyeNote][Shortcut] overlay register", definitions );
         const unsubscribe = bindShortcutDispatcher( {
             registry: overlayShortcutRegistry,
             scope: "overlay",
+            target: document,
+            debugLabel: "overlay",
         } );
         return () => {
             unsubscribe();
