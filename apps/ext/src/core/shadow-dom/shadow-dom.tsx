@@ -45,7 +45,12 @@ import {
     type SettingsDialogItem,
 } from "@eye-note/ui";
 import { INSPECTOR_BLOCKED_EVENT } from "../../hooks/use-inspector-mode";
-import { overlayShortcutRegistry } from "../../shortcuts/overlay-shortcuts";
+import {
+    overlayShortcutRegistry,
+    getOverlayQuickLaunchItems,
+    type OverlayShortcutId,
+    QUICK_LAUNCH_MENU_GROUPS,
+} from "../../shortcuts/overlay-shortcuts";
 
 type SettingsSectionId = "general" | "groups";
 const SHADOW_HOST_ID = "eye-note-shadow-dom";
@@ -261,33 +266,24 @@ const ShadowDomContent : React.FC = () => {
         [ canManageGroups, generalSettingsSection, groupsSection ]
     );
 
-    const quickMenuItems = useMemo<QuickMenuItem[]>(
-        () => [
-            {
-                id: "groups" as const,
-                label: "Groups",
-                description: "Manage collaboration groups, invites, and roles.",
-                shortcutId: "overlay.openGroupManager",
-                disabled: !canManageGroups,
-            },
-            {
-                id: "notifications" as const,
-                label: "Notifications",
-                description:
-                    unreadNotificationCount > 0
-                        ? `${ unreadNotificationCount } unread alert${ unreadNotificationCount === 1 ? "" : "s" }`
-                        : "Review recent alerts from your groups.",
-                shortcutId: "overlay.openNotifications",
-            },
-            {
-                id: "settings" as const,
-                label: "Settings",
-                description: "Adjust overlay preferences without leaving the page.",
-                shortcutId: "overlay.openSettings",
-            },
-        ],
-        [ canManageGroups, unreadNotificationCount ]
-    );
+    const triggerShortcutAction = useCallback( ( shortcutId : OverlayShortcutId ) => {
+        const definition = overlayShortcutRegistry.require( shortcutId );
+        if ( definition.action.type === "event" ) {
+            window.dispatchEvent( new CustomEvent( definition.action.eventName ) );
+        }
+    }, [] );
+
+    const quickMenuItems = useMemo<QuickMenuItem[]>( () => {
+        const entries = getOverlayQuickLaunchItems( { unreadCount: unreadNotificationCount } );
+        return entries.map( ( entry ) => ( {
+            id: entry.menuId,
+            shortcutId: entry.shortcutId,
+            label: entry.label,
+            description: entry.description,
+            shortcutDisplay: overlayShortcutRegistry.getDisplayText( entry.shortcutId ),
+            disabled: entry.menuId === QUICK_LAUNCH_MENU_GROUPS && !canManageGroups,
+        } ) );
+    }, [ canManageGroups, unreadNotificationCount ] );
 
     useEffect( () => {
         const handler = ( event : Event ) => {
@@ -533,21 +529,9 @@ const ShadowDomContent : React.FC = () => {
                     onOpenChange={setIsQuickMenuOpen}
                     dialogContainer={dialogContainer}
                     items={quickMenuItems}
-                    onSelect={ ( item ) => {
+                    onSelect={( item ) => {
                         setIsQuickMenuOpen( false );
-                        if ( item === "groups" ) {
-                            if ( canManageGroups ) {
-                                setActiveSettingsSection( "groups" );
-                                setIsSettingsDialogOpen( true );
-                            }
-                            return;
-                        }
-                        if ( item === "notifications" ) {
-                            setIsNotificationsOpen( true );
-                            return;
-                        }
-                        setActiveSettingsSection( "general" );
-                        setIsSettingsDialogOpen( true );
+                        triggerShortcutAction( item.shortcutId );
                     }}
                 />
                 <NotificationCenter

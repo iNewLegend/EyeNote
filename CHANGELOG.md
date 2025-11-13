@@ -7,6 +7,7 @@
 ## Keyboard shortcuts
 - Added a centralized `@eye-note/shortcuts` toolkit with a generic registry/dispatcher so the extension (not the package) now declares the active bindings and can later swap combos per user settings.
 - Wired the overlay shadow host to mount the dispatcher and taught the quick menu to pull shortcut labels directly from the registry, eliminating the duplicated "Shift" labels sprinkled across the UI.
+- Promoted the Quick Launch dialog to build its entries straight from the registered shortcuts (via metadata), so adding a new binding automatically surfaces the action without touching the UI.
 
 # 2025-11-12
 

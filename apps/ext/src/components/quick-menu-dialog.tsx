@@ -11,52 +11,26 @@ import {
     DialogTitle,
     cn,
 } from "@eye-note/ui";
-import {
-    overlayShortcutRegistry,
-    type OverlayShortcutId,
-} from "../shortcuts/overlay-shortcuts";
+import type { OverlayShortcutId, QuickLaunchMenuId } from "../shortcuts/overlay-shortcuts";
 
 const dialogClassName =
     "max-h-[85vh] overflow-y-auto w-[min(90vw,480px)] max-w-[480px] space-y-6";
 
-type QuickMenuItemId = "groups" | "settings" | "notifications";
-
 type QuickMenuItem = {
-    id: QuickMenuItemId;
+    id: QuickLaunchMenuId;
+    shortcutId : OverlayShortcutId;
     label: string;
     description: string;
-    shortcut ?: string;
-    shortcutId ?: OverlayShortcutId;
+    shortcutDisplay ?: string;
     disabled ?: boolean;
 };
-
-const DEFAULT_MENU_ITEMS : QuickMenuItem[] = [
-    {
-        id: "groups",
-        label: "Groups",
-        description: "Manage collaboration groups, invites, and member roles.",
-        shortcutId: "overlay.openGroupManager",
-    },
-    {
-        id: "notifications",
-        label: "Notifications",
-        description: "Review unread alerts from your groups.",
-        shortcutId: "overlay.openNotifications",
-    },
-    {
-        id: "settings",
-        label: "Settings",
-        description: "Configure overlay preferences and notifications.",
-        shortcutId: "overlay.openSettings",
-    },
-];
 
 interface QuickMenuDialogProps {
     open : boolean;
     dialogContainer ?: HTMLElement | null;
-    onSelect : ( item : QuickMenuItemId ) => void;
+    onSelect : ( item : QuickMenuItem ) => void;
     onOpenChange : ( open : boolean ) => void;
-    items ?: QuickMenuItem[];
+    items : QuickMenuItem[];
 }
 
 export const QuickMenuDialog : React.FC<QuickMenuDialogProps> = ( {
@@ -64,7 +38,7 @@ export const QuickMenuDialog : React.FC<QuickMenuDialogProps> = ( {
     dialogContainer,
     onOpenChange,
     onSelect,
-    items = DEFAULT_MENU_ITEMS,
+    items,
 } ) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
@@ -79,11 +53,7 @@ export const QuickMenuDialog : React.FC<QuickMenuDialogProps> = ( {
             </DialogHeader>
             <div className="flex flex-col gap-2">
                 {items.map( ( item ) => {
-                    const shortcutLabel = item.shortcut
-                        ? item.shortcut
-                        : item.shortcutId
-                            ? overlayShortcutRegistry.getDisplayText( item.shortcutId )
-                            : null;
+                    const shortcutLabel = item.shortcutDisplay ?? null;
                     return (
                         <Button
                             key={item.id}
@@ -93,7 +63,7 @@ export const QuickMenuDialog : React.FC<QuickMenuDialogProps> = ( {
                                 "flex w-full items-start justify-between gap-3 rounded-md border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-muted",
                                 item.disabled && "pointer-events-none opacity-60"
                             )}
-                            onClick={() => onSelect( item.id )}
+                            onClick={() => onSelect( item )}
                             disabled={item.disabled}
                         >
                             <span>
@@ -120,4 +90,4 @@ export const QuickMenuDialog : React.FC<QuickMenuDialogProps> = ( {
     </Dialog>
 );
 
-export type { QuickMenuItem, QuickMenuItemId };
+export type { QuickMenuItem };

@@ -6,13 +6,16 @@ import type {
 } from "./types";
 import { formatShortcutDisplay } from "./utils";
 
-export function createShortcutRegistry<TId extends ShortcutId = ShortcutId> (
-    initialDefinitions : ShortcutDefinition<TId>[] = []
-) : ShortcutRegistry<TId> {
-    const byId = new Map<TId, ShortcutDefinition<TId>>();
+export function createShortcutRegistry<
+    TId extends ShortcutId = ShortcutId,
+    TMeta = Record<string, never>
+> (
+    initialDefinitions : ShortcutDefinition<TId, TMeta>[] = []
+) : ShortcutRegistry<TId, TMeta> {
+    const byId = new Map<TId, ShortcutDefinition<TId, TMeta>>();
     const scopeIndex = new Map<ShortcutScope, Set<TId>>();
 
-    const register = ( definition : ShortcutDefinition<TId> ) => {
+    const register = ( definition : ShortcutDefinition<TId, TMeta> ) => {
         const existing = byId.get( definition.id );
         if ( existing ) {
             removeFromScope( existing );
@@ -22,7 +25,7 @@ export function createShortcutRegistry<TId extends ShortcutId = ShortcutId> (
         addToScope( definition );
     };
 
-    const registerMany = ( definitions : ShortcutDefinition<TId>[] ) => {
+    const registerMany = ( definitions : ShortcutDefinition<TId, TMeta>[] ) => {
         definitions.forEach( register );
     };
 
@@ -57,13 +60,13 @@ export function createShortcutRegistry<TId extends ShortcutId = ShortcutId> (
 
     const getDisplayText = ( id : TId ) => formatShortcutDisplay( require( id ).combo );
 
-    const addToScope = ( definition : ShortcutDefinition<TId> ) => {
+    const addToScope = ( definition : ShortcutDefinition<TId, TMeta> ) => {
         const scoped = scopeIndex.get( definition.scope ) ?? new Set<TId>();
         scoped.add( definition.id );
         scopeIndex.set( definition.scope, scoped );
     };
 
-    const removeFromScope = ( definition : ShortcutDefinition<TId> ) => {
+    const removeFromScope = ( definition : ShortcutDefinition<TId, TMeta> ) => {
         const scoped = scopeIndex.get( definition.scope );
         if ( !scoped ) {
             return;

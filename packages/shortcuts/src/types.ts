@@ -9,7 +9,7 @@ export interface ShortcutActionEvent {
 
 export type ShortcutAction = ShortcutActionEvent;
 
-export interface ShortcutDefinition<TId extends ShortcutId = ShortcutId> {
+export interface ShortcutDefinition<TId extends ShortcutId = ShortcutId, TMeta = Record<string, never>> {
     id : TId;
     label : string;
     description ?: string;
@@ -19,24 +19,25 @@ export interface ShortcutDefinition<TId extends ShortcutId = ShortcutId> {
     allowRepeat ?: boolean;
     preventDefault ?: boolean;
     action : ShortcutAction;
+    meta ?: TMeta;
 }
 
 export interface ShortcutTriggeredDetail<TId extends ShortcutId = ShortcutId> {
     shortcutId : TId;
 }
 
-export type ShortcutHandler<TId extends ShortcutId = ShortcutId> = (
+export type ShortcutHandler<TId extends ShortcutId = ShortcutId, TMeta = Record<string, never>> = (
     event : KeyboardEvent,
-    definition : ShortcutDefinition<TId>
+    definition : ShortcutDefinition<TId, TMeta>
 ) => void;
 
-export interface ShortcutRegistry<TId extends ShortcutId = ShortcutId> {
-    register : ( definition : ShortcutDefinition<TId> ) => void;
-    registerMany : ( definitions : ShortcutDefinition<TId>[] ) => void;
+export interface ShortcutRegistry<TId extends ShortcutId = ShortcutId, TMeta = Record<string, never>> {
+    register : ( definition : ShortcutDefinition<TId, TMeta> ) => void;
+    registerMany : ( definitions : ShortcutDefinition<TId, TMeta>[] ) => void;
     unregister : ( id : TId ) => void;
-    get : ( id : TId ) => ShortcutDefinition<TId> | undefined;
-    require : ( id : TId ) => ShortcutDefinition<TId>;
-    list : () => ShortcutDefinition<TId>[];
-    listByScope : ( scope : ShortcutScope ) => ShortcutDefinition<TId>[];
+    get : ( id : TId ) => ShortcutDefinition<TId, TMeta> | undefined;
+    require : ( id : TId ) => ShortcutDefinition<TId, TMeta>;
+    list : () => ShortcutDefinition<TId, TMeta>[];
+    listByScope : ( scope : ShortcutScope ) => ShortcutDefinition<TId, TMeta>[];
     getDisplayText : ( id : TId ) => string;
 }

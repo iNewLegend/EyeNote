@@ -8,23 +8,34 @@ import type {
 } from "./types";
 import { isEditableTarget, matchesShortcutCombo, parseShortcutCombo } from "./utils";
 
-interface ShortcutBindingEntry<TId extends ShortcutId = ShortcutId> {
-    definition : ShortcutDefinition<TId>;
+interface ShortcutBindingEntry<
+    TId extends ShortcutId = ShortcutId,
+    TMeta = Record<string, never>
+> {
+    definition : ShortcutDefinition<TId, TMeta>;
     parsedCombo : ReturnType<typeof parseShortcutCombo>;
 }
 
 type ShortcutEventTarget = Window | Document;
 
-export interface BindShortcutOptions<TId extends ShortcutId = ShortcutId> {
-    registry : ShortcutRegistry<TId>;
+export interface BindShortcutOptions<
+    TId extends ShortcutId = ShortcutId,
+    TMeta = Record<string, never>
+> {
+    registry : ShortcutRegistry<TId, TMeta>;
     target ?: ShortcutEventTarget;
     scope ?: ShortcutScope | ShortcutScope[];
     ids ?: TId[];
-    overrides ?: Partial<Record<TId, ShortcutHandler<TId>>>;
+    overrides ?: Partial<Record<TId, ShortcutHandler<TId, TMeta>>>;
+    listenerOptions ?: boolean | AddEventListenerOptions;
+    respectPrevented ?: boolean;
 }
 
-export function bindShortcutDispatcher<TId extends ShortcutId = ShortcutId> (
-    options : BindShortcutOptions<TId>
+export function bindShortcutDispatcher<
+    TId extends ShortcutId = ShortcutId,
+    TMeta = Record<string, never>
+> (
+    options : BindShortcutOptions<TId, TMeta>
 ) : () => void {
     if ( typeof window === "undefined" ) {
         return () => {};
@@ -40,7 +51,7 @@ export function bindShortcutDispatcher<TId extends ShortcutId = ShortcutId> (
         return () => {};
     }
 
-    const bindings : ShortcutBindingEntry<TId>[] = definitions.map( ( definition ) => ( {
+    const bindings : ShortcutBindingEntry<TId, TMeta>[] = definitions.map( ( definition ) => ( {
         definition,
         parsedCombo: parseShortcutCombo( definition.combo ),
     } ) );
@@ -49,7 +60,7 @@ export function bindShortcutDispatcher<TId extends ShortcutId = ShortcutId> (
         for ( const entry of bindings ) {
             const { definition, parsedCombo } = entry;
 
-            if ( shouldSkipEvent( event, definition ) ) {
+            if ( shouldSkipEvent( event, definition, options.respectPrevented ?? false ) ) {
                 continue;
             }
 
@@ -70,10 +81,16 @@ export function bindShortcutDispatcher<TId extends ShortcutId = ShortcutId> (
         }
     };
 
-    eventTarget.addEventListener( "keydown", handler as EventListener );
+    const listener : EventListener = ( event ) => {
+        handler( event as KeyboardEvent );
+    };
+
+    const listenerOptions = options.listenerOptions ?? { capture: true };
+
+    eventTarget.addEventListener( "keydown", listener, listenerOptions );
 
     return () => {
-        eventTarget.removeEventListener( "keydown", handler as EventListener );
+        eventTarget.removeEventListener( "keydown", listener, listenerOptions );
     };
 }
 
@@ -85,12 +102,12 @@ function normalizeScopes ( scope ?: ShortcutScope | ShortcutScope[] ) : Shortcut
     return Array.isArray( scope ) ? scope : [ scope ];
 }
 
-function selectDefinitions<TId extends ShortcutId> (
-    registry : ShortcutRegistry<TId>,
+function selectDefinitions<TId extends ShortcutId, TMeta = Record<string, never>> (
+    registry : ShortcutRegistry<TId, TMeta>,
     scopes : ShortcutScope[] | null,
     ids : Set<TId> | null
-) : ShortcutDefinition<TId>[] {
-    let baseList : ShortcutDefinition<TId>[];
+) : ShortcutDefinition<TId, TMeta>[] {
+    let baseList : ShortcutDefinition<TId, TMeta>[];
 
     if ( scopes && scopes.length > 0 ) {
         baseList = scopes.flatMap( ( scope ) => registry.listByScope( scope ) );
@@ -105,11 +122,12 @@ function selectDefinitions<TId extends ShortcutId> (
     return baseList.filter( ( definition ) => ids.has( definition.id ) );
 }
 
-function shouldSkipEvent<TId extends ShortcutId> (
+function shouldSkipEvent<TId extends ShortcutId, TMeta = Record<string, never>> (
     event : KeyboardEvent,
-    definition : ShortcutDefinition<TId>
+    definition : ShortcutDefinition<TId, TMeta>,
+    respectPrevented : boolean
 ) : boolean {
-    if ( event.defaultPrevented ) {
+    if ( respectPrevented && event.defaultPrevented ) {
         return true;
     }
 
@@ -124,10 +142,10 @@ function shouldSkipEvent<TId extends ShortcutId> (
     return false;
 }
 
-function createDefaultHandler<TId extends ShortcutId> (
+function createDefaultHandler<TId extends ShortcutId, TMeta = Record<string, never>> (
     target : ShortcutEventTarget,
-    definition : ShortcutDefinition<TId>
-) : ShortcutHandler<TId> | undefined {
+    definition : ShortcutDefinition<TId, TMeta>
+) : ShortcutHandler<TId, TMeta> | undefined {
     if ( definition.action.type === "event" ) {
         return () => {
             const detail : ShortcutTriggeredDetail<TId> = { shortcutId: definition.id };
