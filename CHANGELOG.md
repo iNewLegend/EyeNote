@@ -12,6 +12,7 @@
 ## Extension popup
 - Closed the popup window automatically after launching the quick menu so the overlay dialog can take focus without leaving the popup hanging open.
 - Rewired the Manage Groups shortcut to open the Extension Managment panel, removed the legacy standalone window/background handler, and dropped the duplicate popup button so the menu is the single entry point.
+- Clarified the popup's "can't reach this tab" toast so users know EyeNote only works on regular webpages and not Chrome system tabs.
 
 # 2025-11-12
 

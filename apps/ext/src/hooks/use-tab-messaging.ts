@@ -61,8 +61,28 @@ export function useTabMessaging () {
         }
     };
 
-    const buildMessageFailureDescription = ( error?: string ): string =>
-        error ? `${ error } Make sure EyeNote is active on this tab.` : "Make sure EyeNote is active on this tab.";
+    const buildMessageFailureDescription = ( error?: string ): string => {
+        const defaultHint = "Open a regular webpage (not Chrome Web Store or chrome:// pages), ensure EyeNote is enabled, then try again.";
+        if ( !error ) {
+            return defaultHint;
+        }
+
+        const normalized = error.toLowerCase();
+
+        if ( normalized.includes( "no active tab" ) ) {
+            return "No active tab detected. Focus a normal browser tab and try again.";
+        }
+
+        if ( normalized.includes( "receiving end does not exist" ) || normalized.includes( "could not establish connection" ) ) {
+            return "EyeNote isn't injected into this tab yet. Refresh the page or open EyeNote on a supported site, then retry.";
+        }
+
+        if ( normalized.includes( "cannot access contents of this page" ) ) {
+            return "Chrome blocks extensions on this page. Try again on a standard http/https site.";
+        }
+
+        return `${ error }. ${ defaultHint }`;
+    };
 
     const sendMessageWithToast = async ( payload: MessagePayload, errorTitle: string ): Promise<MessageResult> => {
         const result = await sendMessageToActiveTab( payload );
