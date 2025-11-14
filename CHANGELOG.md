@@ -13,6 +13,11 @@
 - Pointed every extension import at `@eye-note/groups`, expanded the `GroupsApiClient` interface with join-request review helpers, and routed the notification center through `getGroupsApiClient` so groups logic truly lives in one package.
 - Re-ran `pnpm --filter @eye-note/{ext,groups} exec tsc --noEmit` (both pass).
 
+## Invitations portal
+- Scaffolded a new `@eye-note/app` workspace (Vite + Tailwind) that reuses `@eye-note/auth/app` and `@eye-note/groups` so web users can sign in, hydrate the shared store, and manage invites outside the Chrome extension.
+- Added `apps/app/src/lib` adapters for the browser (localStorage group storage + fetch-based API client), a Google OAuth callback route, and Tailwind-powered theming shared with the UI package.
+- Built a dedicated invitations surface with a join form (prefills `?invite=` links), group overview, and a manager panel that generates, copies, and revokes shareable invite links while reflecting real-time status changes.
+
 # 2025-11-13
 
 ## Discord-style group manager
