@@ -6,6 +6,7 @@
 - Added a repo-level SVG module declaration (`types/svg/index.d.ts`) and wired it through `tsconfig.base.json` so every workspace can import `*.svg`, then re-ran `pnpm --filter @eye-note/{ext,groups} exec tsc --noEmit` (both pass).
 - Introduced a dedicated Roles tab inside Extension Management: users choose a group before the shared `RoleManagementPanel` renders, the Groups tab routes its manage buttons into that experience, and the roles selector now uses stable store slices so the dialog no longer spins in an infinite update loop.
 - Routed the roles dropdown portal through the shadow host container so Radix Select opens reliably inside the dialog instead of silently failing.
+- Rebuilt the role manager surface with a Discord-inspired layout (phi-aligned column grid, glassmorphic stats row, refreshed role list + composer) so editing roles feels premium instead of utilitarian, and stabilized its hook order so selecting roles no longer crashes the dialog.
 
 # 2025-11-13
 
