@@ -1,4 +1,11 @@
-import { Button, Dialog, DialogContent } from "@eye-note/ui";
+import {
+    Button,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@eye-note/ui";
 import type { Note } from "../../../types";
 
 type NoteScreenshot = NonNullable<Note["screenshots"]>[ number ];
@@ -43,6 +50,10 @@ export function NoteImageViewer ( {
                 overlayClassName="z-sheet-overlay"
                 onPointerDownOutside={onClose}
             >
+                <DialogHeader className="sr-only">
+                    <DialogTitle>Note screenshot viewer</DialogTitle>
+                    <DialogDescription>Preview captured note images with navigation controls.</DialogDescription>
+                </DialogHeader>
                 {screenshot && (
                     <div className="relative w-full h-full flex items-center justify-center">
                         <img

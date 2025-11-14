@@ -1,3 +1,10 @@
+# 2025-11-14
+
+## Overlay accessibility & invite selects
+- Added an sr-only `DialogTitle` plus description to the note screenshot viewer so Radix no longer logs missing title/description warnings while keeping the UI visually unchanged.
+- Replaced the empty-string placeholder values in the group invite Select menus with explicit sentinel values and helpers, preventing Radix from throwing when the "Never"/"No limit" options are rendered.
+- Added a repo-level SVG module declaration (`types/svg/index.d.ts`) and wired it through `tsconfig.base.json` so every workspace can import `*.svg`, then re-ran `pnpm --filter @eye-note/{ext,groups} exec tsc --noEmit` (both pass).
+
 # 2025-11-13
 
 ## Discord-style group manager

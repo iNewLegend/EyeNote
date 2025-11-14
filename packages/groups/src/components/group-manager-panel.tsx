@@ -72,6 +72,14 @@ const DEFAULT_INVITE_SELECTION : InviteSelection = {
     expiresInMinutes: null,
 };
 
+const INVITE_SELECT_EMPTY_VALUE = "__empty__";
+
+const encodeInviteSelectValue = ( value : number | null ) =>
+    value === null ? INVITE_SELECT_EMPTY_VALUE : value.toString();
+
+const decodeInviteSelectValue = ( value : string ) =>
+    value === INVITE_SELECT_EMPTY_VALUE ? null : Number( value );
+
 const INVITE_LINK_BASE_URL = "https://eyenote.io/invite";
 
 const buildInviteLink = ( code : string ) => `${ INVITE_LINK_BASE_URL.replace( /\/$/, "" ) }/${ code }`;
@@ -455,9 +463,9 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
                             <Select
-                                value={selection.expiresInMinutes?.toString() ?? ""}
+                                value={encodeInviteSelectValue( selection.expiresInMinutes ?? null )}
                                 onValueChange={( value ) => {
-                                    const numValue = value === "" ? null : Number( value );
+                                    const numValue = decodeInviteSelectValue( value );
                                     handleSelectionChange( selectedGroup.id, { expiresInMinutes: numValue } );
                                 }}
                             >
@@ -466,16 +474,19 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
                                 </SelectTrigger>
                                 <SelectContent>
                                     {INVITE_EXPIRATION_OPTIONS.map( ( option ) => (
-                                        <SelectItem key={`expires-${ option.label }`} value={option.value?.toString() ?? ""}>
+                                        <SelectItem
+                                            key={`expires-${ option.label }`}
+                                            value={encodeInviteSelectValue( option.value ?? null )}
+                                        >
                                             {option.label}
                                         </SelectItem>
                                     ) )}
                                 </SelectContent>
                             </Select>
                             <Select
-                                value={selection.maxUses?.toString() ?? ""}
+                                value={encodeInviteSelectValue( selection.maxUses ?? null )}
                                 onValueChange={( value ) => {
-                                    const numValue = value === "" ? null : Number( value );
+                                    const numValue = decodeInviteSelectValue( value );
                                     handleSelectionChange( selectedGroup.id, { maxUses: numValue } );
                                 }}
                             >
@@ -484,7 +495,10 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
                                 </SelectTrigger>
                                 <SelectContent>
                                     {INVITE_MAX_USE_OPTIONS.map( ( option ) => (
-                                        <SelectItem key={`uses-${ option.label }`} value={option.value?.toString() ?? ""}>
+                                        <SelectItem
+                                            key={`uses-${ option.label }`}
+                                            value={encodeInviteSelectValue( option.value ?? null )}
+                                        >
                                             {option.label}
                                         </SelectItem>
                                     ) )}
