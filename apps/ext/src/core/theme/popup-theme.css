@@ -56,7 +56,7 @@
 
     /* Text colors */
     --text-color: hsl(0 0% 100%);
-    --text-muted: hsl(264 15% 65%);
+    --text-muted: hsl(265, 100%, 79%);
 
     /* Shadow colors */
     --shadow-color: hsl(var(--violet-950) / 0.5);
@@ -119,4 +119,12 @@
     --button-background: hsl(var(--violet-600));
     --button-hover: hsl(var(--violet-700));
     --button-active: hsl(var(--violet-800));
+}
+
+.dark .toaster [data-sonner-toast][data-styled=true] [data-description] {
+    color: rgb(var(--muted-foreground) / 0.95) !important;
+}
+
+.toaster [data-sonner-toast][data-styled=true] [data-description] {
+  color: rgb(var(--muted-foreground) / 0.9) !important;
 }

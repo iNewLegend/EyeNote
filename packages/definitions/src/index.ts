@@ -57,6 +57,86 @@ export interface NoteRecord extends NoteBase {
     updatedAt : string;
 }
 
+export interface NoteChatMessageBase {
+    noteId : string;
+    groupId : string | null;
+    userId : string;
+    content : string;
+    clientMessageId ?: string;
+}
+
+export interface NoteChatMessageRecord extends NoteChatMessageBase {
+    id : string;
+    createdAt : string;
+    updatedAt : string;
+}
+
+export interface CreateNoteChatMessagePayload {
+    content : string;
+    clientMessageId ?: string;
+}
+
+export interface ListNoteChatMessagesResponse {
+    messages : NoteChatMessageRecord[];
+    nextCursor ?: string;
+    hasMore : boolean;
+}
+
+export type NotificationType = "note_chat_message" | "group_join_request" | "group_join_decision";
+
+export interface NotificationMetadata {
+    noteId ?: string;
+    groupId ?: string;
+    messageId ?: string;
+    senderId ?: string;
+    snippet ?: string;
+    requestId ?: string;
+    requesterId ?: string;
+    requesterName ?: string;
+    decision ?: "approved" | "rejected";
+    processedBy ?: string;
+}
+
+export interface NotificationRecord {
+    id : string;
+    userId : string;
+    type : NotificationType;
+    title : string;
+    body ?: string | null;
+    data ?: NotificationMetadata;
+    isRead : boolean;
+    readAt ?: string | null;
+    createdAt : string;
+    updatedAt : string;
+}
+
+export interface ListNotificationsResponse {
+    notifications : NotificationRecord[];
+    nextCursor ?: string;
+    hasMore : boolean;
+    unreadCount : number;
+}
+
+export interface MarkNotificationsReadPayload {
+    notificationIds : string[];
+}
+
+export interface RealtimeTokenRequestPayload {
+    activeGroupIds ?: string[];
+}
+
+export interface RealtimeTokenResponse {
+    token : string;
+    expiresAt : string;
+}
+
+export interface RealtimeAuthClaims {
+    userId : string;
+    groupIds : string[];
+    iat : number;
+    exp : number;
+}
+
 export type CreateNotePayload = NoteBase & {
     pageIdentity ?: PageIdentityPayload;
 };
@@ -98,8 +178,61 @@ export interface JoinGroupPayload {
     inviteCode : string;
 }
 
+export type GroupJoinRequestStatus = "pending" | "approved" | "rejected";
+
+export interface GroupJoinRequestRecord {
+    id : string;
+    groupId : string;
+    groupName : string;
+    userId : string;
+    userName ?: string;
+    inviteCode : string;
+    status : GroupJoinRequestStatus;
+    processedBy ?: string | null;
+    processedAt ?: string | null;
+    createdAt : string;
+    updatedAt : string;
+}
+
+export interface JoinGroupResponse {
+    group : GroupRecord;
+    joined : boolean;
+    requiresApproval : boolean;
+    request ?: GroupJoinRequestRecord;
+}
+
+export type GroupInviteStatus = "active" | "expired" | "revoked" | "maxed";
+
+export interface GroupInviteRecord {
+    id : string;
+    groupId : string;
+    code : string;
+    status : GroupInviteStatus;
+    maxUses ?: number | null;
+    uses : number;
+    expiresAt ?: string | null;
+    revokedAt ?: string | null;
+    createdBy : string;
+    createdAt : string;
+    updatedAt : string;
+}
+
+export interface CreateGroupInvitePayload {
+    maxUses ?: number | null;
+    expiresInMinutes ?: number | null;
+}
+
+export interface ListGroupInvitesResponse {
+    invites : GroupInviteRecord[];
+}
+
 export interface ListGroupsResponse {
     groups : GroupRecord[];
+}
+
+export interface ReviewJoinRequestResponse {
+    request : GroupJoinRequestRecord;
+    group : GroupRecord;
 }
 
 export interface ListNotesQuery {

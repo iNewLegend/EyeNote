@@ -13,6 +13,10 @@ export default defineConfig( ( { mode } ) => {
     const commonConfig = {
         ... getBaseConfig( {} ),
         plugins: [ react() ],
+        define: {
+            // Force React to use its development build in dev mode to show full error messages instead of minified errors
+            "process.env.NODE_ENV": JSON.stringify( isDev ? "development" : "production" ),
+        },
         build: {
             minify: !isDev,
             sourcemap: true,
@@ -57,7 +61,7 @@ export default defineConfig( ( { mode } ) => {
             ...commonConfig.build,
             rollupOptions: {
                 input: {
-                    popup: resolve( __dirname, "src/core/extension-popup/extension-popup.tsx" ),
+                    popup: resolve( __dirname, "src/core/extension-popup/extension-popup-mount.tsx" ),
                     "background-script": resolve(
                         __dirname,
                         "src/core/background-script/background-script.ts"

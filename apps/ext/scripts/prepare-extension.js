@@ -273,7 +273,13 @@ async function prepareExtension () {
             }
         }
 
-        // The popup HTML is generated from dist/index.html above; no additional copy required.
+        // Copy HTML shells from src so they reference the stable entry file names
+        const htmlTemplates = [ "popup.html" ];
+        for ( const template of htmlTemplates ) {
+            const sourcePath = path.join( rootDir, "src", template );
+            const destinationPath = path.join( extensionDir, template );
+            await copyFileWithRetry( sourcePath, destinationPath );
+        }
 
         console.log( "Extension files prepared successfully!" );
 

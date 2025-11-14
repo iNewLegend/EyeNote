@@ -1,0 +1,19 @@
+{
+  "name": "@eye-note/backend-models",
+  "version": "0.1.0",
+  "description": "Shared Mongoose models for EyeNote services",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist",
+    "prepare": "tsc -b"
+  },
+  "peerDependencies": {
+    "mongoose": "^7.8.1"
+  },
+  "dependencies": {
+    "@eye-note/definitions": "workspace:*"
+  }
+}

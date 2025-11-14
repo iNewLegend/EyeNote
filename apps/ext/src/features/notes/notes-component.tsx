@@ -92,6 +92,7 @@ export function NotesComponent ( {
             .map( ( group ) => ( {
                 id: group.id,
                 name: group.name,
+                color: group.color,
             } ) )
             .sort( ( a, b ) => a.name.localeCompare( b.name ) );
     }, [ groups ] );
@@ -112,6 +113,7 @@ export function NotesComponent ( {
             {
                 id: selectedGroupId,
                 name: "Group unavailable",
+                color: undefined,
             },
         ];
     }, [ groupOptions, selectedGroupId ] );

@@ -1,12 +1,38 @@
-import { Button, Sheet, SheetContent, SheetDescription, SheetTitle } from "@eye-note/ui";
+import { useEffect, useMemo, useState } from "react";
+import {
+    cn,
+    Button,
+    Input,
+    SheetDescription,
+    SheetTitle,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@eye-note/ui";
 import type { Note } from "../../../types";
+import { useAuthStore } from "@eye-note/auth/extension";
+import { useNoteChatStore } from "../chat-store";
+import type { NoteChatMessage } from "../chat-store";
+import { useRealtimeStore } from "../../realtime/realtime-store";
+import { useGroupsStore } from "../../../modules/groups";
+import { SidebarSheet } from "../../../components/sidebar-sheet";
+
+const EMPTY_CHAT_MESSAGES : NoteChatMessage[] = [];
 
 export interface NoteGroupOption {
     id : string;
     name : string;
+    color ?: string;
 }
 
 type NoteScreenshot = NonNullable<Note["screenshots"]>[ number ];
+
+const GROUP_SWATCH_FALLBACK = "#94a3b8";
+const SELECT_EMPTY_VALUE = "__none__";
+
+const resolveGroupColor = ( color ?: string ) => ( color && color.trim().length > 0 ? color : GROUP_SWATCH_FALLBACK );
 
 interface NoteSheetProps {
     note : Note;
@@ -55,25 +81,126 @@ export function NoteSheet ( {
     isSaving,
     isExistingPending,
 } : NoteSheetProps ) {
+    const [ isSelectOpen, setIsSelectOpen ] = useState( false );
+    const [ chatDraft, setChatDraft ] = useState( "" );
+    const [ isSendingChat, setIsSendingChat ] = useState( false );
+    const groupLabelId = `note-group-label-${ note.id }`;
+    const groupTriggerId = `note-group-${ note.id }`;
+    const authUser = useAuthStore( ( state ) => state.user );
+    const activeGroupIds = useGroupsStore( ( state ) => state.activeGroupIds );
+    const chatMessages = useNoteChatStore(
+        ( state ) => state.messages[ note.id ] ?? EMPTY_CHAT_MESSAGES
+    ) as NoteChatMessage[];
+    const chatLoading = useNoteChatStore( ( state ) => state.isLoading[ note.id ] ?? false );
+    const chatHasMore = useNoteChatStore( ( state ) => state.hasMore[ note.id ] ?? false );
+    const chatInitialized = useNoteChatStore( ( state ) => state.initialized[ note.id ] ?? false );
+    const fetchChatMessages = useNoteChatStore( ( state ) => state.fetchMessages );
+    const fetchOlderChatMessages = useNoteChatStore( ( state ) => state.fetchOlderMessages );
+    const realtimeStatus = useRealtimeStore( ( state ) => state.status );
+    const joinNoteRoom = useRealtimeStore( ( state ) => state.joinNoteRoom );
+    const leaveNoteRoom = useRealtimeStore( ( state ) => state.leaveNoteRoom );
+    const sendRealtimeMessage = useRealtimeStore( ( state ) => state.sendMessage );
+    const isChatEnabled = Boolean( note.groupId );
+    const activeGroupKey = activeGroupIds.join( "|" );
+    useEffect( () => {
+        if ( !open || !isChatEnabled ) {
+            return;
+        }
+
+        if ( !chatInitialized && !chatLoading ) {
+            void fetchChatMessages( note.id );
+        }
+
+        void joinNoteRoom( note.id );
+
+        return () => {
+            leaveNoteRoom( note.id );
+        };
+    }, [
+        open,
+        isChatEnabled,
+        note.id,
+        note.groupId,
+        chatInitialized,
+        chatLoading,
+        activeGroupKey,
+        joinNoteRoom,
+        leaveNoteRoom,
+        fetchChatMessages,
+    ] );
+
+    const handleSendChat = async () => {
+        if ( !authUser || !isChatEnabled || isSendingChat ) {
+            return;
+        }
+
+        const trimmed = chatDraft.trim();
+        if ( trimmed.length === 0 ) {
+            return;
+        }
+
+        setIsSendingChat( true );
+        try {
+            await sendRealtimeMessage( {
+                note: { id: note.id, groupId: note.groupId },
+                content: trimmed,
+                userId: authUser.id,
+            } );
+            setChatDraft( "" );
+        } catch ( error ) {
+            console.error( "[EyeNote] Failed to send chat message", error );
+        } finally {
+            setIsSendingChat( false );
+        }
+    };
+
+    const chatStatusLabel = useMemo( () => {
+        switch ( realtimeStatus ) {
+            case "connected":
+                return "Connected";
+            case "connecting":
+                return "Connecting…";
+            case "error":
+                return "Realtime unavailable";
+            default:
+                return "Disconnected";
+        }
+    }, [ realtimeStatus ] );
+
+    const canSendChat = Boolean( authUser && isChatEnabled && chatDraft.trim().length > 0 && !isSendingChat );
+
+    const handleSelectOpenChange = ( open : boolean ) => {
+        setIsSelectOpen( open );
+        console.debug( "[EyeNote] Note sheet group select open:", {
+            open,
+            noteId: note.id,
+        } );
+    };
+
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent
-                {...( container ? { container } : {} )}
-                side="right"
-                className="note-content w-full sm:max-w-md flex flex-col outline-none opacity-50 hover:opacity-100 transition-opacity duration-200"
-                onPointerDownOutside={( event ) => {
+        <SidebarSheet
+            open={open}
+            onOpenChange={onOpenChange}
+            container={container ?? undefined}
+            className={cn(
+                "note-content w-full sm:max-w-md flex flex-col outline-none opacity-50 hover:opacity-100 transition-opacity duration-200",
+                isSelectOpen && "opacity-100"
+            )}
+            contentProps={{
+                onPointerDownOutside: ( event ) => {
                     if ( note.isLocalDraft ) {
                         event.preventDefault();
                         return;
                     }
                     onOpenChange( false );
-                }}
-                onInteractOutside={( event ) => {
+                },
+                onInteractOutside: ( event ) => {
                     if ( note.isLocalDraft ) {
                         event.preventDefault();
                     }
-                }}
-            >
+                },
+            }}
+        >
                 <SheetTitle className="sr-only">Add Note</SheetTitle>
                 <SheetDescription className="sr-only">
                     Add or edit your note for the selected element. Use the textarea below to write your note,
@@ -134,27 +261,130 @@ export function NoteSheet ( {
                     ) : null}
                     <div className="space-y-2">
                         <label
-                            htmlFor={`note-group-${ note.id }`}
+                            id={groupLabelId}
+                            htmlFor={groupTriggerId}
                             className="text-xs font-medium text-muted-foreground"
                         >
                             Group
                         </label>
-                        <select
-                            id={`note-group-${ note.id }`}
-                            className="w-full rounded-md border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                            value={selectedGroupId}
-                            onChange={( event ) => onSelectedGroupIdChange( event.target.value )}
+                        <Select
+                            value={selectedGroupId || SELECT_EMPTY_VALUE}
+                            onValueChange={( value ) => {
+                                onSelectedGroupIdChange( value === SELECT_EMPTY_VALUE ? "" : value );
+                            }}
+                            onOpenChange={handleSelectOpenChange}
                             disabled={isActionLocked}
                         >
-                            <option value="">No group</option>
-                            {selectOptions.map( ( option ) => (
-                                <option key={`${ note.id }-${ option.id }`} value={option.id}>
-                                    {option.name}
-                                </option>
-                            ) )}
-                        </select>
+                            <SelectTrigger
+                                id={groupTriggerId}
+                                aria-labelledby={groupLabelId}
+                                className="w-full px-3 py-2 text-sm rounded-md border border-border bg-background/80"
+                                disabled={isActionLocked}
+                            >
+                                <SelectValue placeholder="Select a group" />
+                            </SelectTrigger>
+                            <SelectContent align="start" container={container ?? undefined}>
+                                <SelectItem value={SELECT_EMPTY_VALUE}>
+                                    <div className="flex items-center gap-2">
+                                        <span className="h-3 w-3 rounded-full border border-border bg-transparent" />
+                                        <span>No group</span>
+                                    </div>
+                                </SelectItem>
+                                {selectOptions.map( ( option ) => (
+                                    <SelectItem key={`${ note.id }-${ option.id }`} value={option.id}>
+                                        <div className="flex items-center gap-2">
+                                            <span
+                                                aria-hidden="true"
+                                                className="h-3 w-3 rounded-full border border-border"
+                                                style={{ backgroundColor: resolveGroupColor( option.color ) }}
+                                            />
+                                            <span className="truncate">{option.name}</span>
+                                        </div>
+                                    </SelectItem>
+                                ) )}
+                            </SelectContent>
+                        </Select>
                     </div>
-                    <div className="space-y-2 flex-1 min-h-0">
+                    <div className="space-y-2">
+                        <label className="text-xs font-medium text-muted-foreground">
+                            Group Chat
+                        </label>
+                        {isChatEnabled ? (
+                            <div className="space-y-2">
+                                <div className="border border-border/60 rounded-md bg-background/40 h-48 overflow-y-auto p-2 flex flex-col gap-3">
+                                    {chatHasMore ? (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="self-center text-xs"
+                                            onClick={() => fetchOlderChatMessages( note.id )}
+                                            disabled={chatLoading}
+                                        >
+                                            {chatLoading ? "Loading..." : "Load earlier"}
+                                        </Button>
+                                    ) : null}
+                                    {chatMessages.length === 0 && !chatLoading ? (
+                                        <p className="text-xs text-muted-foreground text-center mt-4">
+                                            Start the conversation for this note.
+                                        </p>
+                                    ) : (
+                                        chatMessages.map( ( message ) => {
+                                            const isSelf = authUser?.id === message.userId;
+                                            const bubbleClasses = cn(
+                                                "rounded-lg px-3 py-2 text-xs whitespace-pre-wrap break-words",
+                                                isSelf
+                                                    ? "bg-primary/20 text-primary-foreground/90"
+                                                    : "bg-muted text-foreground"
+                                            );
+                                            const timestamp = new Date( message.createdAt ).toLocaleTimeString(
+                                                [],
+                                                { hour: "2-digit", minute: "2-digit" }
+                                            );
+                                            return (
+                                                <div key={message.id} className="flex flex-col gap-1">
+                                                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                                                        <span className="font-medium">
+                                                            {isSelf ? "You" : "Collaborator"}
+                                                        </span>
+                                                        <span>{timestamp}</span>
+                                                        {message.optimistic ? (
+                                                            <span>Sending…</span>
+                                                        ) : null}
+                                                    </div>
+                                                    <div className={bubbleClasses}>
+                                                        <p>{message.content}</p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        } )
+                                    )}
+                                </div>
+                                <div className="flex gap-2">
+                                    <Input
+                                        value={chatDraft}
+                                        onChange={( event ) => setChatDraft( event.target.value )}
+                                        placeholder="Type a message..."
+                                        onKeyDown={( event ) => {
+                                            if ( event.key === "Enter" && !event.shiftKey ) {
+                                                event.preventDefault();
+                                                void handleSendChat();
+                                            }
+                                        }}
+                                        disabled={!authUser || !isChatEnabled || isSendingChat}
+                                    />
+                                    <Button onClick={() => void handleSendChat()} disabled={!canSendChat}>
+                                        {isSendingChat ? "Sending..." : "Send"}
+                                    </Button>
+                                </div>
+                                <p className="text-[11px] text-muted-foreground">{chatStatusLabel}</p>
+                            </div>
+                        ) : (
+                            <p className="text-xs text-muted-foreground">
+                                Assign this note to a group to start chatting with collaborators.
+                            </p>
+                        )}
+                    </div>
+                    <div className="space-y-2">
                         <label
                             htmlFor={`note-content-${ note.id }`}
                             className="text-xs font-medium text-muted-foreground"
@@ -187,7 +417,6 @@ export function NoteSheet ( {
                         </Button>
                     </div>
                 </div>
-            </SheetContent>
-        </Sheet>
+        </SidebarSheet>
     );
 }

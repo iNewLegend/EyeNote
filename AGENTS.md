@@ -1,6 +1,5 @@
 ## Project Structure & Module Organization
-- `apps/app`: Fastify + Socket.IO API; TypeScript lives in `src` and compiles to `dist`.
-- `apps/dashboard`: Vite + React dashboard; code in `src`, Vite builds into `dist`.
+- `apps/backend`: Fastify + Socket.IO API; TypeScript lives in `src` and compiles to `dist`.
 - `apps/ext`: Vite Chrome extension; `src` sources, watch/build rolls up to `dist` and copies the unpacked bundle into `extension/`.
 - `packages/auth`: Shared auth flows with environment-specific entrypoints.
 - `packages/definitions`: Shared Zod schemas and TypeScript contracts.
@@ -10,10 +9,9 @@
 ## Build, Test, and Development Commands
 - `pnpm install` — bootstrap all workspaces.
 - `pnpm backend:dev` or `pnpm --filter @eye-note/backend dev` — nodemon + tsx Fastify server (reads `.env`).
-- `pnpm app:dev` or `pnpm --filter @eye-note/app dev` — Vite dev server for the dashboard.
 - `pnpm ext:dev` or `pnpm --filter @eye-note/ext dev` — watches Vite builds and repacks the Chrome extension into `apps/ext/extension`.
-- `pnpm --filter @eye-note/backend build` — transpile the API into `apps/app/dist`.
-- `pnpm --filter @eye-note/app build` — type-check then bundle the dashboard into `apps/dashboard/dist`.
+- `pnpm --filter @eye-note/backend build` — transpile the API into `apps/backend/dist`.
+- `pnpm --filter @eye-note/ext build` — clean/build Vite outputs and prepare the unpacked extension.
 - `pnpm --filter @eye-note/ext build` — clean/build Vite outputs and prepare the unpacked extension.
 - `pnpm lint` — run ESLint across all `apps`.
 - `pnpm type-check` — run `tsc --noEmit` against every workspace to keep shared types honest.
@@ -108,7 +106,7 @@ feat(`ext/overlay`): add inspector controls
 fix(`backend/api`): guard missing sessions
 chore(`shared/definitions`): sync zod contracts
 infra(`root`): configure lint workflow
-tweak(`dashboard/ui`): refine settings layout
+tweak(`ext/ui`): refine settings layout
 ```
 
 ### Instructions

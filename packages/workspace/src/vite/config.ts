@@ -24,7 +24,7 @@ export function getBaseConfig ( { hostEnvPrefix } : { hostEnvPrefix ?: string } 
 
     if ( !googleClientId ) {
         console.warn(
-            "[EyeNote] GOOGLE_CLIENT_ID is not set. OAuth flows in the dashboard will fail until configured."
+            "[EyeNote] GOOGLE_CLIENT_ID is not set. OAuth flows in the extension will fail until configured."
         );
     }
 

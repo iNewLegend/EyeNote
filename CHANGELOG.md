@@ -1,3 +1,66 @@
+# 2025-11-14
+
+## Overlay accessibility & invite selects
+- Added an sr-only `DialogTitle` plus description to the note screenshot viewer so Radix no longer logs missing title/description warnings while keeping the UI visually unchanged.
+- Replaced the empty-string placeholder values in the group invite Select menus with explicit sentinel values and helpers, preventing Radix from throwing when the "Never"/"No limit" options are rendered.
+- Added a repo-level SVG module declaration (`types/svg/index.d.ts`) and wired it through `tsconfig.base.json` so every workspace can import `*.svg`, then re-ran `pnpm --filter @eye-note/{ext,groups} exec tsc --noEmit` (both pass).
+- Introduced a dedicated Roles tab inside Extension Management: users choose a group before the shared `RoleManagementPanel` renders, the Groups tab routes its manage buttons into that experience, and the roles selector now uses stable store slices so the dialog no longer spins in an infinite update loop.
+- Routed the roles dropdown portal through the shadow host container so Radix Select opens reliably inside the dialog instead of silently failing.
+- Rebuilt the role manager surface with a Discord-inspired layout (phi-aligned column grid, glassmorphic stats row, refreshed role list + composer) so editing roles feels premium instead of utilitarian, and stabilized its hook order so selecting roles no longer crashes the dialog.
+
+# 2025-11-13
+
+## Discord-style group manager
+- Refactored `GroupManagerPanel` with a hero stats banner, vertical tab navigation, and a Discord-inspired group stack so managing spaces mirrors the server settings experience.
+- Consolidated the create/join flows into a quick-action tab card, keeping the existing handlers but surfacing them in a single Discord-like entry point.
+- Restyled invite management, owner-only messaging, and the access/danger zones with richer cards/badges so invite sharing and role management feel consistent with the new layout.
+
+## Sidebar layout parity
+- Introduced a shared `SidebarSheet` wrapper around the shadcn sheet primitives so overlay sidebars reuse consistent width, padding, and backdrop treatment, then reran `pnpm --filter @eye-note/ext exec tsc --noEmit`.
+- Updated the notifications center and note editor panels to consume the shared sidebar, keeping their existing event handlers while aligning both experiences to the new layout.
+
+## Keyboard shortcuts
+- Added a centralized `@eye-note/shortcuts` toolkit with a generic registry/dispatcher so the extension (not the package) now declares the active bindings and can later swap combos per user settings.
+- Wired the overlay shadow host to mount the dispatcher and taught the quick menu to pull shortcut labels directly from the registry, eliminating the duplicated "Shift" labels sprinkled across the UI.
+- Promoted the Quick Launch dialog to build its entries straight from the registered shortcuts (via metadata), so adding a new binding automatically surfaces the action without touching the UI.
+
+## Extension popup
+- Closed the popup window automatically after launching the quick menu so the overlay dialog can take focus without leaving the popup hanging open.
+- Rewired the Manage Groups shortcut to open the Extension Managment panel, removed the legacy standalone window/background handler, and dropped the duplicate popup button so the menu is the single entry point.
+- Clarified the popup's "can't reach this tab" toast so users know EyeNote only works on regular webpages and not Chrome system tabs.
+
+## Group invites
+- Replaced email-locked single-use codes with Discord-style invite links that support configurable expirations, max uses, revocation, and automatic lowest-role assignment on join.
+- Extended the backend API with invite listing/revocation endpoints and normalized invite code parsing so pasted links or raw codes both work.
+- Refreshed the Extension Managment panel to generate/share links, monitor usage, and revoke invites, while the join form now accepts full links in addition to codes.
+
+# 2025-11-12
+
+## Notes overlay
+- Prevented the extension NoteSheet from endlessly refetching `/api/notes/:id/chat/messages` when a note has no chat history by tracking per-note chat initialization in the store so the initial load only fires once per session.
+- Added an end-to-end notifications system: Mongo-backed notification records, Fastify `/api/notifications` listing + read endpoints, live gateway broadcasts, and an extension notification center with realtime updates and Chrome badge sync.
+- Reworked group invites into an approval-driven workflow—join requests now fan out via the notification system, group managers can approve or decline directly from the overlay, and applicants are synced into their groups automatically once approved.
+
+## Collaboration
+- Extracted the group manager store, hooks, and role-management UI into a new `@eye-note/groups` package with pluggable API/storage adapters so both the extension and dashboard consume the same logic.
+- Pointed the extension at the shared package (Chrome storage + existing REST client) and removed its local copies of the group manager/role components so popup, overlay, and notifications all stay in sync automatically.
+- Replaced the dashboard app’s preview surface with the real group manager experience by wiring a local-storage adapter, app-authenticated API client, and shared panel—users can now create/join/manage groups from the standalone app without opening the extension.
+- Restored the dashboard’s `Extension Managment` shell so the shared group manager renders inside the familiar settings surface, matching the extension’s look and copy.
+- Centralized the `Extension Managment` title/description copy inside `@eye-note/definitions` so the app, overlay, and popup stay perfectly in sync.
+- Synced the extension auth store across contexts so the popup and standalone group window reuse the existing session before showing sign-in prompts, eliminating the “sign in twice” confusion.
+- Removed the legacy dashboard workspace (`apps/app`) so the Chrome extension and its standalone manager window remain the single source of truth for extension management.
+
+# 2025-11-11
+
+## Notes overlay
+- Replaced the note sheet's native select with the shared shadcn dropdown so editors can preview group colors directly inside the overlay.
+- Exported the select primitives from `@eye-note/ui` and threaded group color metadata through note group options to keep the picker in sync even when a group's membership changes.
+- Kept the note sheet at full opacity whenever the dropdown is open so the panel no longer fades mid-edit, moved the Radix select portal inside the shadow container, and boosted the popover z-index/logging so the menu renders above the overlay and we can trace when it opens or closes.
+- Simplified the group selector trigger so it no longer shows a duplicate color chip; the top-of-sheet header remains the single color indicator.
+- Introduced server-side chat infrastructure: added Mongo models, REST endpoints, and a socket.io gateway (auth tokens + `/api/notes/:id/chat/messages`) so group members can exchange real-time note messages.
+- Wired the extension to the new realtime service with a `useRealtimeStore`, chat store, and NoteSheet UI that streams messages live, loads history, and falls back to HTTP when the socket drops.
+- Split the websocket gateway into a dedicated `apps/live` service with its own Fastify + Socket.IO stack, reusable Mongoose models (`@eye-note/backend-models`), and a configurable `REALTIME_JWT_SECRET`, so the REST API and realtime layer can scale independently.
+
 # 2025-10-30
 
 ## Overlay capture & rendering
@@ -14,7 +77,7 @@
 # 2025-10-29
 
 ## Documentation
-- Realigned `AGENTS.md` with the current workspace layout (`apps/app`, `apps/dashboard`, `apps/ext`) and developer commands.
+- Realigned `AGENTS.md` with the current workspace layout (`apps/backend`, `apps/ext`) and developer commands.
 - Inlined `.cursor` automation rule descriptions inside `AGENTS.md` for quick reference.
 - Added a root `pnpm type-check` script that executes TypeScript checks across every workspace and documented it for agents.
 

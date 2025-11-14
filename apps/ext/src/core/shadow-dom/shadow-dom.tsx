@@ -5,7 +5,15 @@ import { NotesComponent } from "../../features/notes/notes-component";
 import { useInspectorMode } from "../../hooks/use-inspector-mode";
 import { isElementVisible } from "../../utils/is-element-visible";
 import { useDomMutations } from "../../hooks/use-dom-mutations";
-import { EVENT_OPEN_GROUP_MANAGER, EVENT_OPEN_QUICK_MENU, EVENT_OPEN_SETTINGS_DIALOG } from "@eye-note/definitions";
+import {
+    EVENT_OPEN_GROUP_MANAGER,
+    EVENT_OPEN_NOTIFICATIONS_PANEL,
+    EVENT_OPEN_QUICK_MENU,
+    EVENT_OPEN_SETTINGS_DIALOG,
+    EXTENSION_MANAGEMENT_DESCRIPTION,
+    EXTENSION_MANAGEMENT_TITLE,
+} from "@eye-note/definitions";
+import { bindShortcutDispatcher } from "@eye-note/shortcuts";
 import { useMarkerVirtualization } from "../../hooks/use-marker-virtualization";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { InteractionBlocker } from "../../components/interaction-blocker";
@@ -21,7 +29,13 @@ import {
     GroupManagerPanel,
 } from "../../modules/groups";
 import { useExtensionSettings, type ExtensionSettings } from "../../hooks/use-extension-settings";
-import { QuickMenuDialog } from "../../components/quick-menu-dialog";
+import { QuickMenuDialog, type QuickMenuItem } from "../../components/quick-menu-dialog";
+import { RolesSettingsSection } from "../../components/roles-settings-section";
+import { useRealtimeBootstrap } from "../../features/realtime/hooks/use-realtime-bootstrap";
+import { REALTIME_FAILURE_EVENT } from "../../features/realtime/realtime-store";
+import { useNotificationsBootstrap } from "../../features/notifications/hooks/use-notifications-bootstrap";
+import { useNotificationsStore } from "../../features/notifications/notifications-store";
+import { NotificationCenter } from "../../features/notifications/components/notification-center";
 import {
     Label,
     SettingsDialog,
@@ -32,8 +46,14 @@ import {
     type SettingsDialogItem,
 } from "@eye-note/ui";
 import { INSPECTOR_BLOCKED_EVENT } from "../../hooks/use-inspector-mode";
+import {
+    overlayShortcutRegistry,
+    getOverlayQuickLaunchItems,
+    type OverlayShortcutId,
+    QUICK_LAUNCH_MENU_GROUPS,
+} from "../../shortcuts/overlay-shortcuts";
 
-type SettingsSectionId = "general" | "groups";
+type SettingsSectionId = "general" | "groups" | "roles";
 const SHADOW_HOST_ID = "eye-note-shadow-dom";
 
 const ShadowDomContent : React.FC = () => {
@@ -43,6 +63,7 @@ const ShadowDomContent : React.FC = () => {
     const { createNote, loadNotes } = useNotesController();
     const activeGroupIds = useGroupsStore( ( state ) => state.activeGroupIds );
     const isAuthenticated = useAuthStore( ( state ) => state.isAuthenticated );
+    const authUserId = useAuthStore( ( state ) => state.user?.id ?? null );
     const refreshAuthStatus = useAuthStore( ( state ) => state.refreshStatus );
     const modes = useModeStore( ( state ) => state.modes );
     const isConnected = ( modes & AppMode.CONNECTED ) === AppMode.CONNECTED;
@@ -57,8 +78,10 @@ const ShadowDomContent : React.FC = () => {
     const [ isProcessingNoteDismissal, setIsProcessingNoteDismissal ] = useState( false );
     const [ currentUrl, setCurrentUrl ] = useState( () => window.location.href );
     const [ isQuickMenuOpen, setIsQuickMenuOpen ] = useState( false );
+    const [ isNotificationsOpen, setIsNotificationsOpen ] = useState( false );
     const [ isSettingsDialogOpen, setIsSettingsDialogOpen ] = useState( false );
     const [ activeSettingsSection, setActiveSettingsSection ] = useState<SettingsSectionId>( "general" );
+    const [ roleSettingsGroupId, setRoleSettingsGroupId ] = useState<string | null>( null );
     const [ , setLocalSelectedElement ] = useState<HTMLElement | null>( null );
     const notesContainerRef = useRef<HTMLDivElement>( null );
     const pageIdentityState = usePageIdentity( currentUrl );
@@ -71,6 +94,40 @@ const ShadowDomContent : React.FC = () => {
     const inspectorToastTimeoutsRef = useRef<Record<string, number | null>>( {} );
     const dialogContainer = notesContainerRef.current?.parentElement ?? null;
     const visibleNoteIds = useMarkerVirtualization( notes, { rootMargin: "200px" } );
+    const unreadNotificationCount = useNotificationsStore( ( state ) => state.unreadCount );
+
+    useRealtimeBootstrap();
+    useNotificationsBootstrap();
+
+    useEffect( () => {
+        const definitions = overlayShortcutRegistry.listByScope( "overlay" );
+        console.info( "[EyeNote][Shortcut] overlay register", definitions );
+        const unsubscribe = bindShortcutDispatcher( {
+            registry: overlayShortcutRegistry,
+            scope: "overlay",
+            target: document,
+            debugLabel: "overlay",
+        } );
+        return () => {
+            unsubscribe();
+        };
+    }, [] );
+
+    useEffect( () => {
+        if ( typeof chrome === "undefined" || !chrome.runtime?.sendMessage ) {
+            return;
+        }
+
+        const count = settings.showUnreadBadge ? unreadNotificationCount : 0;
+        chrome.runtime
+            .sendMessage( {
+                type: "UPDATE_BADGE",
+                count,
+            } )
+            .catch( () => {
+                // Ignore background messaging failures (popup closed, etc.)
+            } );
+    }, [ settings.showUnreadBadge, unreadNotificationCount ] );
 
     const lastKnownUrlRef = useUrlListener( setCurrentUrl );
     useGroupsBootstrap( {
@@ -181,14 +238,39 @@ const ShadowDomContent : React.FC = () => {
     const groupsSection = useMemo(
         () =>
             canManageGroups ? (
-                <GroupManagerPanel onClose={() => setIsSettingsDialogOpen( false )} />
+                <GroupManagerPanel
+                    currentUserId={authUserId}
+                    onManageRoles={( groupId ) => {
+                        setRoleSettingsGroupId( groupId );
+                        setActiveSettingsSection( "roles" );
+                    }}
+                    onClose={() => setIsSettingsDialogOpen( false )}
+                />
             ) : (
                 <div className="space-y-2 text-sm text-muted-foreground">
                     <p>Sign in and connect to manage groups.</p>
                     <p>Once connected, you can create, join, and configure collaboration groups.</p>
                 </div>
             ),
-        [ canManageGroups, setIsSettingsDialogOpen ]
+        [
+            authUserId,
+            canManageGroups,
+            setActiveSettingsSection,
+            setIsSettingsDialogOpen,
+            setRoleSettingsGroupId,
+        ]
+    );
+
+    const rolesSection = useMemo(
+        () => (
+            <RolesSettingsSection
+                canManageGroups={canManageGroups}
+                selectedGroupId={roleSettingsGroupId}
+                onSelectedGroupIdChange={setRoleSettingsGroupId}
+                portalContainer={dialogContainer}
+            />
+        ),
+        [ canManageGroups, roleSettingsGroupId, setRoleSettingsGroupId, dialogContainer ]
     );
 
     const settingsItems = useMemo<SettingsDialogItem[]>(
@@ -208,28 +290,37 @@ const ShadowDomContent : React.FC = () => {
                 content: groupsSection,
                 disabled: !canManageGroups,
             },
-        ],
-        [ canManageGroups, generalSettingsSection, groupsSection ]
-    );
-
-    const quickMenuItems = useMemo(
-        () => [
             {
-                id: "groups" as const,
-                label: "Groups",
-                description: "Manage collaboration groups, invites, and roles.",
-                shortcut: "Shift + G",
+                id: "roles",
+                label: "Roles",
+                description: canManageGroups
+                    ? "Assign permissions per group."
+                    : "Connect first to manage roles.",
+                content: rolesSection,
                 disabled: !canManageGroups,
             },
-            {
-                id: "settings" as const,
-                label: "Settings",
-                description: "Adjust overlay preferences without leaving the page.",
-                shortcut: "Shift + S",
-            },
         ],
-        [ canManageGroups ]
+        [ canManageGroups, generalSettingsSection, groupsSection, rolesSection ]
     );
+
+    const triggerShortcutAction = useCallback( ( shortcutId : OverlayShortcutId ) => {
+        const definition = overlayShortcutRegistry.require( shortcutId );
+        if ( definition.action.type === "event" ) {
+            window.dispatchEvent( new CustomEvent( definition.action.eventName ) );
+        }
+    }, [] );
+
+    const quickMenuItems = useMemo<QuickMenuItem[]>( () => {
+        const entries = getOverlayQuickLaunchItems( { unreadCount: unreadNotificationCount } );
+        return entries.map( ( entry ) => ( {
+            id: entry.menuId,
+            shortcutId: entry.shortcutId,
+            label: entry.label,
+            description: entry.description,
+            shortcutDisplay: overlayShortcutRegistry.getDisplayText( entry.shortcutId ),
+            disabled: entry.menuId === QUICK_LAUNCH_MENU_GROUPS && !canManageGroups,
+        } ) );
+    }, [ canManageGroups, unreadNotificationCount ] );
 
     useEffect( () => {
         const handler = ( event : Event ) => {
@@ -272,6 +363,22 @@ const ShadowDomContent : React.FC = () => {
     }, [ showToast, dismissToast ] );
 
     useEffect( () => {
+        const handleRealtimeFailure = ( event : Event ) => {
+            const detail = ( event as CustomEvent<{ error ?: string }> ).detail;
+            const description = detail?.error ?? "The live server is unavailable.";
+            showToast( `Cannot reach EyeNote live server. ${ description }`, {
+                id: "shadow-toast-realtime-failure",
+                duration: 4000,
+            } );
+        };
+
+        window.addEventListener( REALTIME_FAILURE_EVENT, handleRealtimeFailure as EventListener );
+        return () => {
+            window.removeEventListener( REALTIME_FAILURE_EVENT, handleRealtimeFailure as EventListener );
+        };
+    }, [ showToast ] );
+
+    useEffect( () => {
         const handler = () => {
             if ( !canManageGroups ) {
                 return;
@@ -285,6 +392,23 @@ const ShadowDomContent : React.FC = () => {
             window.removeEventListener( EVENT_OPEN_GROUP_MANAGER, handler as EventListener );
         };
     }, [ canManageGroups ] );
+
+    useEffect( () => {
+        if ( !canManageGroups ) {
+            setRoleSettingsGroupId( null );
+        }
+    }, [ canManageGroups ] );
+
+    useEffect( () => {
+        const handler = () => {
+            setIsNotificationsOpen( true );
+        };
+
+        window.addEventListener( EVENT_OPEN_NOTIFICATIONS_PANEL, handler as EventListener );
+        return () => {
+            window.removeEventListener( EVENT_OPEN_NOTIFICATIONS_PANEL, handler as EventListener );
+        };
+    }, [] );
 
     useEffect( () => {
         const handler = () => {
@@ -448,25 +572,22 @@ const ShadowDomContent : React.FC = () => {
                     onOpenChange={setIsQuickMenuOpen}
                     dialogContainer={dialogContainer}
                     items={quickMenuItems}
-                    onSelect={ ( item ) => {
+                    onSelect={( item ) => {
                         setIsQuickMenuOpen( false );
-                        if ( item === "groups" ) {
-                            if ( canManageGroups ) {
-                                setActiveSettingsSection( "groups" );
-                                setIsSettingsDialogOpen( true );
-                            }
-                            return;
-                        }
-                        setActiveSettingsSection( "general" );
-                        setIsSettingsDialogOpen( true );
+                        triggerShortcutAction( item.shortcutId );
                     }}
+                />
+                <NotificationCenter
+                    open={isNotificationsOpen}
+                    onOpenChange={setIsNotificationsOpen}
+                    container={dialogContainer}
                 />
                 <SettingsDialog
                     open={isSettingsDialogOpen}
                     onOpenChange={setIsSettingsDialogOpen}
                     dialogContainer={dialogContainer}
-                    title="Extension Managment"
-                    description="These preferences are stored locally in chrome.storage and sync across the popup and overlay."
+                    title={EXTENSION_MANAGEMENT_TITLE}
+                    description={EXTENSION_MANAGEMENT_DESCRIPTION}
                     selectedItemId={activeSettingsSection}
                     onSelectedItemChange={( id ) =>
                         setActiveSettingsSection( id as SettingsSectionId )
@@ -484,7 +605,7 @@ const ShadowDomContent : React.FC = () => {
                     <NotesComponent
                         key={note.id}
                         note={note}
-                        container={notesContainerRef.current!.parentElement}
+                        container={dialogContainer}
                         setSelectedElement={setSelectedElement}
                         onNoteDismissed={handleNoteDismissed}
                     />
