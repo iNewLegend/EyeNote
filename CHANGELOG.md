@@ -4,6 +4,8 @@
 - Added an sr-only `DialogTitle` plus description to the note screenshot viewer so Radix no longer logs missing title/description warnings while keeping the UI visually unchanged.
 - Replaced the empty-string placeholder values in the group invite Select menus with explicit sentinel values and helpers, preventing Radix from throwing when the "Never"/"No limit" options are rendered.
 - Added a repo-level SVG module declaration (`types/svg/index.d.ts`) and wired it through `tsconfig.base.json` so every workspace can import `*.svg`, then re-ran `pnpm --filter @eye-note/{ext,groups} exec tsc --noEmit` (both pass).
+- Introduced a dedicated Roles tab inside Extension Management: users choose a group before the shared `RoleManagementPanel` renders, the Groups tab routes its manage buttons into that experience, and the roles selector now uses stable store slices so the dialog no longer spins in an infinite update loop.
+- Routed the roles dropdown portal through the shadow host container so Radix Select opens reliably inside the dialog instead of silently failing.
 
 # 2025-11-13
 

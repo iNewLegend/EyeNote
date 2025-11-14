@@ -132,9 +132,10 @@ type GroupManagerPanelProps = {
     className ?: string;
     onClose ?: () => void;
     currentUserId ?: string | null;
+    onManageRoles ?: ( groupId : string ) => void;
 };
 
-export function GroupManagerPanel ( { className, onClose, currentUserId } : GroupManagerPanelProps ) {
+export function GroupManagerPanel ( { className, onClose, currentUserId, onManageRoles } : GroupManagerPanelProps ) {
     const groups = useGroupsStore( ( state ) => state.groups );
     const activeGroupIds = useGroupsStore( ( state ) => state.activeGroupIds );
     const groupsError = useGroupsStore( ( state ) => state.error );
@@ -176,6 +177,14 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
         }
         return sortedGroups.find( ( group ) => group.id === selectedGroupId ) ?? null;
     }, [ sortedGroups, selectedGroupId ] );
+
+    const handleManageRoles = useCallback( ( groupId : string ) => {
+        if ( onManageRoles ) {
+            onManageRoles( groupId );
+            return;
+        }
+        setManagingRolesForGroupId( groupId );
+    }, [ onManageRoles, setManagingRolesForGroupId ] );
 
     useEffect( () => {
         if ( sortedGroups.length === 0 ) {
@@ -662,7 +671,7 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
                                 size="sm"
                                 variant="ghost"
                                 className="h-8 w-8 p-0"
-                                onClick={() => setManagingRolesForGroupId( selectedGroup.id )}
+                                onClick={() => handleManageRoles( selectedGroup.id )}
                             >
                                 <Settings className="h-4 w-4" />
                             </Button>
@@ -744,7 +753,7 @@ export function GroupManagerPanel ( { className, onClose, currentUserId } : Grou
                                         size="sm"
                                         variant="ghost"
                                         className="h-7 text-xs"
-                                        onClick={() => setManagingRolesForGroupId( selectedGroup.id )}
+                                        onClick={() => handleManageRoles( selectedGroup.id )}
                                     >
                                         <Settings className="mr-1.5 h-3.5 w-3.5" />
                                         Manage

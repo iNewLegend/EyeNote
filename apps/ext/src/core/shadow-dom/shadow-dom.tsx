@@ -30,6 +30,7 @@ import {
 } from "../../modules/groups";
 import { useExtensionSettings, type ExtensionSettings } from "../../hooks/use-extension-settings";
 import { QuickMenuDialog, type QuickMenuItem } from "../../components/quick-menu-dialog";
+import { RolesSettingsSection } from "../../components/roles-settings-section";
 import { useRealtimeBootstrap } from "../../features/realtime/hooks/use-realtime-bootstrap";
 import { REALTIME_FAILURE_EVENT } from "../../features/realtime/realtime-store";
 import { useNotificationsBootstrap } from "../../features/notifications/hooks/use-notifications-bootstrap";
@@ -52,7 +53,7 @@ import {
     QUICK_LAUNCH_MENU_GROUPS,
 } from "../../shortcuts/overlay-shortcuts";
 
-type SettingsSectionId = "general" | "groups";
+type SettingsSectionId = "general" | "groups" | "roles";
 const SHADOW_HOST_ID = "eye-note-shadow-dom";
 
 const ShadowDomContent : React.FC = () => {
@@ -80,6 +81,7 @@ const ShadowDomContent : React.FC = () => {
     const [ isNotificationsOpen, setIsNotificationsOpen ] = useState( false );
     const [ isSettingsDialogOpen, setIsSettingsDialogOpen ] = useState( false );
     const [ activeSettingsSection, setActiveSettingsSection ] = useState<SettingsSectionId>( "general" );
+    const [ roleSettingsGroupId, setRoleSettingsGroupId ] = useState<string | null>( null );
     const [ , setLocalSelectedElement ] = useState<HTMLElement | null>( null );
     const notesContainerRef = useRef<HTMLDivElement>( null );
     const pageIdentityState = usePageIdentity( currentUrl );
@@ -238,6 +240,10 @@ const ShadowDomContent : React.FC = () => {
             canManageGroups ? (
                 <GroupManagerPanel
                     currentUserId={authUserId}
+                    onManageRoles={( groupId ) => {
+                        setRoleSettingsGroupId( groupId );
+                        setActiveSettingsSection( "roles" );
+                    }}
                     onClose={() => setIsSettingsDialogOpen( false )}
                 />
             ) : (
@@ -246,7 +252,25 @@ const ShadowDomContent : React.FC = () => {
                     <p>Once connected, you can create, join, and configure collaboration groups.</p>
                 </div>
             ),
-        [ canManageGroups, setIsSettingsDialogOpen ]
+        [
+            authUserId,
+            canManageGroups,
+            setActiveSettingsSection,
+            setIsSettingsDialogOpen,
+            setRoleSettingsGroupId,
+        ]
+    );
+
+    const rolesSection = useMemo(
+        () => (
+            <RolesSettingsSection
+                canManageGroups={canManageGroups}
+                selectedGroupId={roleSettingsGroupId}
+                onSelectedGroupIdChange={setRoleSettingsGroupId}
+                portalContainer={dialogContainer}
+            />
+        ),
+        [ canManageGroups, roleSettingsGroupId, setRoleSettingsGroupId, dialogContainer ]
     );
 
     const settingsItems = useMemo<SettingsDialogItem[]>(
@@ -266,8 +290,17 @@ const ShadowDomContent : React.FC = () => {
                 content: groupsSection,
                 disabled: !canManageGroups,
             },
+            {
+                id: "roles",
+                label: "Roles",
+                description: canManageGroups
+                    ? "Assign permissions per group."
+                    : "Connect first to manage roles.",
+                content: rolesSection,
+                disabled: !canManageGroups,
+            },
         ],
-        [ canManageGroups, generalSettingsSection, groupsSection ]
+        [ canManageGroups, generalSettingsSection, groupsSection, rolesSection ]
     );
 
     const triggerShortcutAction = useCallback( ( shortcutId : OverlayShortcutId ) => {
@@ -358,6 +391,12 @@ const ShadowDomContent : React.FC = () => {
         return () => {
             window.removeEventListener( EVENT_OPEN_GROUP_MANAGER, handler as EventListener );
         };
+    }, [ canManageGroups ] );
+
+    useEffect( () => {
+        if ( !canManageGroups ) {
+            setRoleSettingsGroupId( null );
+        }
     }, [ canManageGroups ] );
 
     useEffect( () => {
