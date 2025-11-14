@@ -16,7 +16,7 @@ import type {
     GroupInviteRecord,
 } from "@eye-note/definitions";
 import type { GroupsApiClient } from "@eye-note/groups";
-import { apiRequest } from "../../lib/api-client";
+import { apiRequest } from "../api-client";
 
 export async function listGroups () : Promise<GroupRecord[]> {
     const response = await apiRequest<ListGroupsResponse>( "/api/groups" );
@@ -147,4 +147,6 @@ export const groupsApiClient : GroupsApiClient = {
     createGroupInvite,
     listGroupInvites,
     revokeGroupInvite,
+    approveJoinRequest,
+    rejectJoinRequest,
 };

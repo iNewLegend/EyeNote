@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 
 import { getPageAnalyzer } from "../../lib/page-analyzer";
+import { ensureGroupsConfigured } from "../../lib/groups/configure-groups";
 
 import { ShadowDOM } from "../shadow-dom/shadow-dom";
 import { UserlandDOM } from "../userland-dom/userland-dom";
@@ -9,6 +10,8 @@ import { useModeStore, AppMode } from "../../stores/use-mode-store";
 
 import shadowDOMStyles from "../shadow-dom/shadow-dom.css?inline";
 import userlandDOMStyles from "../userland-dom/userland-dom.css?inline";
+
+ensureGroupsConfigured();
 
 const DOM_IDS = {
     SHADOW_CONTAINER: "eye-note-shadow-dom",

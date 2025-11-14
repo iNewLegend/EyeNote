@@ -14,7 +14,7 @@ import {
 } from "@eye-note/ui";
 import { RefreshCw, Shield } from "lucide-react";
 
-import { RoleManagementPanel, useGroupsStore } from "../modules/groups";
+import { RoleManagementPanel, useGroupsStore } from "@eye-note/groups";
 
 const ROLE_NONE_VALUE = "__role_none__";
 

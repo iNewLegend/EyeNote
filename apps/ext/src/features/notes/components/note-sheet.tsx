@@ -16,7 +16,7 @@ import { useAuthStore } from "@eye-note/auth/extension";
 import { useNoteChatStore } from "../chat-store";
 import type { NoteChatMessage } from "../chat-store";
 import { useRealtimeStore } from "../../realtime/realtime-store";
-import { useGroupsStore } from "../../../modules/groups";
+import { useGroupsStore } from "@eye-note/groups";
 import { SidebarSheet } from "../../../components/sidebar-sheet";
 
 const EMPTY_CHAT_MESSAGES : NoteChatMessage[] = [];

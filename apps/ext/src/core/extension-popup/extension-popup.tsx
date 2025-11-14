@@ -5,7 +5,7 @@ import "./extension-popup.css";
 import { useAuthStore, useAuthStatusEffects } from "@eye-note/auth/extension";
 import { useBackendHealthStore } from "@eye-note/backend-health";
 import { useBackendHealthBridge } from "../../hooks/use-backend-health-bridge";
-import { useGroupsBootstrap } from "../../modules/groups";
+import { useGroupsBootstrap } from "@eye-note/groups";
 import { useTabMessaging } from "../../hooks/use-tab-messaging";
 import { ActiveGroupsList } from "./components/active-groups-list";
 import { PopupHeader } from "./components/popup-header";

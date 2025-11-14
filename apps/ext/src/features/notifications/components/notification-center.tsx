@@ -4,7 +4,7 @@ import { Badge, Button, SheetDescription, SheetHeader, SheetTitle, cn } from "@e
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { useNotificationsStore } from "../notifications-store";
-import { approveJoinRequest, rejectJoinRequest } from "../../../modules/groups/groups-api";
+import { getGroupsApiClient } from "@eye-note/groups";
 import { SidebarSheet } from "../../../components/sidebar-sheet";
 
 interface NotificationCenterProps {
@@ -40,7 +40,8 @@ export function NotificationCenter ( { open, onOpenChange, container } : Notific
         }
 
         setActioningId( notification.id );
-        const action = decision === "approve" ? approveJoinRequest : rejectJoinRequest;
+        const client = getGroupsApiClient();
+        const action = decision === "approve" ? client.approveJoinRequest : client.rejectJoinRequest;
         try {
             await action( groupId, requestId );
             await markAsRead( notification.id );

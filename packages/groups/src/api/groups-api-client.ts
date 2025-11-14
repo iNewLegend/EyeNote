@@ -9,6 +9,7 @@ import type {
     GroupWithRoles,
     JoinGroupResponse,
     RemoveRolePayload,
+    ReviewJoinRequestResponse,
     UpdateGroupPayload,
     UpdateGroupRolePayload,
 } from "@eye-note/definitions";
@@ -27,6 +28,8 @@ export interface GroupsApiClient {
     createGroupInvite : ( groupId : string, payload : CreateGroupInvitePayload ) => Promise<GroupInviteRecord>;
     listGroupInvites : ( groupId : string ) => Promise<GroupInviteRecord[]>;
     revokeGroupInvite : ( groupId : string, code : string ) => Promise<GroupInviteRecord>;
+    approveJoinRequest : ( groupId : string, requestId : string ) => Promise<ReviewJoinRequestResponse>;
+    rejectJoinRequest : ( groupId : string, requestId : string ) => Promise<ReviewJoinRequestResponse>;
 }
 
 let groupsApiClient : GroupsApiClient | null = null;

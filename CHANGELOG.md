@@ -8,6 +8,11 @@
 - Routed the roles dropdown portal through the shadow host container so Radix Select opens reliably inside the dialog instead of silently failing.
 - Rebuilt the role manager surface with a Discord-inspired layout (phi-aligned column grid, glassmorphic stats row, refreshed role list + composer) so editing roles feels premium instead of utilitarian, and stabilized its hook order so selecting roles no longer crashes the dialog.
 
+## Groups package source of truth
+- Removed the extension-only `modules/groups` re-export, moved the API/storage wiring into `src/lib/groups`, and bootstrapped the content script + popup entrypoints with an `ensureGroupsConfigured` helper so the shared store always has adapters ready before React renders.
+- Pointed every extension import at `@eye-note/groups`, expanded the `GroupsApiClient` interface with join-request review helpers, and routed the notification center through `getGroupsApiClient` so groups logic truly lives in one package.
+- Re-ran `pnpm --filter @eye-note/{ext,groups} exec tsc --noEmit` (both pass).
+
 # 2025-11-13
 
 ## Discord-style group manager

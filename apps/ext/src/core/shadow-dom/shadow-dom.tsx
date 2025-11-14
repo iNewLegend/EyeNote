@@ -27,7 +27,7 @@ import {
     useGroupsBootstrap,
     useGroupsStore,
     GroupManagerPanel,
-} from "../../modules/groups";
+} from "@eye-note/groups";
 import { useExtensionSettings, type ExtensionSettings } from "../../hooks/use-extension-settings";
 import { QuickMenuDialog, type QuickMenuItem } from "../../components/quick-menu-dialog";
 import { RolesSettingsSection } from "../../components/roles-settings-section";
