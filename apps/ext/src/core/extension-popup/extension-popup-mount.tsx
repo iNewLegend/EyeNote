@@ -2,6 +2,9 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { Toaster } from "@eye-note/ui";
 import { ExtensionPopup } from "./extension-popup";
+import { ensureGroupsConfigured } from "../../lib/groups/configure-groups";
+
+ensureGroupsConfigured();
 
 console.log( "Popup mounting..." );
 
@@ -27,4 +30,3 @@ try {
 } catch ( error ) {
     console.error( "Error mounting React app:", error );
 }
-

@@ -4,7 +4,7 @@ import type { UpdateNotePayload } from "@eye-note/definitions";
 import { useHighlightStore } from "../../stores/highlight-store";
 import { useNotesStore } from "./notes-store";
 import { useNotesController } from "./notes-controller";
-import { useGroupsStore } from "../../modules/groups";
+import { useGroupsStore } from "@eye-note/groups";
 import { useModeStore, AppMode } from "../../stores/use-mode-store";
 import { calculateMarkerPosition } from "./notes-utils";
 import { NoteMarker } from "./components/note-marker";

@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useAuthStore } from "@eye-note/auth/extension";
-import { useGroupsStore } from "../../../modules/groups";
+import { useGroupsStore } from "@eye-note/groups";
 import { useRealtimeStore } from "../realtime-store";
 
 export function useRealtimeBootstrap () {

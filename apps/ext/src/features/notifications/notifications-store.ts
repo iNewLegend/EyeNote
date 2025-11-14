@@ -5,7 +5,7 @@ import {
     markAllNotificationsRead,
     markNotificationRead,
 } from "./notifications-api";
-import { useGroupsStore } from "../../modules/groups";
+import { useGroupsStore } from "@eye-note/groups";
 
 interface NotificationsState {
     items : NotificationRecord[];

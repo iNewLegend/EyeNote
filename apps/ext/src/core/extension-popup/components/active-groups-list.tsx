@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useGroupsStore } from "../../../modules/groups";
+import { useGroupsStore } from "@eye-note/groups";
 
 export function ActiveGroupsList () {
     const groups = useGroupsStore( ( state ) => state.groups );
